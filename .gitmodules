@@ -2,3 +2,7 @@
 	path = dracut_rpm/dracut
 	url = git@github.com:johnmeneghini/dracut.git
 	branch = timberland_final_v2
+[submodule "libnvme_rpm/libnvme"]
+	path = libnvme_rpm/libnvme
+	url = git@github.com:timberland-sig/libnvme.git
+	branch = timberlandmaster_final_v13

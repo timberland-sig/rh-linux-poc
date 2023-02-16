@@ -9,5 +9,5 @@ a.out
 *.tar.gz
 *.tar.xz
 cscope.*
-dracut_rpm/rpmbuild/*
+*/rpmbuild/*
 
