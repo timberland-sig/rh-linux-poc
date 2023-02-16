@@ -10,10 +10,8 @@ pushd dracut
 make clean
 make dist
 cp dracut-${VERSION}.tar.xz ../
+make clean
 popd
-
-#git archive --format=tar HEAD > dracut-${VERSION}.tar
-#gzip -f -9 dracut-${VERSION}.tar
 
 xz -d -v dracut-${VERSION}.tar.xz
 tar rf dracut-${VERSION}.tar dracut.spec
