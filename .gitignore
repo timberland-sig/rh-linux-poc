@@ -1,0 +1,13 @@
+a.out
+*.o
+*.ol
+*.os
+*~
+*.swp
+*.a
+*.so.*
+*.tar.gz
+*.tar.xz
+cscope.*
+dracut_rpm/rpmbuild/*
+
