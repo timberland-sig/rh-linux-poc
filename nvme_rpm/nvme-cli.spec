@@ -3,12 +3,16 @@
 
 Name:           nvme-cli
 Version:        2.3
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        NVMe management command line interface
 
 License:        GPLv2
 URL:            https://github.com/linux-nvme/nvme-cli
-Source0:        %{url}/archive/v%{version_no_tilde}/%{name}-%{version_no_tilde}.tar.gz
+Source:         %{name}-%{version_no_tilde}.tar.gz
+
+Group:          Development/Tools
+Provides:       nvme
+BuildRoot:      %{_tmppath}/%{name}-%{version}-root
 
 BuildRequires:  meson >= 0.50.0
 BuildRequires:  gcc gcc-c++
@@ -16,7 +20,6 @@ BuildRequires:  systemd-devel
 BuildRequires:  systemd-rpm-macros
 BuildRequires:  zlib-devel
 BuildRequires:  openssl-devel
-
 BuildRequires:  libnvme-devel >= 1.3
 BuildRequires:  json-c-devel >= 0.13
 
@@ -36,13 +39,12 @@ Requires:       util-linux
 nvme-cli provides NVM-Express user space tooling for Linux.
 
 %prep
-%autosetup -p1 -n %{name}-%{version_no_tilde}
 
+%autosetup -c
 
 %build
 %meson -Dudevrulesdir=%{_udevrulesdir} -Dsystemddir=%{_unitdir} -Ddocs=all -Ddocs-build=true -Dhtmldir=%{_pkgdocdir}
 %meson_build
-
 
 %install
 %meson_install
@@ -62,7 +64,6 @@ rm -f %{buildroot}/usr/lib/dracut/dracut.conf.d/70-nvmf-autoconnect.conf
 mv %{buildroot}%{_pkgdocdir}/nvme %{buildroot}%{_pkgdocdir}/html
 rm -rf %{buildroot}%{_pkgdocdir}/nvme
 
-
 %files
 %license LICENSE
 %doc %{_pkgdocdir}
@@ -80,7 +81,6 @@ rm -rf %{buildroot}%{_pkgdocdir}/nvme
 %{_udevrulesdir}/71-nvmf-iopolicy-netapp.rules
 # Do not install the dracut rule yet.  See rhbz 1742764
 # /usr/lib/dracut/dracut.conf.d/70-nvmf-autoconnect.conf
-
 
 %changelog
 * Wed Feb 01 2023 Tomas Bzatek <tbzatek@redhat.com> - 2.3-1
