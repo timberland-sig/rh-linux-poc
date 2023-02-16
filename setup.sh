@@ -7,30 +7,34 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 # Configuraiton
 NOOP=0
-MODES="all|user|pkgs|net|fedora|centos|edk2|dracut|nvme|virt|fio|cp|nvmet|blktest"
+MODES="build|user|pkgs|net|rpms|fedora|centos|edk2|dracut|nvme|virt|fio|cp|nvmet|blktest"
 MODE="user"
 
 display_help() {
         echo
         echo " Usage: ${0##*/} [-h] [-m <$MODES>]"
         echo "  -h help "
-		echo "  -m all      : run all modules in order "
 		echo "  -m user     : setup basic user environment (default)"
-		echo "  -m net      : configure bridged network environment "
 		echo "  -m pkgs     : install all pkgs for host build environment "
+		echo "  -m build    : run all modules to build timberlan-sig artifacts  "
+		echo "  -m edk2     : build timberland-sig repository in ~/timberland/edk2  "
+		echo "              : - install build artifacts in ~/OVMF  "
+		echo "  -m rpms     : build rpms for dracut, libnvme and nvme-cli "
+		echo "              : - see artifacts in {dir}_rpm/rpmbuild/..."
+		echo "  -m net      : configure bridged network environment "
 		echo "  -m virt     : install qemu-kvm environment "
 		echo "  -m fedora   : download Fedora37 iso in ~/ISOs "
 		echo "  -m centos   : download Centos9 iso in ~/ISOs "
-		echo "  -m edk2     : setup git repository in ~/timberland/edk2  "
-		echo "  -m nvme     : setup git reposigory in ~/timberland/nvme-cli "
-		echo "  -m dracut   : setup git reposigory in ~/timberland/dracut "
+		echo "  -m nvme     : build timberland-sig repository in ~/timberland/nvme-cli "
+		echo "  -m dracut   : build timberland-sig repository in ~/timberland/dracut "
         echo ""
         echo " Examples:"
         echo "       ${0##*/} "
         echo "       ${0##*/} -m user "
         echo "       ${0##*/} -m pkgs "
-        echo "       ${0##*/} -m virt "
+        echo "       ${0##*/} -m build "
         echo "       ${0##*/} -m net "
+        echo "       ${0##*/} -m virt "
         echo "       ${0##*/} -h "
         echo ""
         exit 1
@@ -54,12 +58,12 @@ if [ ! -f ~/.gitconfig ]; then
 fi
 
 if [ ! -d ~/.ssh ]; then
-	echo " : You must setup setup ~/.ssh" 
+	echo " : You must setup setup ~/.ssh"
 	exit 1
-else 
+else
 	ssh -o StrictHostKeyChecking=no -T git@github.com
 	if [ $? -ne 1 ]; then
-		echo " : You must setup your ssh key for github.com" 
+		echo " : You must setup your ssh key for github.com"
 		exit 1
 	fi
 fi
@@ -72,7 +76,7 @@ install_network() {
 
 	echo " : setup bridged network environment"
 
-	nmcli dev show br0
+	nmcli dev show br0 &>/dev/null
 	if [ $? -ne 0 ]; then
 		netdev=""
 		nmcli dev status
@@ -83,30 +87,30 @@ install_network() {
 			exit 1
 		fi
 
-		nmcli dev show $netdev
+		nmcli dev show $netdev &>/dev/null
 
-		if [ $? -ne 0 ]; then 
+		if [ $? -ne 0 ]; then
 			exit 1
 	    fi
 
 		mac=$(nmcli -t -f general.hwaddr -e yes dev show $netdev | sed 's/^general.hwaddr://')
-		sudo nmcli con down $netdev 
+		sudo nmcli con down $netdev
 		sudo nmcli con add type bridge ifname br0 autoconnect yes stp off ethernet.cloned-mac-address $mac
 		sudo nmcli con add type bridge-slave ifname $netdev master br0
 		sudo nmcli con up bridge-br0
 		ip -h -c -o -br address show br0
 	fi
 
-	nmcli dev show virbr1
+	nmcli dev show virbr1 &>/dev/null
 	if [ $? -ne 0 ]; then
 		sudo nmcli conn add type bridge ifname virbr1 con-name virbr1 stp yes ipv4.addresses 192.168.101.1/24 ipv4.method manual ipv6.method shared
-		ip -h -c -o -br address show virbr1 
+		ip -h -c -o -br address show virbr1
 	fi
 
-	nmcli dev show virbr2
+	nmcli dev show virbr2 &>/dev/null
 	if [ $? -ne 0 ]; then
 		sudo nmcli conn add ifname virbr2 type bridge con-name virbr2 stp yes ipv4.addresses 192.168.102.1/24 ipv4.method manual ipv6.method shared
-		ip -h -c -o -br address show virbr2 
+		ip -h -c -o -br address show virbr2
 	fi
 }
 
@@ -121,13 +125,46 @@ fi
 popd
 }
 
+build_dracut_rpms() {
+if [ ! -d $DIR/dracut_rpm ]; then
+	echo "$DIR/dracut_rpm not found!"
+	exit 1
+else
+	pushd $DIR/dracut_rpm
+	./build_rpm.sh
+	popd
+fi
+}
+
+build_nvme_rpms() {
+if [ ! -d $DIR/nvme_rpm ]; then
+	echo "$DIR/nvme_rpm not found!"
+	exit 1
+else
+	pushd $DIR/nvme_rpm
+	./build_rpm.sh
+	popd
+fi
+}
+
+build_libnvme_rpms() {
+if [ ! -d $DIR/libnvme_rpm ]; then
+	echo "$DIR/libnvme_rpm not found!"
+	exit 1
+else
+	pushd $DIR/libnvme_rpm
+	./build_rpm.sh
+	popd
+fi
+}
+
 install_dracut() {
 pushd $HOME
 if [ ! -d timberland/dracut ]; then
     mkdir -p timberland/dracut
     pushd timberland/dracut
     git clone git@github.com:timberland-sig/dracut
-    pushd dracut 
+    pushd dracut
     git remote add upstream git@github.com:dracutdevs/dracut.git
 	popd
 	popd
@@ -240,7 +277,7 @@ popd
 install_centos_iso() {
 pushd $HOME
 if [ ! -d ISO ]; then
-    mkdir -p ISO 
+    mkdir -p ISO
 fi
 
 if [ ! -f ISO/CentOS-Stream-9-latest-x86_64-dvd1.iso ]; then
@@ -254,7 +291,7 @@ popd
 install_fedora_iso() {
 pushd $HOME
 if [ ! -d ISO ]; then
-    mkdir -p ISO 
+    mkdir -p ISO
 fi
 
 if [ ! -f ISO/Fedora-Server-dvd-x86_64-37-1.7.iso ]; then
@@ -304,6 +341,11 @@ case "${MODE}" in
            nvme)
               install_nvme
            ;;
+           rpms)
+              build_dracut_rpms
+			  build_libnvme_rpms
+			  build_nvme_rpms
+           ;;
            dracut)
               install_dracut
            ;;
@@ -325,15 +367,16 @@ case "${MODE}" in
            blktest)
               install_blktest
            ;;
-           all)
+           build)
               install_user
               install_pkgs
-              install_network
-              install_virt
-              install_fedora_iso
+              build_dracut_rpms
+			  build_libnvme_rpms
+			  build_nvme_rpms
               install_edk2
+              install_fedora_iso
               echo ""
-              echo " Ready to run install.sh"
+              echo " All artifacts have been built"
               echo ""
            ;;
            *)
