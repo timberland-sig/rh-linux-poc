@@ -1,15 +1,14 @@
 # RHEL 8 compatibility
 %{!?version_no_tilde: %define version_no_tilde %{shrink:%(echo '%{version}' | tr '~' '-')}}
 
-Name:    libnvme
+Name: libnvme
 Summary: Linux-native nvme device management library
 Version: 1.3
-Release: 1%{?dist}
-License: LGPLv2+
-URL:     https://github.com/linux-nvme/libnvme
-Source0: %{url}/archive/v%{version_no_tilde}/%{name}-%{version_no_tilde}.tar.gz
-
-Patch0:  libnvme-1.3-meson_nss_includes.patch
+Release: 2%{?dist}
+License: LGPL-2.1-or-later
+URL: http://github.com/linux-nvme/libnvme
+Source: %{name}-%{version_no_tilde}.tar.gz
+BuildRoot: %{_tmppath}/%{name}-root
 
 BuildRequires: gcc gcc-c++
 BuildRequires: swig
@@ -18,6 +17,7 @@ BuildRequires: python3-devel
 BuildRequires: meson >= 0.50
 BuildRequires: json-c-devel >= 0.13
 BuildRequires: openssl-devel
+BuildRequires: libuuid-devel
 BuildRequires: dbus-devel
 %if (0%{?rhel} == 0)
 BuildRequires: kernel-headers >= 5.15
@@ -57,7 +57,7 @@ Obsoletes: python3-nvme < 1.0~rc7
 This package contains Python bindings for libnvme.
 
 %prep
-%autosetup -p1 -n %{name}-%{version_no_tilde}
+%autosetup -c
 
 %build
 %meson -Dpython=true -Ddocs=all -Ddocs-build=true -Dhtmldir=%{_pkgdocdir}
@@ -98,6 +98,9 @@ mv %{buildroot}/usr/*.rst %{buildroot}%{_pkgdocdir}/
 %{python3_sitearch}/libnvme/*
 
 %changelog
+* Mon Feb 13 2023 John Meneghini <jmeneghi@redhat.com>
+- Fix building rpms
+
 * Tue Jan 31 2023 Tomas Bzatek <tbzatek@redhat.com> - 1.3-1
 - Upstream v1.3 release
 
