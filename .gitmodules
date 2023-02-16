@@ -1,0 +1,4 @@
+[submodule "dracut_rpm/dracut"]
+	path = dracut_rpm/dracut
+	url = git@github.com:johnmeneghini/dracut.git
+	branch = timberland_final_v2
