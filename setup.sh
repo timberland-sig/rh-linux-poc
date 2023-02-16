@@ -63,6 +63,9 @@ else
 		exit 1
 	fi
 fi
+
+git submodule update --init --recursive
+
 }
 
 install_network() {
@@ -325,16 +328,13 @@ case "${MODE}" in
            all)
               install_user
               install_pkgs
-			  install_network
+              install_network
               install_virt
-              install_nvme
-              install_edk2
-              install_dracut
               install_fedora_iso
-              install_centos_iso
-			  echo ""
-			  echo " Ready to run install.sh"
-			  echo ""
+              install_edk2
+              echo ""
+              echo " Ready to run install.sh"
+              echo ""
            ;;
            *)
            echo "  Invalid argument: $MODE" >&2
