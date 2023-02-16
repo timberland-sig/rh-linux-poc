@@ -6,3 +6,7 @@
 	path = libnvme_rpm/libnvme
 	url = git@github.com:timberland-sig/libnvme.git
 	branch = timberlandmaster_final_v13
+[submodule "nvme_rpm/nvme-cli"]
+	path = nvme_rpm/nvme-cli
+	url = git@github.com:timberland-sig/nvme-cli.git
+	branch = timberlandmaster_final
