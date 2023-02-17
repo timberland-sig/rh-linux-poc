@@ -68,6 +68,11 @@ else
 	fi
 fi
 
+if [ ! -d ~/.config/copr ]; then
+	echo " : You must setup setup ~/.config/copr"
+	exit 1
+fi
+
 git submodule update --init --recursive
 
 }
@@ -220,7 +225,8 @@ popd
 install_pkgs() {
 if [ -f /etc/redhat-release ]; then
 	sudo dnf groupinstall -y "Development tools"
-    sudo dnf install -y --skip-broken asciidoc audit-libs-devel binutils-devel elfutils-devel java-devel kabi-dw libcap-devel libcap-ng-devel libmnl-devel llvm ncurses-devel newt-devel nss-tools numactl-devel pciutils-devel perl perl-generators pesign python3-devel python3-docutils xmlto rpm-build yum-utils sg3_utils dwarves libbabeltrace-devel libbpf-devel openssl-devel net-tools wget bison acpica-tools binutils gcc gcc-c++ git meson cmake dbus-devel libuuid libuuid-devel libuuid-debuginfo json-c-devel json-c-debuginfo json-c json-c-doc libhugetlbfs libhugetlbfs-devel libhugetlbfs-lib clang openssl kmod-devel systemd-devel
+    sudo dnf install -y --skip-broken asciidoc audit-libs-devel binutils-devel elfutils-devel java-devel kabi-dw libcap-devel libcap-ng-devel libmnl-devel llvm ncurses-devel newt-devel nss-tools numactl-devel pciutils-devel perl perl-generators pesign python3-devel python3-docutils xmlto rpm-build yum-utils sg3_utils dwarves libbabeltrace-devel libbpf-devel openssl-devel net-tools wget bison acpica-tools binutils gcc gcc-c++ git meson cmake dbus-devel libuuid libuuid-devel libuuid-debuginfo json-c-devel json-c-debuginfo json-c json-c-doc libhugetlbfs libhugetlbfs-devel libhugetlbfs-lib clang openssl kmod-devel systemd-devel copr-cli mock
+	sudo usermod -a -G mock $USER
 fi
 }
 
