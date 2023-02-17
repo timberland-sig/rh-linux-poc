@@ -68,13 +68,19 @@ else
 	fi
 fi
 
-if [ ! -d ~/.config/copr ]; then
+if [ ! -f ~/.config/copr ]; then
 	echo " : You must setup setup ~/.config/copr"
 	exit 1
 fi
 
 git submodule update --init --recursive
 
+}
+
+# validate that the interface is connected
+function check_conn () {
+    set -o pipefail # optional.
+    nmcli conn show --active | grep -q "$1"
 }
 
 install_network() {
@@ -93,17 +99,32 @@ install_network() {
 		fi
 
 		nmcli dev show $netdev &>/dev/null
-
 		if [ $? -ne 0 ]; then
+           echo "Interface $netdev does not exist!"
 			exit 1
 	    fi
 
-		mac=$(nmcli -t -f general.hwaddr -e yes dev show $netdev | sed 's/^general.hwaddr://')
+        if check_conn $netdev; then
+            MAC=$(nmcli -t -f general.hwaddr -e yes dev show $netdev | sed 's/^GENERAL.HWADDR://')
+            sudo nmcli con down $netdev
+            sudo nmcli con add type bridge ifname br0 autoconnect yes stp off ethernet.cloned-mac-address $MAC
+            sudo nmcli con add type bridge-slave ifname $netdev master br0
+            sudo nmcli con up bridge-br0
+			sudo nmcli con up bridge-slave-$netdev
+        else
+            echo "Interface $netdev is down!"
+			echo " try: nmcli con add type ethernet ifname $netdev con-name $netdev autoconnect yes"
+		   exit 1
+	    fi
+
+        set -
+		MAC=$(nmcli -t -f general.hwaddr -e yes dev show $netdev | sed 's/^GENERAL.HWADDR://')
 		sudo nmcli con down $netdev
-		sudo nmcli con add type bridge ifname br0 autoconnect yes stp off ethernet.cloned-mac-address $mac
+		sudo nmcli con add type bridge ifname br0 autoconnect yes stp off ethernet.cloned-mac-address $MAC
 		sudo nmcli con add type bridge-slave ifname $netdev master br0
 		sudo nmcli con up bridge-br0
 		ip -h -c -o -br address show br0
+        set +
 	fi
 
 	nmcli dev show virbr1 &>/dev/null
