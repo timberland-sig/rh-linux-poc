@@ -212,29 +212,35 @@ popd
 }
 
 install_edk2() {
-if [ -f /etc/redhat-release ]; then
-	sudo dnf -y --skip-broken groupinstall "Development tools"
-    sudo dnf -y --skip-broken install python3-devel libuuid-devel acpica-tools binutils gcc gcc-c++ git nasm
-fi
-pushd $HOME
-if [ ! -d timberland/edk2 ]; then
-    mkdir -p timberland/edk2
-    pushd timberland/edk2
-	git clone -b timberland_1.0_final git@github.com:timberland-sig/edk2-private.git
-    pushd edk2-private
-    git config url."ssh://git@github.com/timberland-sig".insteadOf https://github.com/timberland-sig
-    git submodule update --init --recursive
-    make -C BaseTools
-    source edksetup.sh
-    build -t GCC5 -a X64 -p OvmfPkg/OvmfPkgX64.dsc
-    mkdir -p $HOME/OVMF
-    cp Build/OvmfX64/DEBUG_GCC5/FV/OVMF_CODE.fd $HOME/OVMF
-    cp Build/OvmfX64/DEBUG_GCC5/FV/OVMF_VARS.fd $HOME/OVMF
-	cp Build/OvmfX64/DEBUG_GCC5/X64/NvmeOfCli.efi $HOME/OVMF
+	pushd $DIR
+	if [ ! -f .edk2pkgs ]; then
+		sudo dnf -y --skip-broken groupinstall "Development tools"
+		sudo dnf -y --skip-broken install python3-devel libuuid-devel acpica-tools binutils gcc gcc-c++ git nasm
+		touch .edk2pkgs
+	fi
+	if [ ! -d timberland_edk2 ]; then
+		mkdir -p timberland_edk2
+		pushd timberland_edk2
+		git clone -b timberland_1.0_final git@github.com:timberland-sig/edk2.git
+		pushd edk2
+		git config url."ssh://git@github.com/timberland-sig".insteadOf https://github.com/timberland-sig
+		git submodule update --init --recursive
+		popd
+		popd
+	fi
+	pushd timberland_edk2
+	pushd edk2
+	make -C BaseTools clean
+	rm -rf Build
+	make -C BaseTools
+	source edksetup.sh
+	build -t GCC5 -a X64 -p OvmfPkg/OvmfPkgX64.dsc
+	rm -f  $DIR/OVMF/{OVMF_CODE.fd, OVMF_VARS.fd, NvmeOfCli.efi}
+	cp Build/OvmfX64/DEBUG_GCC5/FV/OVMF_CODE.fd $DIR/OVMF
+	cp Build/OvmfX64/DEBUG_GCC5/FV/OVMF_VARS.fd $DIR/OVMF
+	cp Build/OvmfX64/DEBUG_GCC5/X64/NvmeOfCli.efi $DIR/OVMF
 	popd
 	popd
-fi
-popd
 }
 
 install_pkgs() {

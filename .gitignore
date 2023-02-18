@@ -10,4 +10,8 @@ a.out
 *.tar.xz
 cscope.*
 */rpmbuild/*
-
+.edk2pkgs
+timberland_edk2/*
+OVMF/NvmeOfCli.efi
+OVMF/OVMF_CODE.fd
+OVMF/OVMF_VARS.fd
