@@ -10,4 +10,3 @@ display_rpm_help() {
   echo "  copr - create a source rpm and upload it to the copr dist-git repository"
   echo ""
 }
-

@@ -2,20 +2,20 @@
 # SPDX-License-Identifier: GPL-3.0+
 # Copyright (C) 2023 John Meneghini <jmeneghi@redhat.com> All rights reserved.
 
-TOP=`git rev-parse --show-toplevel`
-. $TOP/rpm_lib.sh
+DIR="$(dirname -- "$(realpath -- "$0")")"
+. $DIR/../rpm_lib.sh
 
 VERSION=1.3
 RELEASE=1
 MODE=srpm
 
-if [ $# -gt 0 ]; then 
+if [ $# -gt 0 ]; then
   MODE=$1
 fi
 
 build_dist() {
 	rm -f libnvme-${VERSION}.tar.gz
-	pushd libnvme 
+	pushd libnvme
 	make purge
 	make
 	git archive --format=tar HEAD > libnvme-${VERSION}.tar
@@ -38,7 +38,7 @@ build_srpm () {
 	rpmbuild -ts --define "_topdir `pwd`/rpmbuild" -v  libnvme-${VERSION}.tar.gz
 }
 
-pushd $TOP/libnvme_rpm 
+pushd $DIR
 
 case "${MODE}" in
            srpm)
