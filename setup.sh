@@ -156,9 +156,7 @@ if [ ! -d $DIR/dracut_rpm ]; then
 	echo "$DIR/dracut_rpm not found!"
 	exit 1
 else
-	pushd $DIR/dracut_rpm
-	./build_rpm.sh
-	popd
+	$DIR/dracut_rpm/build.sh
 fi
 }
 
@@ -167,9 +165,7 @@ if [ ! -d $DIR/nvme_rpm ]; then
 	echo "$DIR/nvme_rpm not found!"
 	exit 1
 else
-	pushd $DIR/nvme_rpm
-	./build_rpm.sh
-	popd
+	$DIR/nvme_rpm/build.sh
 fi
 }
 
@@ -178,9 +174,7 @@ if [ ! -d $DIR/libnvme_rpm ]; then
 	echo "$DIR/libnvme_rpm not found!"
 	exit 1
 else
-	pushd $DIR/libnvme_rpm
-	./build_rpm.sh
-	popd
+	$DIR/libnvme_rpm/bulid.sh
 fi
 }
 
