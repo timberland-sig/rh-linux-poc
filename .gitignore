@@ -11,6 +11,7 @@ a.out
 cscope.*
 */rpmbuild/*
 .edk2pkgs
+.pkgs
 timberland_edk2/*
 OVMF/NvmeOfCli.efi
 OVMF/OVMF_CODE.fd

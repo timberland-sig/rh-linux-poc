@@ -17,10 +17,10 @@ display_help() {
 		echo "  -m user     : setup basic user environment (default)"
 		echo "  -m pkgs     : install all pkgs for host build environment "
 		echo "  -m build    : run all modules to build timberlan-sig artifacts  "
-		echo "  -m edk2     : build timberland-sig repository in ~/timberland/edk2  "
-		echo "              : - install build artifacts in ~/OVMF  "
+		echo "  -m edk2     : build timberland-sig repository in timberland_edk2  "
+		echo "              : - install build artifacts in OVMF directory  "
 		echo "  -m rpms     : build rpms for dracut, libnvme and nvme-cli "
-		echo "              : - see artifacts in {dir}_rpm/rpmbuild/..."
+		echo "              : - install rpm artifacts in {dir}_rpm/rpmbuild/..."
 		echo "  -m net      : configure bridged network environment "
 		echo "  -m virt     : install qemu-kvm environment "
 		echo "  -m fedora   : download Fedora37 iso in ~/ISOs "
@@ -193,22 +193,22 @@ popd
 }
 
 install_nvme() {
-#if [ -f /etc/redhat-release ]; then
-#    sudo dnf install -y --skip-broken meson cmake dbus-devel libuuid libuuid-devel libuuid-debuginfo json-c-devel json-c-debuginfo json-c json-c-doc
-#    sudo dnf install -y --skip-broken libhugetlbfs libhugetlbfs-devel libhugetlbfs-lib clang openssl openssl-devel
-#fi
-pushd $HOME
-if [ ! -d timberland/nvme-cli ]; then
-    mkdir -p timberland/nvme-cli
-    pushd timberland/nvme-cli
-    git clone git@github.com:timberland-sig/nvme-cli
-    pushd nvme-cli
-    git remote add upstream git@github.com:linux-nvme/nvme-cli.git
-	make nvme
+	if [ ! -f .pkgs ]; then
+		sudo dnf install -y meson cmake dbus-devel libuuid libuuid-devel libuuid-debuginfo json-c-devel json-c-debuginfo json-c json-c-doc
+		sudo dnf install -y libhugetlbfs libhugetlbfs-devel libhugetlbfs-lib clang openssl openssl-devel
+	fi
+	pushd $HOME
+	if [ ! -d timberland/nvme-cli ]; then
+		mkdir -p timberland/nvme-cli
+		pushd timberland/nvme-cli
+		git clone git@github.com:timberland-sig/nvme-cli
+		pushd nvme-cli
+		git remote add upstream git@github.com:linux-nvme/nvme-cli.git
+		make nvme
+		popd
+		popd
+	fi
 	popd
-	popd
-fi
-popd
 }
 
 install_edk2() {
@@ -244,16 +244,27 @@ install_edk2() {
 }
 
 install_pkgs() {
-if [ -f /etc/redhat-release ]; then
-	sudo dnf groupinstall -y "Development tools"
-    sudo dnf install -y --skip-broken asciidoc audit-libs-devel binutils-devel elfutils-devel java-devel kabi-dw libcap-devel libcap-ng-devel libmnl-devel llvm ncurses-devel newt-devel nss-tools numactl-devel pciutils-devel perl perl-generators pesign python3-devel python3-docutils xmlto rpm-build yum-utils sg3_utils dwarves libbabeltrace-devel libbpf-devel openssl-devel net-tools wget bison acpica-tools binutils gcc gcc-c++ git meson cmake dbus-devel libuuid libuuid-devel libuuid-debuginfo json-c-devel json-c-debuginfo json-c json-c-doc libhugetlbfs libhugetlbfs-devel libhugetlbfs-lib clang openssl kmod-devel systemd-devel copr-cli mock
-	sudo usermod -a -G mock $USER
-fi
+	pushd $DIR
+	if [ ! -f .pkgs ]; then
+		sudo dnf groupinstall -y "Development tools"
+		sudo dnf install -y asciidoc audit-libs-devel binutils-devel elfutils-devel java-devel kabi-dw libcap-devel \
+            libcap-ng-devel libmnl-devel llvm ncurses-devel newt-devel nss-tools numactl-devel pciutils-devel perl perl-generators \
+			pesign python3-devel python3-docutils xmlto rpm-build yum-utils sg3_utils dwarves libbabeltrace-devel libbpf-devel openssl-devel \
+			net-tools wget bison acpica-tools binutils gcc gcc-c++ git meson cmake dbus-devel libuuid libuuid-devel \
+			json-c-devel json-c json-c-doc clang openssl kmod-devel \
+			systemd-devel copr-cli mock
+
+		sudo usermod -a -G mock $USER
+		touch .pkgs
+	else
+		echo "Nothing to do"
+	fi
+	popd
 }
 
 install_virt() {
 if [ -f /etc/redhat-release ];then
-    sudo dnf install -y --skip-broken qemu-kvm
+    sudo dnf install -y qemu-kvm
 	sudo echo "allow all" > /etc/qemu/bridge.conf
 	sudo chmod 4755 /usr/libexec/qemu-bridge-helper
 fi
