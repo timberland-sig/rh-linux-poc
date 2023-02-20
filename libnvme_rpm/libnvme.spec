@@ -6,8 +6,9 @@ Summary: Linux-native nvme device management library
 Version: 1.3
 Release: 2%{?dist}
 License: LGPL-2.1-or-later
-URL: http://github.com/linux-nvme/libnvme
+URL: https://github.com/timberland-sig/libnvme
 Source: %{name}-%{version_no_tilde}.tar.gz
+Group: Development/Tools
 BuildRoot: %{_tmppath}/%{name}-root
 
 BuildRequires: gcc gcc-c++
@@ -28,6 +29,10 @@ Provides type definitions for NVMe specification structures,
 enumerations, and bit fields, helper functions to construct,
 dispatch, and decode commands and payloads, and utilities to connect,
 scan, and manage nvme devices on a Linux system.
+NOTICE: This is an expermental version of the libnvme library
+from the Timberland-sig repository. This library provides
+additional types and definitions to support NVMe/TCP boot
+with Timberland-sig version of nvme-cli and dracut.
 
 %package devel
 Summary: Development files for %{name}

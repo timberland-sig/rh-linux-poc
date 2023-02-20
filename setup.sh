@@ -7,20 +7,24 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 # Configuraiton
 NOOP=0
-MODES="build|user|pkgs|net|rpms|fedora|centos|edk2|dracut|nvme|virt|fio|cp|nvmet|blktest"
+MODES="build|user|pkgs|net|rpms|copr|repo|fedora|centos|edk2|dracut|nvme|virt|fio|cp|nvmet|blktest"
 MODE="user"
 
 display_help() {
         echo
         echo " Usage: ${0##*/} [-h] [-m <$MODES>]"
-        echo "  -h help "
+        echo "  -h          : display this help"
 		echo "  -m user     : setup basic user environment (default)"
 		echo "  -m pkgs     : install all pkgs for host build environment "
 		echo "  -m build    : run all modules to build timberlan-sig artifacts  "
+		echo "  -m copr     : create timberland-sig copr project "
+		echo "              : - results at: https://copr.fedorainfracloud.org/coprs/"
 		echo "  -m edk2     : build timberland-sig repository in timberland_edk2  "
 		echo "              : - install build artifacts in OVMF directory  "
 		echo "  -m rpms     : build rpms for dracut, libnvme and nvme-cli "
 		echo "              : - install rpm artifacts in {dir}_rpm/rpmbuild/..."
+		echo "  -m repo     : build a timberland-sig rpm repo in your copr project"
+		echo "              : - results at: https://copr.fedorainfracloud.org/coprs/"
 		echo "  -m net      : configure bridged network environment "
 		echo "  -m virt     : install qemu-kvm environment "
 		echo "  -m fedora   : download Fedora37 iso in ~/ISOs "
@@ -32,7 +36,7 @@ display_help() {
         echo "       ${0##*/} "
         echo "       ${0##*/} -m user "
         echo "       ${0##*/} -m pkgs "
-        echo "       ${0##*/} -m build "
+        echo "       ${0##*/} -m rpms "
         echo "       ${0##*/} -m net "
         echo "       ${0##*/} -m virt "
         echo "       ${0##*/} -h "
@@ -156,7 +160,7 @@ if [ ! -d $DIR/dracut_rpm ]; then
 	echo "$DIR/dracut_rpm not found!"
 	exit 1
 else
-	$DIR/dracut_rpm/build.sh
+	$DIR/dracut_rpm/build.sh $1
 fi
 }
 
@@ -165,7 +169,7 @@ if [ ! -d $DIR/nvme_rpm ]; then
 	echo "$DIR/nvme_rpm not found!"
 	exit 1
 else
-	$DIR/nvme_rpm/build.sh
+	$DIR/nvme_rpm/build.sh $1
 fi
 }
 
@@ -174,7 +178,7 @@ if [ ! -d $DIR/libnvme_rpm ]; then
 	echo "$DIR/libnvme_rpm not found!"
 	exit 1
 else
-	$DIR/libnvme_rpm/bulid.sh
+	$DIR/libnvme_rpm/build.sh $1
 fi
 }
 
@@ -209,6 +213,16 @@ install_nvme() {
 		popd
 	fi
 	popd
+}
+
+create_copr_project() {
+	copr-cli list | grep Name | grep timberland-sig
+	if [ $? -ne 0 ]; then
+		copr-cli create --chroot centos-stream-9-x86_64 --chroot fedora-37-x86_64 --chroot fedora-36-x86_64 \
+		--description "Timberland-sig NVMe/TCP Boot support" \
+		--instructions "File bugs and propose patches at https://github.com/timberland-sig" \
+		timberland-sig
+	fi
 }
 
 install_edk2() {
@@ -373,6 +387,14 @@ case "${MODE}" in
            net)
               install_network
            ;;
+           copr)
+			create_copr_project
+           ;;
+           repo)
+			  build_libnvme_rpms copr
+              build_dracut_rpms copr
+			  build_nvme_rpms copr
+           ;;
            cp)
               install_cockpit
            ;;
@@ -380,8 +402,8 @@ case "${MODE}" in
               install_nvme
            ;;
            rpms)
-              build_dracut_rpms
 			  build_libnvme_rpms
+              build_dracut_rpms
 			  build_nvme_rpms
            ;;
            dracut)
@@ -408,8 +430,8 @@ case "${MODE}" in
            build)
               install_user
               install_pkgs
-              build_dracut_rpms
 			  build_libnvme_rpms
+              build_dracut_rpms
 			  build_nvme_rpms
               install_edk2
               install_fedora_iso

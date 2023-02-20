@@ -7,7 +7,7 @@ Release:        2%{?dist}
 Summary:        NVMe management command line interface
 
 License:        GPLv2
-URL:            https://github.com/linux-nvme/nvme-cli
+URL:            https://github.com/timberland-sig/nvme-cli
 Source:         %{name}-%{version_no_tilde}.tar.gz
 
 Group:          Development/Tools
@@ -20,6 +20,7 @@ BuildRequires:  systemd-devel
 BuildRequires:  systemd-rpm-macros
 BuildRequires:  zlib-devel
 BuildRequires:  openssl-devel
+BuildRequires:  libuuid-devel
 BuildRequires:  libnvme-devel >= 1.3
 BuildRequires:  json-c-devel >= 0.13
 
@@ -37,6 +38,10 @@ Requires:       util-linux
 
 %description
 nvme-cli provides NVM-Express user space tooling for Linux.
+NOTICE: This is an expermental version of nvme-cli
+from the Timberland-sig repository.  This utility provides
+additional support for NVMe/TCP boot with the Timberland-sig
+libnvme and dracut libraries.
 
 %prep
 

@@ -56,6 +56,7 @@ case "${MODE}" in
              build_dist
 			 prep_rpm
 			 build_srpm
+			 build_copr_pkg "rpmbuild/SRPMS/dracut-*.src.rpm"
            ;;
            *)
            echo " Invalid argument: $MODE" >&2
