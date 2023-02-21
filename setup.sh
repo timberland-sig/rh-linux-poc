@@ -7,38 +7,37 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 # Configuraiton
 NOOP=0
-MODES="build|user|pkgs|net|rpms|copr|repo|fedora|centos|edk2|dracut|nvme|virt|fio|cp|nvmet|blktest"
+MODES="build|user|pkgs|net|rpms|copr|repo|fedora|centos|edk2|iso|virt"
 MODE="user"
 
 display_help() {
         echo
         echo " Usage: ${0##*/} [-h] [-m <$MODES>]"
-        echo "  -h          : display this help"
-		echo "  -m user     : setup basic user environment (default)"
-		echo "  -m pkgs     : install all pkgs for host build environment "
-		echo "  -m build    : run all modules to build timberlan-sig artifacts  "
-		echo "  -m copr     : create timberland-sig copr project "
-		echo "              : - results at: https://copr.fedorainfracloud.org/coprs/"
-		echo "  -m edk2     : build timberland-sig repository in timberland_edk2  "
-		echo "              : - install build artifacts in OVMF directory  "
-		echo "  -m rpms     : build rpms for dracut, libnvme and nvme-cli "
-		echo "              : - install rpm artifacts in {dir}_rpm/rpmbuild/..."
-		echo "  -m repo     : build a timberland-sig rpm repo in your copr project"
-		echo "              : - results at: https://copr.fedorainfracloud.org/coprs/"
+        echo "  -h               : display this help"
+		echo "  -m user          : setup basic user environment (default)"
+		echo "  -m pkgs          : install all pkgs for host build environment "
+		echo "  -m build         : run all modules to build timberlan-sig artifacts  "
+		echo "  -m copr          : create timberland-sig copr project "
+		echo "                   : - results at: https://copr.fedorainfracloud.org/coprs/"
+		echo "  -m edk2          : create and build the timberland-sig edk2 repository in the edk2 directory "
+		echo "                   : - install build artifacts in OVMF directory  "
+		echo "  -m rpms          : build rpms for dracut, libnvme and nvme-cli "
+		echo "                   : - install rpm artifacts in {dir}_rpm/rpmbuild/..."
+		echo "  -m repo          : build a timberland-sig rpm repo in your copr project"
+		echo "                   : - results at: https://copr.fedorainfracloud.org/coprs/{username}"
+		echo "  -m iso [version] : build bootable iso image with timberland-sig artifacts"
+		echo "                   : - results appear in 'lorax/results' directory"
 		echo "  -m net      : configure bridged network environment "
 		echo "  -m virt     : install qemu-kvm environment "
 		echo "  -m fedora   : download Fedora37 iso in ~/ISOs "
 		echo "  -m centos   : download Centos9 iso in ~/ISOs "
-		echo "  -m nvme     : build timberland-sig repository in ~/timberland/nvme-cli "
-		echo "  -m dracut   : build timberland-sig repository in ~/timberland/dracut "
         echo ""
         echo " Examples:"
         echo "       ${0##*/} "
         echo "       ${0##*/} -m user "
         echo "       ${0##*/} -m pkgs "
-        echo "       ${0##*/} -m rpms "
-        echo "       ${0##*/} -m net "
-        echo "       ${0##*/} -m virt "
+        echo "       ${0##*/} -m edk2 "
+        echo "       ${0##*/} -m iso fc37 "
         echo "       ${0##*/} -h "
         echo ""
         exit 1
@@ -46,38 +45,35 @@ display_help() {
 
 install_user() {
 
-echo " : Installing user environment"
+	echo " : Installing user environment"
 
-if [ -f /etc/redhat-release ]; then
-    sudo dnf install -y --skip-broken vim git tar gpg wget ethtool pciutils net-tools
-fi
+	if [ ! -f .usr ]; then
+		sudo dnf install -y --skip-broken vim git tar gpg wget ethtool pciutils net-tools
+		touch .usr
+	fi
 
-mkdir -p $HOME/ISO
-mkdir -p $HOME/timberland
-mkdir -p $HOME/repos
-
-if [ ! -f ~/.gitconfig ]; then
-	echo " : You must setup ~/.gitconfig"
-	exit 1
-fi
-
-if [ ! -d ~/.ssh ]; then
-	echo " : You must setup setup ~/.ssh"
-	exit 1
-else
-	ssh -o StrictHostKeyChecking=no -T git@github.com
-	if [ $? -ne 1 ]; then
-		echo " : You must setup your ssh key for github.com"
+	if [ ! -f ~/.gitconfig ]; then
+		echo " : You must setup ~/.gitconfig"
 		exit 1
 	fi
-fi
 
-if [ ! -f ~/.config/copr ]; then
-	echo " : You must setup setup ~/.config/copr"
-	exit 1
-fi
+	if [ ! -d ~/.ssh ]; then
+		echo " : You must setup setup ~/.ssh"
+		exit 1
+	else
+		ssh -o StrictHostKeyChecking=no -T git@github.com
+		if [ $? -ne 1 ]; then
+			echo " : You must setup your ssh key for github.com"
+			exit 1
+		fi
+	fi
 
-git submodule update --init --recursive
+	if [ ! -f ~/.config/copr ]; then
+		echo " : You must setup setup ~/.config/copr"
+		exit 1
+	fi
+
+	git submodule update --init --recursive
 
 }
 
@@ -144,75 +140,35 @@ install_network() {
 	fi
 }
 
-install_nvmetcli() {
-pushd $HOME
-if [ ! -d repos/nvmetcli ]; then
-    mkdir -p repos/nvmetcli
-    pushd repos/nvmetcli
-    git clone git://git.infradead.org/users/hch/nvmetcli.git
-    popd
-fi
-popd
-}
-
 build_dracut_rpms() {
-if [ ! -d $DIR/dracut_rpm ]; then
-	echo "$DIR/dracut_rpm not found!"
-	exit 1
-else
-	$DIR/dracut_rpm/build.sh $1
-fi
+	if [ ! -d $DIR/dracut_rpm ]; then
+		echo "$DIR/dracut_rpm not found!"
+		exit 1
+	else
+		$DIR/dracut_rpm/build.sh $1
+	fi
 }
 
 build_nvme_rpms() {
-if [ ! -d $DIR/nvme_rpm ]; then
-	echo "$DIR/nvme_rpm not found!"
-	exit 1
-else
-	$DIR/nvme_rpm/build.sh $1
-fi
-}
-
-build_libnvme_rpms() {
-if [ ! -d $DIR/libnvme_rpm ]; then
-	echo "$DIR/libnvme_rpm not found!"
-	exit 1
-else
-	$DIR/libnvme_rpm/build.sh $1
-fi
-}
-
-install_dracut() {
-pushd $HOME
-if [ ! -d timberland/dracut ]; then
-    mkdir -p timberland/dracut
-    pushd timberland/dracut
-    git clone git@github.com:timberland-sig/dracut
-    pushd dracut
-    git remote add upstream git@github.com:dracutdevs/dracut.git
-	popd
-	popd
-fi
-popd
-}
-
-install_nvme() {
 	if [ ! -f .pkgs ]; then
 		sudo dnf install -y meson cmake dbus-devel libuuid libuuid-devel libuuid-debuginfo json-c-devel json-c-debuginfo json-c json-c-doc
 		sudo dnf install -y libhugetlbfs libhugetlbfs-devel libhugetlbfs-lib clang openssl openssl-devel
 	fi
-	pushd $HOME
-	if [ ! -d timberland/nvme-cli ]; then
-		mkdir -p timberland/nvme-cli
-		pushd timberland/nvme-cli
-		git clone git@github.com:timberland-sig/nvme-cli
-		pushd nvme-cli
-		git remote add upstream git@github.com:linux-nvme/nvme-cli.git
-		make nvme
-		popd
-		popd
+	if [ ! -d $DIR/nvme_rpm ]; then
+		echo "$DIR/nvme_rpm not found!"
+		exit 1
+	else
+		$DIR/nvme_rpm/build.sh $1
 	fi
-	popd
+}
+
+build_libnvme_rpms() {
+	if [ ! -d $DIR/libnvme_rpm ]; then
+		echo "$DIR/libnvme_rpm not found!"
+		exit 1
+	else
+		$DIR/libnvme_rpm/build.sh $1
+	fi
 }
 
 create_copr_project() {
@@ -264,7 +220,7 @@ install_pkgs() {
 			pesign python3-devel python3-docutils xmlto rpm-build yum-utils sg3_utils dwarves libbabeltrace-devel libbpf-devel openssl-devel \
 			net-tools wget bison acpica-tools binutils gcc gcc-c++ git meson cmake dbus-devel libuuid libuuid-devel \
 			json-c-devel json-c json-c-doc clang openssl kmod-devel \
-			systemd-devel copr-cli mock
+			systemd-devel copr-cli mock lorax
 
 		sudo usermod -a -G mock $USER
 		touch .pkgs
@@ -274,82 +230,92 @@ install_pkgs() {
 	popd
 }
 
+build_iso() {
+
+	copr-cli list | grep $1
+	if [ $? -ne 0 ]; then
+		echo "No repository for $1 found"
+		copr-cli list
+		exit 1
+    else
+		REPO=$(copr-cli list | grep $1 | tr -d '()' | awk '{print $2}')
+    fi
+
+	ENFORCE=`getenforce`
+
+	if [[ $ENFORCE == *"Enforcing" ]]; then sudo setenforce 0; fi
+
+	pushd $DIR
+    rm -rf lorax
+	mkdir -p lorax
+	pushd lorax
+
+	case "$1" in
+	  fedora-36)
+		  sudo lorax -p Fedora -v 36 -r 36 \
+			--volid Fedora36-S-dvd-x86_64-rawh \
+			-s https://dl.fedoraproject.org/pub/fedora/linux/releases/36/Everything/x86_64/os/ \
+			-s $REPO result
+	  ;;
+	  fedora-37)
+		  sudo lorax -p Fedora -v 37 -r 37 \
+			--volid Fedora37-S-dvd-x86_64-rawh \
+			-s https://dl.fedoraproject.org/pub/fedora/linux/releases/37/Everything/x86_64/os/ \
+			-s $REPO result
+      ;;
+      centos-stream-9)
+          echo "$1 is not supported"
+      ;;
+	  *)
+      ;;
+	esac
+
+	popd
+
+	if [[ $ENFORCE == *"Enforcing" ]]; then sudo setenforce 1; fi
+
+	sudo chown -R $USER lorax
+    sudo chgrp -R $USER lorax
+
+	popd
+}
+
+
 install_virt() {
-if [ -f /etc/redhat-release ];then
-    sudo dnf install -y qemu-kvm
-	sudo echo "allow all" > /etc/qemu/bridge.conf
-	sudo chmod 4755 /usr/libexec/qemu-bridge-helper
-fi
-}
-
-install_cockpit() {
-if [ -f /etc/redhat-release ]; then
-    HOST=`hostname`
-    sudo dnf install -y --skip-broken cockpit cockpit-machines
-	sudo systemctl enable --now cockpit.socket
-	echo ""
-	echo "Access the web console by entering the https://$HOST:9090 address in your browser."
-	echo ""
-fi
-}
-
-install_fio() {
-if [ -f /etc/redhat-release ]; then
-    sudo dnf install -y --skip-broken libaio libaio-devel
-fi
-pushd $HOME
-if [ ! -d repos/fio ]; then
-    mkdir -p repos/fio
-    pushd repos/fio
-    git clone git@github.com:axboe/fio.git
-    popd
-fi
-popd
-}
-
-install_blktest() {
-if [ -f /etc/redhat-release ]; then
-    sudo dnf install -y --skip-broken ShellCheck blktrace blktrace-debuginfo libpmem*
-	hash fio 2>/dev/null || { echo >&2 "fio required but not installed."; install_fio; }
-	hash nvme 2>/dev/null || { echo >&2 "nvme required but not installed."; install_nvme; }
-	hash nvmetcli 2>/dev/null || { echo >&2 "nvme required but not installed."; install_nvmet; }
-fi
-pushd $HOME
-if [ ! -d repos/tests ]; then
-    mkdir -p repos/tests
-    pushd repos/tests
-    git clone git@github.com:osandov/blktests.git
-    popd
-fi
-popd
+    command -v qemu-system-x86_64
+    if [ $? -ne 0 ]; then
+        sudo dnf install -y qemu-kvm
+        sudo echo "allow all" > /etc/qemu/bridge.conf
+        sudo chmod 4755 /usr/libexec/qemu-bridge-helper
+    fi
 }
 
 install_centos_iso() {
-pushd $HOME
-if [ ! -d ISO ]; then
-    mkdir -p ISO
-fi
+	pushd $DIR
+	if [ ! -d ISO ]; then
+		mkdir -p ISO
+	fi
 
-if [ ! -f ISO/CentOS-Stream-9-latest-x86_64-dvd1.iso ]; then
-    pushd ISO
-	wget https://download.cf.centos.org/9-stream/BaseOS/x86_64/iso/CentOS-Stream-9-latest-x86_64-dvd1.iso
+	if [ ! -f ISO/CentOS-Stream-9-latest-x86_64-dvd1.iso ]; then
+		pushd ISO
+		wget https://download.cf.centos.org/9-stream/BaseOS/x86_64/iso/CentOS-Stream-9-latest-x86_64-dvd1.iso
+		popd
+	fi
 	popd
-fi
-popd
 }
 
 install_fedora_iso() {
-pushd $HOME
-if [ ! -d ISO ]; then
-    mkdir -p ISO
-fi
+	pushd $DIR
+	if [ ! -d ISO ]; then
+		mkdir -p ISO
+	fi
 
-if [ ! -f ISO/Fedora-Server-dvd-x86_64-37-1.7.iso ]; then
-    pushd ISO
-	wget https://download.fedoraproject.org/pub/fedora/linux/releases/37/Server/x86_64/iso/Fedora-Server-dvd-x86_64-37-1.7.iso
+	if [ ! -f ISO/Fedora-Server-dvd-x86_64-37-1.7.iso ]; then
+		pushd ISO
+		wget https://download.fedoraproject.org/pub/fedora/linux/releases/37/Server/x86_64/iso/Fedora-Server-dvd-x86_64-37-1.7.iso
+		popd
+	fi
 	popd
-fi
-popd
 }
 
 while getopts "m:h" opt; do
@@ -369,8 +335,8 @@ while getopts "m:h" opt; do
         esac
 done
 
-shift "$((OPTIND-1))"   # Discard the options and sentinel --
-NEWARGS="$@"
+#shift "$((OPTIND-1))"   # Discard the options and sentinel --
+#NEWARGS="$@"
 
 case "${MODE}" in
            user)
@@ -386,32 +352,17 @@ case "${MODE}" in
               install_network
            ;;
            copr)
-			create_copr_project
+              create_copr_project
            ;;
            repo)
-			  build_libnvme_rpms copr
+              build_libnvme_rpms copr
               build_dracut_rpms copr
-			  build_nvme_rpms copr
-           ;;
-           cp)
-              install_cockpit
-           ;;
-           nvme)
-              install_nvme
+              build_nvme_rpms copr
            ;;
            rpms)
-			  build_libnvme_rpms
+              build_libnvme_rpms
               build_dracut_rpms
-			  build_nvme_rpms
-           ;;
-           dracut)
-              install_dracut
-           ;;
-           nvmet)
-              install_nvmet
-           ;;
-           fio)
-              install_fio
+              build_nvme_rpms
            ;;
            edk2)
               install_edk2
@@ -422,8 +373,25 @@ case "${MODE}" in
            centos)
               install_centos_iso
            ;;
-           blktest)
-              install_blktest
+           iso)
+              shift
+              VERSION="$2"
+              case "${VERSION}" in
+                  fedora-36)
+					build_iso $VERSION
+                  ;;
+                  fedora-37)
+					build_iso $VERSION
+				  ;;
+                  centos-stream-9)
+					build_iso $VERSION
+                  ;;
+                  *)
+                     echo "  Invalid argument: $VERSION" >&2
+                     echo "  use: \"$0 -m $MODE <fedora-36|fedora-37|centos-stream-9>\"" >&2
+                     exit 1
+                  ;;
+              esac
            ;;
            build)
               install_user

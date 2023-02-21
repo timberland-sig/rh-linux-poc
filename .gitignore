@@ -13,6 +13,7 @@ cscope.*
 .edk2pkgs
 .pkgs
 edk2/*
+lorax/*
 OVMF/NvmeOfCli.efi
 OVMF/OVMF_CODE.fd
 OVMF/OVMF_VARS.fd
