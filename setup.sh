@@ -228,13 +228,13 @@ create_copr_project() {
 install_edk2() {
 	pushd $DIR
 	if [ ! -f .edk2pkgs ]; then
-		sudo dnf -y --skip-broken groupinstall "Development tools"
-		sudo dnf -y --skip-broken install python3-devel libuuid-devel acpica-tools binutils gcc gcc-c++ git nasm
+		sudo dnf -y groupinstall "Development tools"
+		sudo dnf -y install python3-devel libuuid-devel acpica-tools binutils gcc gcc-c++ git nasm
 		touch .edk2pkgs
 	fi
-	if [ ! -d timberland_edk2 ]; then
-		mkdir -p timberland_edk2
-		pushd timberland_edk2
+	if [ ! -d edk2 ]; then
+		mkdir -p edk2
+		pushd edk2
 		git clone -b timberland_1.0_final git@github.com:timberland-sig/edk2.git
 		pushd edk2
 		git config url."ssh://git@github.com/timberland-sig".insteadOf https://github.com/timberland-sig
@@ -242,8 +242,7 @@ install_edk2() {
 		popd
 		popd
 	fi
-	pushd timberland_edk2
-	pushd edk2
+	pushd edk2/edk2
 	make -C BaseTools clean
 	rm -rf Build
 	make -C BaseTools
@@ -253,7 +252,6 @@ install_edk2() {
 	cp Build/OvmfX64/DEBUG_GCC5/FV/OVMF_CODE.fd $DIR/OVMF
 	cp Build/OvmfX64/DEBUG_GCC5/FV/OVMF_VARS.fd $DIR/OVMF
 	cp Build/OvmfX64/DEBUG_GCC5/X64/NvmeOfCli.efi $DIR/OVMF
-	popd
 	popd
 }
 

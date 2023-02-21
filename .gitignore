@@ -12,7 +12,7 @@ cscope.*
 */rpmbuild/*
 .edk2pkgs
 .pkgs
-timberland_edk2/*
+edk2/*
 OVMF/NvmeOfCli.efi
 OVMF/OVMF_CODE.fd
 OVMF/OVMF_VARS.fd
