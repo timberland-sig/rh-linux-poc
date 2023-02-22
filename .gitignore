@@ -13,7 +13,8 @@ cscope.*
 .edk2pkgs
 .pkgs
 edk2/*
-lorax/*
+lorax_results/*
+mock_result/*
 ISO/*
 OVMF/NvmeOfCli.efi
 OVMF/OVMF_CODE.fd
