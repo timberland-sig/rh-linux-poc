@@ -15,28 +15,28 @@ if [ $# -gt 0 ]; then
 fi
 
 build_dist() {
-	rm -f nvme-cli-${VERSION}.tar.gz
-	pushd nvme-cli
-	make purge
-	make
-	git archive --format=tar HEAD > nvme-cli-${VERSION}.tar
-	mv nvme-cli-${VERSION}.tar ../
-	popd
-	tar rf nvme-cli-${VERSION}.tar nvme-cli.spec
-	gzip -f -9 nvme-cli-${VERSION}.tar
+    rm -f nvme-cli-${VERSION}.tar.gz
+    pushd nvme-cli
+    make purge
+    make
+    git archive --format=tar HEAD > nvme-cli-${VERSION}.tar
+    mv nvme-cli-${VERSION}.tar ../
+    popd
+    tar rf nvme-cli-${VERSION}.tar nvme-cli.spec
+    gzip -f -9 nvme-cli-${VERSION}.tar
 }
 
 prep_rpm() {
-	rm -rf rmpbuild
-	mkdir -p rpmbuild/{BUILD,BUILDROOT,RPMS,SOURCES,SPECS,SRPMS}
+    rm -rf rmpbuild
+    mkdir -p rpmbuild/{BUILD,BUILDROOT,RPMS,SOURCES,SPECS,SRPMS}
 }
 
 build_rpm () {
-	rpmbuild -ta --define "_topdir `pwd`/rpmbuild" -v  nvme-cli-${VERSION}.tar.gz
+    rpmbuild -ta --define "_topdir `pwd`/rpmbuild" -v  nvme-cli-${VERSION}.tar.gz
 }
 
 build_srpm () {
-	rpmbuild -ts --define "_topdir `pwd`/rpmbuild" -v  nvme-cli-${VERSION}.tar.gz
+    rpmbuild -ts --define "_topdir `pwd`/rpmbuild" -v  nvme-cli-${VERSION}.tar.gz
 }
 
 pushd $DIR
@@ -44,23 +44,23 @@ pushd $DIR
 case "${MODE}" in
            srpm)
              build_dist
-			 prep_rpm
-			 build_srpm
+             prep_rpm
+             build_srpm
            ;;
            rpm)
              build_dist
-			 prep_rpm
-			 build_rpm
+             prep_rpm
+             build_rpm
            ;;
            copr)
              build_dist
-			 prep_rpm
-			 build_srpm
-			 build_copr_pkg "rpmbuild/SRPMS/nvme-cli-*.src.rpm"
+             prep_rpm
+             build_srpm
+             build_copr_pkg "rpmbuild/SRPMS/nvme-cli-*.src.rpm"
            ;;
            *)
            echo " Invalid argument: $MODE" >&2
-		   display_rpm_help
+           display_rpm_help
            popd
            exit 1
            ;;

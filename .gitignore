@@ -14,6 +14,7 @@ cscope.*
 .pkgs
 edk2/*
 lorax/*
+ISO/*
 OVMF/NvmeOfCli.efi
 OVMF/OVMF_CODE.fd
 OVMF/OVMF_VARS.fd

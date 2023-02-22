@@ -14,29 +14,29 @@ if [ $# -gt 0 ]; then
 fi
 
 build_dist() {
-	rm -f dracut-${VERSION}.tar.xz
-	pushd dracut
-	make clean
-	make dist
-	cp dracut-${VERSION}.tar.xz ../
-	make clean
-	popd
-	xz -d -v dracut-${VERSION}.tar.xz
-	tar rf dracut-${VERSION}.tar dracut.spec
-	xz -9 dracut-${VERSION}.tar
+    rm -f dracut-${VERSION}.tar.xz
+    pushd dracut
+    make clean
+    make dist
+    cp dracut-${VERSION}.tar.xz ../
+    make clean
+    popd
+    xz -d -v dracut-${VERSION}.tar.xz
+    tar rf dracut-${VERSION}.tar dracut.spec
+    xz -9 dracut-${VERSION}.tar
 }
 
 prep_rpm() {
-	rm -rf rmpbuild
-	mkdir -p rpmbuild/{BUILD,BUILDROOT,RPMS,SOURCES,SPECS,SRPMS}
+    rm -rf rmpbuild
+    mkdir -p rpmbuild/{BUILD,BUILDROOT,RPMS,SOURCES,SPECS,SRPMS}
 }
 
 build_rpm () {
-	rpmbuild -ta --define "_topdir `pwd`/rpmbuild" -v dracut-${VERSION}.tar.xz
+    rpmbuild -ta --define "_topdir `pwd`/rpmbuild" -v dracut-${VERSION}.tar.xz
 }
 
 build_srpm () {
-	rpmbuild -ts --define "_topdir `pwd`/rpmbuild" -v dracut-${VERSION}.tar.xz
+    rpmbuild -ts --define "_topdir `pwd`/rpmbuild" -v dracut-${VERSION}.tar.xz
 }
 
 pushd $DIR
@@ -44,23 +44,23 @@ pushd $DIR
 case "${MODE}" in
            srpm)
              build_dist
-			 prep_rpm
-			 build_srpm
+             prep_rpm
+             build_srpm
            ;;
            rpm)
              build_dist
-			 prep_rpm
-			 build_rpm
+             prep_rpm
+             build_rpm
            ;;
            copr)
              build_dist
-			 prep_rpm
-			 build_srpm
-			 build_copr_pkg "rpmbuild/SRPMS/dracut-*.src.rpm"
+             prep_rpm
+             build_srpm
+             build_copr_pkg "rpmbuild/SRPMS/dracut-*.src.rpm"
            ;;
            *)
            echo " Invalid argument: $MODE" >&2
-		   display_rpm_help
+           display_rpm_help
            popd
            exit 1
            ;;
