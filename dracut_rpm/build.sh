@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -e
 # SPDX-License-Identifier: GPL-3.0+
 # Copyright (C) 2023 John Meneghini <jmeneghi@redhat.com> All rights reserved.
 
@@ -14,7 +14,7 @@ if [ $# -gt 0 ]; then
 fi
 
 build_dist() {
-    rm -f dracut-${VERSION}.tar.xz
+    rm -rf dracut-${VERSION} dracut-${VERSION}.tar.xz
     pushd dracut
     make clean
     make dist
@@ -22,8 +22,12 @@ build_dist() {
     make clean
     popd
     xz -d -v dracut-${VERSION}.tar.xz
-    tar rf dracut-${VERSION}.tar dracut.spec
+    tar -xf dracut-${VERSION}.tar
+    cp dracut.spec dracut-${VERSION}
+    rm dracut-${VERSION}.tar
+    tar -cf dracut-${VERSION}.tar dracut-${VERSION}
     xz -9 dracut-${VERSION}.tar
+    rm -rf dracut-${VERSION}
 }
 
 prep_rpm() {

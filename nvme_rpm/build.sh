@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -e
 # SPDX-License-Identifier: GPL-3.0+
 # Copyright (C) 2023 John Meneghini <jmeneghi@redhat.com> All rights reserved.
 
@@ -16,13 +16,12 @@ fi
 
 build_dist() {
     rm -f nvme-cli-${VERSION}.tar.gz
+    cp nvme-cli.spec nvme-cli
     pushd nvme-cli
     make purge
-    make
-    git archive --format=tar HEAD > nvme-cli-${VERSION}.tar
-    mv nvme-cli-${VERSION}.tar ../
+    git archive --output ../nvme-cli-${VERSION}.tar --format=tar --add-file nvme-cli.spec HEAD
+    rm nvme-cli.spec
     popd
-    tar rf nvme-cli-${VERSION}.tar nvme-cli.spec
     gzip -f -9 nvme-cli-${VERSION}.tar
 }
 

@@ -12,6 +12,7 @@ cscope.*
 */rpmbuild/*
 .edk2pkgs
 .pkgs
+.usr
 edk2/*
 lorax_results/*
 mock_result/*

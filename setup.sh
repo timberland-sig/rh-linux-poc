@@ -228,6 +228,7 @@ install_pkgs() {
             pesign python3-devel python3-docutils xmlto rpm-build yum-utils sg3_utils dwarves libbabeltrace-devel libbpf-devel openssl-devel \
             net-tools wget bison acpica-tools binutils gcc gcc-c++ git meson cmake dbus-devel libuuid libuuid-devel \
             json-c-devel json-c json-c-doc clang openssl kmod-devel \
+            python3-sphinx python3-sphinx_rtd_theme swig \
             systemd-devel copr-cli mock lorax
 
         sudo usermod -a -G mock $USER

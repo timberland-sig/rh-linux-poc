@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -e
 # SPDX-License-Identifier: GPL-3.0+
 # Copyright (C) 2023 John Meneghini <jmeneghi@redhat.com> All rights reserved.
 
@@ -15,13 +15,12 @@ fi
 
 build_dist() {
     rm -f libnvme-${VERSION}.tar.gz
+    cp libnvme.spec libnvme
     pushd libnvme
     make purge
-    make
-    git archive --format=tar HEAD > libnvme-${VERSION}.tar
-    mv libnvme-${VERSION}.tar ../
+    git archive --output ../libnvme-${VERSION}.tar --format=tar --add-file libnvme.spec HEAD
+    rm libnvme.spec
     popd
-    tar rf libnvme-${VERSION}.tar libnvme.spec
     gzip -f -9 libnvme-${VERSION}.tar
 }
 
