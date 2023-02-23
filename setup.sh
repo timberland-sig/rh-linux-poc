@@ -404,10 +404,10 @@ check_version_rpm() {
             MOCK_VERSION=fedora-36-x86_64
         ;;
         fedora-37)
-            MOCK_VERSION=fedora-36-x86_64
+            MOCK_VERSION=fedora-37-x86_64
         ;;
         fedora-38)
-            MOCK_VERSION=fedora-rawhide-x86_64
+            MOCK_VERSION=fedora-38-x86_64
         ;;
         centos-stream-9)
             MOCK_VERSION="centos-stream+epel-9-x86_64"
@@ -463,7 +463,7 @@ check_version_iso() {
             MOCK_VERSION=fedora-36-x86_64
         ;;
         fedora-37)
-            MOCK_VERSION=fedora-36-x86_64
+            MOCK_VERSION=fedora-37-x86_64
         ;;
         fedora-38)
             MOCK_VERSION=fedora-38-x86_64
@@ -533,7 +533,7 @@ case "${MODE}" in
            mock)
               check_version_rpm
               rm -rf $DIR/mock_repo
-              pusdh $DIR
+              pushd $DIR
               build_libnvme_rpms srpm
               build_nvme_rpms srpm
               build_dracut_rpms srpm
