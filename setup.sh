@@ -7,38 +7,41 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 # Configuraiton
 NOOP=0
-MODES="build|user|pkgs|net|rpms|copr|repo|fedora|centos|edk2|iso|virt"
+MODES="build|user|pkgs|net|virt|mock|copr|edk2|iso"
 MODE="user"
 MOCKBUILD=0
-ISO_VERSION="fedora-36|fedora-37|centos-stream-9"
+ALL_VERSIONS="fedora-36|fedora-37|fedora-38|centos-stream-9|opensuse-tumbleweed"
+RPM_VERSIONS="fedora-36|fedora-37|fedora-38|centos-stream-9|opensuse-tumbleweed"
+RH_VERSIONS="fedora-36|fedora-37|fedora-38|centos-stream-9"
+ISO_VERSIONS="fedora-36|fedora-37|fedora-38"
+MOCK_VERSION=fedora-36-x86_64
 
 display_help() {
         echo
-        echo " Usage: ${0##*/} [-h] [-m ] <$MODES>"
+        echo " Usage: ${0##*/} [-h] [-m ] <$MODES> [$ALL_VERSIONS]"
         echo
         echo "  -h            : display this help"
         echo "  -m            : use mock to build things"
         echo ""
         echo "  user          : setup basic user environment (default)"
         echo "  pkgs          : install all pkgs needed for host build environment "
-        echo "  build         : build all timberland sig artifacts and create an iso "
         echo "  net           : configure bridged network environment "
         echo "  virt          : install qemu-kvm environment "
-        echo "  fedora        : download Fedora37 iso in the ISO directory "
-        echo "  centos        : download Centos9 iso in the ISO directory "
-        echo ""
-        echo "  copr          : create timberland-sig copr project "
-        echo "                : - results at: https://copr.fedorainfracloud.org/coprs/"
         echo "  edk2          : create and build the timberland-sig edk2 repository in the edk2 directory "
         echo "                : - install build artifacts in OVMF directory  "
-        echo "  rpms          : build rpms for dracut, libnvme and nvme-cli "
-        echo "                : - install rpm artifacts in {dir}_rpm/rpmbuild/..."
-        echo "  repo          : build a timberland-sig rpm repo in your copr project"
-        echo "                : - results at: https://copr.fedorainfracloud.org/coprs/{username}"
         echo ""
-        echo "  iso <$ISO_VERSION> "
+        echo "  mock  < $ALL_VERSIONS > "
+        echo "                : mock build of all rpms "
+        echo "  copr  < $RH_VERSIONS > "
+        echo "                : create timberland-sig copr project and upload all rpms "
+        echo "                : - results at: https://copr.fedorainfracloud.org/coprs/"
+        echo "  iso   < $ISO_VERSIONS > "
         echo "                : build bootable iso image with timberland-sig artifacts"
         echo "                : - results appear in 'lorax/results' directory"
+        echo "  build < $ISO_VERSIONS > "
+        echo "                : install packages, build edk2, create copr repository, and build iso"
+        echo "                : - results appear in 'lorax/results' directory"
+
         echo ""
         echo " Examples:"
         echo "       ${0##*/} "
@@ -180,13 +183,11 @@ build_libnvme_rpms() {
 }
 
 create_copr_project() {
-    copr-cli list | grep Name | grep timberland-sig
-    if [ $? -ne 0 ]; then
-        copr-cli create --chroot centos-stream-9-x86_64 --chroot fedora-37-x86_64 --chroot fedora-36-x86_64 \
-        --description "Timberland-sig NVMe/TCP Boot support" \
-        --instructions "File bugs and propose patches at https://github.com/timberland-sig" \
-        timberland-sig
-    fi
+    copr-cli delete timberland-sig
+    copr-cli create --chroot centos-stream-9-x86_64 --chroot fedora-38-x86_64 --chroot fedora-37-x86_64 --chroot fedora-36-x86_64 \
+    --description "Timberland-sig NVMe/TCP Boot support" \
+    --instructions "File bugs and propose patches at https://github.com/timberland-sig" \
+    timberland-sig
 }
 
 install_edk2() {
@@ -244,38 +245,26 @@ build_mock_iso() {
     echo "mock build"
 
     case "$1" in
-      fedora-36)
+      fedora-*)
           rm -rf lorax_results
-          mock -r fedora-36-x86_64 --init
-          mock -r fedora-36-x86_64 --install lorax
-          mock -r fedora-36-x86_64 --arch=x86_64 --enable-network --isolation=simple --resultdir $PWD/mock_result --chroot "$2"
+          mock -r $MOCK_VERSION --install lorax
+          mock -r $MOCK_VERSION --arch=x86_64 --enable-network --isolation=simple --resultdir $DIR/mock_result --chroot "$2"
           status=$?
-      ;;
-      fedora-37)
-          mock -r fedora-37-x86_64 --init
-          mock -r fedora-37-x86_64 --install lorax
-          mock -r fedora-37-x86_64 --arch=x86_64 --enable-network --isolation=simple --resultdir $PWD/mock_result --chroot "$2"
-          status=$?
-      ;;
-      centos-stream-9)
+          ;;
+      *)
           echo "$1 is not supported"
           status=1
-          #mock -r centos-stream+epel-9-x86_64 --init
-          #mock -r centos-stream+epel-9-x86_64 --install lorax
-          #mock -r centos-stream+epel-9-x86_64 --arch=x86_64 --enable-network --isolation=simple --resultdir $PWD/mock_result --chroot "$2"
-      ;;
-      *)
-      ;;
+          ;;
     esac
 
-    if [ $status -eq 0 ]; then
-      sudo cp -r /var/lib/mock/$1-x86_64/root/lorax_results $PWD
+    if [[ $status -eq 0 ]]; then
+      set -e
+      sudo cp -r /var/lib/mock/$MOCK_VERSION/root/lorax_results $PWD
       sudo chown -R $USER lorax_results
       sudo chgrp -R $USER lorax_results
     else
       echo "mock build failed!"
     fi
-
 }
 
 build_direct_iso() {
@@ -304,7 +293,31 @@ build_direct_iso() {
     popd
 }
 
-build_iso() {
+mock_iso() {
+
+    exit 1
+
+    case "$1" in
+        fedora-36)
+        LORAX_BUILD="lorax -p Fedora -v 36 -r 36 --nomacboot --volid Fedora-S-dvd-x86_64-f36 -s https://dl.fedoraproject.org/pub/fedora/linux/releases/36/Everything/x86_64/os/ lorax_results"
+            ;;
+        fedora-37)
+        LORAX_BUILD="lorax -p Fedora -v 37 -r 37 --nomacboot --volid Fedora-S-dvd-x86_64-f37 -s https://dl.fedoraproject.org/pub/fedora/linux/releases/37/Everything/x86_64/os/ lorax_results"
+            ;;
+        centos-stream-9)
+            echo "$1 is not supported"
+            ;;
+        *)
+            ;;
+    esac
+
+#    echo "LORAX_BUILD = \"$LORAX_BUILD\""
+
+    build_mock_iso $1 "$LORAX_BUILD"
+
+}
+
+build_copr_iso() {
 
     copr-cli list | grep $1
     if [ $? -ne 0 ]; then
@@ -322,16 +335,19 @@ build_iso() {
         fedora-37)
         LORAX_BUILD="lorax -p Fedora -v 37 -r 37 --nomacboot --volid Fedora-S-dvd-x86_64-f37 -s https://dl.fedoraproject.org/pub/fedora/linux/releases/37/Everything/x86_64/os/ -s $REPO lorax_results"
             ;;
-        centos-stream-9)
-            echo "$1 is not supported"
+        fedora-38)
+        LORAX_BUILD="lorax -p Fedora -v 38 -r 38 --nomacboot --volid Fedora-S-dvd-x86_64-f38 -s https://dl.fedoraproject.org/pub/fedora/linux/releases/38/Everything/x86_64/os/ -s $REPO lorax_results"
             ;;
-        *)
+            *)
+              echo "$1 is not supported"
+              status=1
             ;;
     esac
 
 #    echo "LORAX_BUILD = \"$LORAX_BUILD\""
 
     if [[ $MOCKBUILD -eq 1 ]]; then
+        mock -r $MOCK_VERSION --init
         build_mock_iso $1 "$LORAX_BUILD"
     else
         build_direct_iso "$LORAX_BUILD"
@@ -376,6 +392,90 @@ install_fedora_iso() {
     popd
 }
 
+check_version_rpm() {
+    if [ -z "${VERSION}" ]; then
+        echo "  Invalid argument: ${NEWARGS}" >&2
+        echo "  use: \"$0 $MODE <$RPM_VERSIONS>\"" >&2
+        echo "  Try: \"$0 -h\"" >&2
+        exit 1
+    fi
+    case "${VERSION}" in
+        fedora-36)
+            MOCK_VERSION=fedora-36-x86_64
+        ;;
+        fedora-37)
+            MOCK_VERSION=fedora-36-x86_64
+        ;;
+        fedora-38)
+            MOCK_VERSION=fedora-rawhide-x86_64
+        ;;
+        centos-stream-9)
+            MOCK_VERSION="centos-stream+epel-9-x86_64"
+        ;;
+        opensuse-tumbleweed)
+            MOCK_VERSION=opensuse-tumbleweed-x86_64
+        ;;
+        *)
+            echo "  Invalid argument: $VERSION" >&2
+            echo "  use: \"$0 $MODE <$RPM_VERSIONS>\"" >&2
+            exit 1
+        ;;
+    esac
+}
+
+check_version_rh() {
+    if [ -z "${VERSION}" ]; then
+        echo "  Invalid argument: ${NEWARGS}" >&2
+        echo "  use: \"$0 $MODE <$RH_VERSIONS>\"" >&2
+        echo "  Try: \"$0 -h\"" >&2
+        exit 1
+    fi
+    case "${VERSION}" in
+        fedora-36)
+            MOCK_VERSION=fedora-36-x86_64
+        ;;
+        fedora-37)
+            MOCK_VERSION=fedora-37-x86_64
+        ;;
+        fedora-38)
+            MOCK_VERSION=fedora-38-x86_64
+        ;;
+        centos-stream-9)
+            MOCK_VERSION="centos-stream+epel-9-x86_64"
+        ;;
+        *)
+            echo "  Invalid argument: $VERSION" >&2
+            echo "  use: \"$0 $MODE <$RH_VERSIONS>\"" >&2
+            exit 1
+        ;;
+    esac
+}
+
+check_version_iso() {
+    if [ -z "${VERSION}" ]; then
+        echo "  Invalid argument: ${NEWARGS}" >&2
+        echo "  use: \"$0 $MODE <$ISO_VERSIONS>\"" >&2
+        echo "  Try: \"$0 -h\"" >&2
+        exit 1
+    fi
+    case "${VERSION}" in
+        fedora-36)
+            MOCK_VERSION=fedora-36-x86_64
+        ;;
+        fedora-37)
+            MOCK_VERSION=fedora-36-x86_64
+        ;;
+        fedora-38)
+            MOCK_VERSION=fedora-38-x86_64
+        ;;
+        *)
+            echo "  Invalid argument: $VERSION" >&2
+            echo "  use: \"$0 $MODE <$ISO_VERSIONS>\"" >&2
+            exit 1
+        ;;
+    esac
+}
+
 while getopts "mh" opt; do
         case "${opt}" in
                 h)
@@ -384,7 +484,7 @@ while getopts "mh" opt; do
                 ;;
                 m)
                         MOCKBUILD=1
-                        echo "Set mock build to $MOCK_BUILD"
+                       # echo "Set mock build to $MOCKBUILD"
                 ;;
                 *)
                         echo "  Invalid argument: -$OPTARG" >&2
@@ -395,7 +495,9 @@ while getopts "mh" opt; do
 done
 
 shift "$((OPTIND-1))"   # Discard the options and sentinel --
+
 NEWARGS="$@"
+
 MODE=$(echo "${NEWARGS}" | tr -t '/' ' ' | awk '{print $1}')
 
 if [ -z "${MODE}" ]; then
@@ -403,8 +505,10 @@ if [ -z "${MODE}" ]; then
      echo "Using default arg $MODE"
 fi
 
-echo "MODE is == $MODE"
-echo "MOCKBUILD is == $MOCKBUILD"
+VERSION=$(echo "${NEWARGS}" | tr -t '/' ' ' | awk '{print $2}')
+
+#echo "MODE is == $MODE"
+#echo "MOCKBUILD is == $MOCKBUILD"
 
 case "${MODE}" in
            user)
@@ -420,14 +524,35 @@ case "${MODE}" in
               install_network
            ;;
            copr)
+              check_version_rh
               create_copr_project
+              build_libnvme_rpms copr
+              build_dracut_rpms copr
+              build_nvme_rpms copr
+           ;;
+           mock)
+              check_version_rpm
+              rm -rf $DIR/mock_repo
+              pusdh $DIR
+              build_libnvme_rpms srpm
+              build_nvme_rpms srpm
+              build_dracut_rpms srpm
+              SRPM1="$(ls libnvme_rpm/rpmbuild/SRPMS/libnvme-*.src.rpm)"
+              SRPM2="$(ls nvme_rpm/rpmbuild/SRPMS/nvme-cli-*.src.rpm)"
+              SRPM3="$(ls dracut_rpm/rpmbuild/SRPMS/dracut-*.src.rpm)"
+              mock -r $MOCK_VERSION --init
+              mock -r $MOCK_VERSION --arch=x86_64 --no-clean --localrepo=$DIR/mock_repo --chain $SRPM1 $SRPM2 $SRPM3
+              popd
            ;;
            repo)
+              exit 0
+              create_copr_project
               build_libnvme_rpms copr
               build_dracut_rpms copr
               build_nvme_rpms copr
            ;;
            rpms)
+              exit 0
               build_libnvme_rpms
               build_dracut_rpms
               build_nvme_rpms
@@ -436,44 +561,26 @@ case "${MODE}" in
               install_edk2
            ;;
            fedora)
+              exit 0
               install_fedora_iso
            ;;
            centos)
+               exit 0
                install_centos_iso
            ;;
            iso)
-              VERSION=$(echo "${NEWARGS}" | tr -t '/' ' ' | awk '{print $2}')
-              if [ -z "${VERSION}" ]; then
-                    echo "  Invalid argument: ${NEWARGS}" >&2
-                    echo "  use: \"$0 $MODE <$ISO_VERSION>\"" >&2
-                    echo "  Try: \"$0 -h\"" >&2
-                    exit 1
-              fi
-              case "${VERSION}" in
-                  fedora-36)
-                    build_iso $VERSION
-                  ;;
-                  fedora-37)
-                    build_iso $VERSION
-                  ;;
-                  centos-stream-9)
-                    build_iso $VERSION
-                  ;;
-                  *)
-                     echo "  Invalid argument: $VERSION" >&2
-                     echo "  use: \"$0 $MODE <$ISO_VERSION>\"" >&2
-                     exit 1
-                  ;;
-              esac
+              check_version_iso
+              build_copr_iso $VERSION
            ;;
            build)
-              MOCKBUILD=1
+              check_version_iso
               install_user
-              install_pkgs
+              create_copr_project
               install_edk2
-              build_dracut_rpms copr
               build_libnvme_rpms copr
-              build_iso fedora-36
+              build_dracut_rpms copr
+              build_nvme_rpms copr
+              build_copr_iso $VERSION
               echo ""
               echo " All artifacts have been built"
               echo ""

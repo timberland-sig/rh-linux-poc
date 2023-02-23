@@ -56,6 +56,13 @@ case "${MODE}" in
              build_srpm
              build_copr_pkg "rpmbuild/SRPMS/libnvme-*.src.rpm"
            ;;
+           mock)
+             build_dist
+             prep_rpm
+             build_srpm
+             RPM="$(ls rpmbuild/SRPMS/libnvme-*.src.rpm)"
+             mock -r fedora-36-x86_64 --arch=x86_64 --no-clean --resultdir $PWD/mock_libnvme $RPM
+           ;;
            *)
            echo " Invalid argument: $MODE" >&2
            display_rpm_help
