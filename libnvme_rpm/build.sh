@@ -7,11 +7,10 @@ DIR="$(dirname -- "$(realpath -- "$0")")"
 
 VERSION=1.3
 RELEASE=1
-MODE=srpm
+MODE=blank
+COPR_PROJECT=blank
 
-if [ $# -gt 0 ]; then
-  MODE=$1
-fi
+check_args $# $1 $2
 
 build_dist() {
     rm -f libnvme-${VERSION}.tar.gz
@@ -54,14 +53,15 @@ case "${MODE}" in
              build_dist
              prep_rpm
              build_srpm
-             build_copr_pkg "rpmbuild/SRPMS/libnvme-*.src.rpm"
+             RPM="$(ls rpmbuild/SRPMS/libnvme-*.src.rpm)"
+             build_copr_pkg $COPR_PROJECT "$RPM"
            ;;
            mock)
              build_dist
              prep_rpm
              build_srpm
              RPM="$(ls rpmbuild/SRPMS/libnvme-*.src.rpm)"
-             mock -r fedora-36-x86_64 --arch=x86_64 --no-clean --resultdir $PWD/mock_libnvme $RPM
+             mock -r fedora-36-x86_64 --arch=x86_64 --no-clean --resultdir $PWD/mock_libnvme "$RPM"
            ;;
            *)
            echo " Invalid argument: $MODE" >&2

@@ -7,12 +7,10 @@ DIR="$(dirname -- "$(realpath -- "$0")")"
 
 VERSION=2.3
 RELEASE=1
+MODE=blank
+COPR_PROJECT=blank
 
-MODE=srpm
-
-if [ $# -gt 0 ]; then
-  MODE=$1
-fi
+check_args $# $1 $2
 
 build_dist() {
     rm -f nvme-cli-${VERSION}.tar.gz
@@ -55,7 +53,8 @@ case "${MODE}" in
              build_dist
              prep_rpm
              build_srpm
-             build_copr_pkg "rpmbuild/SRPMS/nvme-cli-*.src.rpm"
+             RPM="$(ls rpmbuild/SRPMS/nvme-cli-*.src.rpm)"
+             build_copr_pkg $COPR_PROJECT "$RPM"
            ;;
            mock)
              build_dist

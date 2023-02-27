@@ -15,6 +15,7 @@ RPM_VERSIONS="fedora-36|fedora-37|fedora-38|centos-stream-9|opensuse-tumbleweed"
 RH_VERSIONS="fedora-36|fedora-37|fedora-38|centos-stream-9"
 ISO_VERSIONS="fedora-36|fedora-37|fedora-38"
 MOCK_VERSION=fedora-36-x86_64
+COPR_PROJECT=timberland-scratch
 
 display_help() {
         echo
@@ -33,7 +34,7 @@ display_help() {
         echo "  mock  < $ALL_VERSIONS > "
         echo "                : mock build of all rpms "
         echo "  copr  < $RH_VERSIONS > "
-        echo "                : create timberland-sig copr project and upload all rpms "
+        echo "                : create $COPR_PROJECT copr project and upload all rpms "
         echo "                : - results at: https://copr.fedorainfracloud.org/coprs/"
         echo "  iso   < $ISO_VERSIONS > "
         echo "                : build bootable iso image with timberland-sig artifacts"
@@ -41,13 +42,13 @@ display_help() {
         echo "  build < $ISO_VERSIONS > "
         echo "                : install packages, build edk2, create copr repository, and build iso"
         echo "                : - results appear in 'lorax/results' directory"
-
         echo ""
         echo " Examples:"
         echo "       ${0##*/} "
         echo "       ${0##*/} user "
         echo "       ${0##*/} pkgs "
         echo "       ${0##*/} edk2 "
+        echo "       ${0##*/} copr "
         echo "       ${0##*/} -m iso fedora-36 "
         echo "       ${0##*/} -h "
         echo ""
@@ -82,6 +83,11 @@ install_user() {
     if [ ! -f ~/.config/copr ]; then
         echo " : You must setup setup ~/.config/copr"
         exit 1
+    fi
+
+    FOO="$(copr-cli list | grep "Name..$COPR_PROJECT")"
+    if [ -z "$FOO" ]; then
+        create_copr_project
     fi
 
     git submodule update --init --recursive
@@ -156,7 +162,7 @@ build_dracut_rpms() {
         echo "$DIR/dracut_rpm not found!"
         exit 1
     else
-        $DIR/dracut_rpm/build.sh $1
+        $DIR/dracut_rpm/build.sh $1 $2
     fi
 }
 
@@ -169,7 +175,7 @@ build_nvme_rpms() {
         echo "$DIR/nvme_rpm not found!"
         exit 1
     else
-        $DIR/nvme_rpm/build.sh $1
+        $DIR/nvme_rpm/build.sh $1 $2
     fi
 }
 
@@ -178,16 +184,17 @@ build_libnvme_rpms() {
         echo "$DIR/libnvme_rpm not found!"
         exit 1
     else
-        $DIR/libnvme_rpm/build.sh $1
+        $DIR/libnvme_rpm/build.sh $1 $2
     fi
 }
 
 create_copr_project() {
-    copr-cli delete timberland-sig
+#    copr-cli delete $COPR_PROJECT
+    echo "Create copr $COPR_PROJECT project. NOTE: you must disable \"Follow Fedora branching\" manually"
     copr-cli create --chroot centos-stream-9-x86_64 --chroot fedora-38-x86_64 --chroot fedora-37-x86_64 --chroot fedora-36-x86_64 \
     --description "Timberland-sig NVMe/TCP Boot support" \
     --instructions "File bugs and propose patches at https://github.com/timberland-sig" \
-    timberland-sig
+    $COPR_PROJECT
 }
 
 install_edk2() {
@@ -319,13 +326,13 @@ mock_iso() {
 
 build_copr_iso() {
 
-    copr-cli list | grep $1
+    copr-cli list | grep "$COPR_PROJECT\/$1"
     if [ $? -ne 0 ]; then
         echo "No repository for $1 found"
         copr-cli list
         exit 1
     else
-        REPO=$(copr-cli list | grep $1 | tr -d '()' | awk '{print $2}')
+        REPO=$(copr-cli list | grep "$COPR_PROJECT\/$1" | tr -d '()' | awk '{print $2}')
     fi
 
     case "$1" in
@@ -344,7 +351,7 @@ build_copr_iso() {
             ;;
     esac
 
-#    echo "LORAX_BUILD = \"$LORAX_BUILD\""
+    echo "LORAX_BUILD = \"$LORAX_BUILD\""
 
     if [[ $MOCKBUILD -eq 1 ]]; then
         mock -r $MOCK_VERSION --init
@@ -503,6 +510,7 @@ MODE=$(echo "${NEWARGS}" | tr -t '/' ' ' | awk '{print $1}')
 if [ -z "${MODE}" ]; then
      MODE=user
      echo "Using default arg $MODE"
+     echo "Try: \"$0 -h\"" >&2
 fi
 
 VERSION=$(echo "${NEWARGS}" | tr -t '/' ' ' | awk '{print $2}')
@@ -525,10 +533,10 @@ case "${MODE}" in
            ;;
            copr)
               check_version_rh
-              create_copr_project
-              build_libnvme_rpms copr
-              build_dracut_rpms copr
-              build_nvme_rpms copr
+              install_user
+              build_libnvme_rpms copr $COPR_PROJECT
+              build_dracut_rpms copr $COPR_PROJECT
+              build_nvme_rpms copr $COPR_PROJECT
            ;;
            mock)
               check_version_rpm
@@ -544,18 +552,10 @@ case "${MODE}" in
               mock -r $MOCK_VERSION --arch=x86_64 --no-clean --localrepo=$DIR/mock_repo --chain $SRPM1 $SRPM2 $SRPM3
               popd
            ;;
-           repo)
-              exit 0
-              create_copr_project
-              build_libnvme_rpms copr
-              build_dracut_rpms copr
-              build_nvme_rpms copr
-           ;;
            rpms)
-              exit 0
-              build_libnvme_rpms
-              build_dracut_rpms
-              build_nvme_rpms
+              build_libnvme_rpms rpm
+              build_dracut_rpms rpm
+              build_nvme_rpms rpm
            ;;
            edk2)
               install_edk2
@@ -570,16 +570,17 @@ case "${MODE}" in
            ;;
            iso)
               check_version_iso
+              install_user
               build_copr_iso $VERSION
            ;;
            build)
               check_version_iso
               install_user
-              create_copr_project
+              install_pkgs
               install_edk2
-              build_libnvme_rpms copr
-              build_dracut_rpms copr
-              build_nvme_rpms copr
+              build_libnvme_rpms copr $COPR_PROJECT
+              build_dracut_rpms copr $COPR_PROJECT
+              build_nvme_rpms copr $COPR_PROJECT
               build_copr_iso $VERSION
               echo ""
               echo " All artifacts have been built"
