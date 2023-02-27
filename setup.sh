@@ -277,18 +277,18 @@ build_mock_iso() {
 build_direct_iso() {
 
     echo "direct build"
-    exit
 
     ENFORCE=`getenforce`
 
     if [[ $ENFORCE == *"Enforcing" ]]; then sudo setenforce 0; fi
 
     pushd $DIR
-    rm -rf lorax
+    rm -rf lorax lorax_results
     mkdir -p lorax
+
     pushd lorax
 
-    sudo *"$1"
+    sudo $1
 
     popd
 
@@ -296,6 +296,7 @@ build_direct_iso() {
 
     sudo chown -R $USER lorax
     sudo chgrp -R $USER lorax
+    mv lorax/lorax_results .
 
     popd
 }
