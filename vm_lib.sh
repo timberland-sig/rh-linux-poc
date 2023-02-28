@@ -1,0 +1,92 @@
+#!/bin/bash
+# SPDX-License-Identifier: GPL-3.0+
+# Copyright (C) 2023 John Meneghini <jmeneghi@redhat.com> All rights reserved.
+
+display_install_help() {
+  echo " Usage: install.sh <iso_file> [\"qemu_args\"]"
+  echo " "
+  echo " Creates qcow2 disk files and installs a QEMU VM named $VMNAME"
+  echo " in $PWD using the installation ISO provided in <iso_file>"
+  echo " "
+  echo " Note: iso_file must be contain the full iso file location"
+  echo ""
+  echo "   E.g.:"
+  echo "          $0 /root/rh-linux-poc/images/boot.iso \"-vnc :0\""
+  echo "          $0 /home/jmeneghi/rh-linux-poc/ISO/Fedora-Server-dvd-x86_64-37-1.7.iso \"-vnc :0 -m 1G\""
+  echo "          $0 /home/jmeneghi/rh-linux-poc/lorax_results/images/boot.iso"
+  echo " "
+}
+
+display_mac_help() {
+  echo " "
+  echo " Error: mac addresss for $VMNAME not found"
+  echo " "
+  echo " Rename $PWD directory to supported hostname (see hostname.txt)"
+  echo " or modify install.sh script to support new hostname."
+  echo " "
+}
+
+create_mac_addresses() {
+        case "$VMNAME" in
+                target-vm)
+                        MAC1="52:54:01:12:44:51"
+                        MAC2="52:51:02:12:44:02"
+                        MAC3="52:51:03:12:44:03"
+                        ;;
+                host-vm)
+                        MAC1="52:54:01:12:44:53"
+                        MAC2="52:53:02:12:44:02"
+                        MAC3="52:53:03:12:44:03"
+                        ;;
+                *)
+                        display_mac_help >&2
+                        exit 1
+                        ;;
+        esac
+}
+
+create_disks() {
+        if [ ! -d disks ]; then
+                mkdir disks
+        fi
+
+        echo "creating disks"
+        rm -f disks/boot.qcow2
+        rm -f disks/nvme2.qcow2
+        qemu-img create -f qcow2 disks/boot.qcow2 50G
+        qemu-img create -f qcow2 disks/nvme2.qcow2 50G
+}
+
+check_qemu_command() {
+    command -v qemu-system-x86_64
+    if [ $? -ne 0 ]; then echo "qemu-system-x86_64 is not installed"; exit 1; fi
+
+    QEMU="$(command -v qemu-system-x86_64)"
+    if [[ $QEMU =~ "/usr/local" ]]; then 
+            BRIDGE="/usr/local/libexec/qemu-bridge-helper"
+    else
+            BRIDGE="/usr/libexec/qemu-bridge-helper"
+    fi
+}
+
+check_install_args() {
+    if [ $1 -lt 1 -o $1 -gt 1 ] ; then
+        display_install_help
+        exit 1
+    fi
+
+    if [ ! -f $2 ]; then
+        echo "iso file $1 not found!"
+        exit 1
+    fi
+
+    if [ $1 -gt 1 ] ; then
+        QARGS="$3"
+    fi
+
+    check_qemu_command
+
+    SN1=$(hexdump -vn8 -e'4/4 "%08X" 1 "\n"' /dev/urandom)
+    SN2=$(hexdump -vn8 -e'4/4 "%08X" 1 "\n"' /dev/urandom)
+}
+
