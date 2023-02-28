@@ -367,7 +367,8 @@ install_virt() {
     command -v qemu-system-x86_64
     if [ $? -ne 0 ]; then
         sudo dnf install -y qemu-kvm
-        sudo echo "allow all" > /etc/qemu/bridge.conf
+        echo "allow all" > /tmp/bridge.conf
+        sudo cp /tmp/bridge.conf /etc/qemu/bridge.conf
         sudo chmod 4755 /usr/libexec/qemu-bridge-helper
     fi
 }
