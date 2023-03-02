@@ -3,8 +3,8 @@
 
 Name:           nvme-cli
 Version:        2.3
-Release:        2%{?dist}
-Summary:        NVMe management command line interface
+Release:        3%{?dist}
+Summary:        NVMe management command line interface (timberland-sig)
 
 License:        GPLv2
 URL:            https://github.com/timberland-sig/nvme-cli
@@ -37,7 +37,7 @@ BuildRequires:  xmlto
 Requires:       util-linux
 
 %description
-nvme-cli provides NVM-Express user space tooling for Linux.
+timberland-sig: nvme-cli provides NVM-Express user space tooling for Linux.
 NOTICE: This is an expermental version of nvme-cli
 from the Timberland-sig repository.  This utility provides
 additional support for NVMe/TCP boot with the Timberland-sig
@@ -86,6 +86,24 @@ rm -rf %{buildroot}%{_pkgdocdir}/nvme
 %{_udevrulesdir}/71-nvmf-iopolicy-netapp.rules
 # Do not install the dracut rule yet.  See rhbz 1742764
 # /usr/lib/dracut/dracut.conf.d/70-nvmf-autoconnect.conf
+
+%post
+if [ $1 -eq 1 ] || [ $1 -eq 2 ]; then
+        if [ ! -s %{_sysconfdir}/nvme/hostnqn ]; then
+		echo $(nvme gen-hostnqn) > %{_sysconfdir}/nvme/hostnqn
+        fi
+        if [ ! -s %{_sysconfdir}/nvme/hostid ]; then
+                uuidgen > %{_sysconfdir}/nvme/hostid
+        fi
+
+	# apply udev and systemd changes that we did
+	if [ $1 -eq 1 ]; then
+		systemctl enable nvmefc-boot-connections
+	fi
+	systemctl daemon-reload
+	udevadm control --reload-rules && udevadm trigger
+	exit 0
+fi
 
 %changelog
 * Wed Feb 01 2023 Tomas Bzatek <tbzatek@redhat.com> - 2.3-1
