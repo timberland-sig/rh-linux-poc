@@ -68,10 +68,15 @@ chmod 755 .build/start.sh
 if [ ! -z "${QARGS}" ]; then
 	echo "$QRGS" > .qargs
 	echo ""
-	echo "Connect with \"vncviewer $HOST :0\""
-	echo ""
-	echo "Reboot/Shutdown when done with Install"
-	echo ""
+	echo "Connect with \"vncviewer $HOST:0\""
 fi
+
+echo ""
+echo " Be sure to create the root account with ssh access."
+echo " Reboot to complete the install and login to the root account."
+echo " Record the host interface name and ip address with \"ip -br address show\" command and shutdown."
+echo ""
+echo " Next step will be to start the vm with the \"./start.sh\" script."
+echo ""
 
 bash .build/install.sh

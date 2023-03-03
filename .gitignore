@@ -13,6 +13,7 @@ cscope.*
 */.build/*
 */disks/*
 */.qargs
+*/.start
 .edk2pkgs
 .pkgs
 .usr

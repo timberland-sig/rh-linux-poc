@@ -39,7 +39,7 @@ create_mac_addresses() {
                         MAC3="53:65:75:01:02:30"
                         ;;
                 *)
-						echo "Error: $VMNAME - not found!"
+						echo " Error: $VMNAME - not found!"
                         display_mac_help >&2
                         exit 1
                         ;;
@@ -51,7 +51,7 @@ create_disks() {
                 mkdir disks
         fi
 
-        echo "creating disks"
+        echo " creating disks"
         rm -f disks/boot.qcow2
         rm -f disks/nvme2.qcow2
         qemu-img create -f qcow2 disks/boot.qcow2 50G
@@ -60,7 +60,7 @@ create_disks() {
 
 check_qemu_command() {
     command -v qemu-system-x86_64
-    if [ $? -ne 0 ]; then echo "qemu-system-x86_64 is not installed"; exit 1; fi
+    if [ $? -ne 0 ]; then echo " qemu-system-x86_64 is not installed"; exit 1; fi
 
     QEMU="$(command -v qemu-system-x86_64)"
     if [[ $QEMU =~ "/usr/local" ]]; then
@@ -77,7 +77,7 @@ check_install_args() {
     fi
 
     if [ ! -f $2 ]; then
-        echo "iso file $1 not found!"
+        echo " iso file $1 not found!"
         exit 1
     fi
 
@@ -149,7 +149,7 @@ create_hosts_file() {
     TARGET_ADDR="$1"
 
 	echo " "
-	echo "creating .build/hosts.txt"
+	echo " creating .build/hosts.txt"
 
 	cat << EOF >> .build/hosts.txt
 
@@ -173,7 +173,7 @@ create_netsetup() {
 	rm -f .build/netsetup.sh
 
 	echo " "
-	echo "creating .build/netsetup.sh"
+	echo " creating .build/netsetup.sh"
 	cat << EOF >> .build/netsetup.sh
 #!/bin/bash
 

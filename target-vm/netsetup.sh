@@ -7,23 +7,38 @@ DIR="$(dirname -- "$(realpath -- "$0")")"
 . $DIR/../vm_lib.sh
 
 VMNAME=`basename $PWD`
-IP2=0
-IP3=0
+
+#These are the Hostnqn and Hostid for the target-vm
+TARGETID="e1df2843-7f74-48c4-adb0-b2a5b9bab8f1"
+TARGETNQN="nqn.2014-08.org.nvmexpress:uuid:a53caec2-eb2d-4bca-819e-f2bbfb10e1fa"
+#These are the Hostnqn and Hostid for the host-vm
+HOSTID="4e16bbb4-097f-44be-8c7f-77d8b4fc9f39"
+#This HostNQN appears in the tcp.json file
+HOSTNQN="nqn.2014-08.org.nvmexpress:uuid:f8131bac-cdef-4165-866b-5998c1e67890"
+#This is the Subsystem NQN for the tcp.json file
+SUBNQN="nqn.2014-08.org.nvmexpress:uuid:0c468c4d-a385-47e0-8299-6e95051277db.subsys"
+NSNGUID="ace42e00-1510-2fce-2ee4-ac0000000001"
+NSUUID="bee9c2b7-1761-44b5-a4e6-0f690498a94b"
 
 create_nvme_target_config() {
-	cp tcp1.json .build/tcp1.json
+    rm -f .build/tcp.json
+    cp tcp.json.in .build/tcp.json
 }
 
 add_target_netsetup() {
     cat << EOF >> .build/netsetup.sh
 
-dnf install -y git tar vim nvmetcli
+dnf copr enable -y johnmeneghini/timberland-sig
+dnf install -y git tar vim nvme-cli nvmetcli
+
+echo "$TARGETNQN" > /etc/nvme/hostnqn
+echo "$TARGETID" > /etc/nvme/hostid
 
 modprobe nvme_fabrics
 modprobe nvmet_tcp
-#nvmetcli restore tcp1.json
-#dmesg | grep nvmet
-#service firewalld stop
+nvmetcli restore tcp.json
+dmesg | grep nvmet
+service firewalld stop
 
 EOF
 }
@@ -31,29 +46,23 @@ EOF
 check_netsetup_args $#
 
 create_netsetup "$1" "$2" "$3"
+
 add_target_netsetup
-chmod 775 .build/netsetup.sh
 
 create_hosts_file "$3"
+
+create_nvme_target_config
+
+chmod 775 .build/netsetup.sh
+chmod 775 .build/tcp.json
 chmod 775 .build/hosts.txt
 
-#create_nvme_target_config
-#chmod 775 .build/tcp1.json
+echo ""
+echo " scp  .build/{netsetup.sh,hosts.txt,tcp.json} root@$3:netsetup.sh"
+echo ""
+scp .build/{netsetup.sh,hosts.txt,tcp.json} root@$3:
 
 echo ""
-echo "scp  .build/{netsetup.sh,hosts.txt} root@$3:netsetup.sh"
+echo " Login to $VMNAME/root and run \"./netsetup.sh\" to complete the VM configuration"
 echo ""
-scp .build/{netsetup.sh,hosts.txt} root@$3:
-
-#echo ""
-#echo "scp .build/host.txt root@$3:host.txt"
-#echo ""
-
-#scp .build/host.txt root@$3:host.txt
-
-#echo ""
-#echo "scp .build/tcp1.json root@$3:tcp1.json"
-#echo ""
-
-#scp .build/tcp1.json root@$3:tcp1.json
 
