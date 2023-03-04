@@ -16,7 +16,7 @@ HOSTID="4e16bbb4-097f-44be-8c7f-77d8b4fc9f39"
 #This HostNQN appears in the tcp.json file
 HOSTNQN="nqn.2014-08.org.nvmexpress:uuid:f8131bac-cdef-4165-866b-5998c1e67890"
 #This is the Subsystem NQN for the tcp.json file
-SUBNQN="nqn.2014-08.org.nvmexpress:uuid:0c468c4d-a385-47e0-8299-6e95051277db.subsys"
+SUBNQN="nqn.2014-08.org.nvmexpress:uuid:0c468c4d-a385-47e0-8299-6e95051277db"
 NSNGUID="ace42e00-1510-2fce-2ee4-ac0000000001"
 NSUUID="bee9c2b7-1761-44b5-a4e6-0f690498a94b"
 
@@ -26,19 +26,17 @@ create_nvme_target_config() {
 }
 
 add_target_netsetup() {
+    rm -f .build/netsetup.sh
     cat << EOF >> .build/netsetup.sh
 
 dnf copr enable -y johnmeneghini/timberland-sig
-dnf install -y git tar vim nvme-cli nvmetcli
+dnf install -y git tar vim nvme-cli
 
-echo "$TARGETNQN" > /etc/nvme/hostnqn
-echo "$TARGETID" > /etc/nvme/hostid
+echo "$HOSTNQN" > /etc/nvme/hostnqn
+echo "$HOSTID" > /etc/nvme/hostid
 
 modprobe nvme_fabrics
-modprobe nvmet_tcp
-nvmetcli restore tcp.json
-dmesg | grep nvmet
-service firewalld stop
+modprobe nvme_tcp
 
 EOF
 }

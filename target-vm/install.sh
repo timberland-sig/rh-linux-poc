@@ -15,6 +15,7 @@ BRIDGE=none
 SN1=0
 SN2=0
 QARGS=""
+ISO_FILE=""
 
 create_install_startup() {
 	rm -rf .build
@@ -24,7 +25,7 @@ create_install_startup() {
 
 	cat << EOF >> .build/install.sh
 #!/bin/bash
-$QEMU -name $VMNAME --enable-kvm -bios $DIR/../OVMF/OVMF-pure-efi.fd -cpu host -m 4G -smp 4 $QARGS \
+$QEMU -name $VMNAME -M q35 -accel kvm -bios OVMF-pure-efi.fd -cpu host -m 4G -smp 4 $QARGS \
 -cdrom $ISO_FILE \
 -device nvme,drive=NVME1,max_ioqpairs=4,physical_block_size=4096,logical_block_size=4096,use-intel-id=on,serial=$SN1 \
 -drive file=disks/boot.qcow2,if=none,id=NVME1 \
@@ -35,7 +36,7 @@ EOF
 	echo "creating .build/start.sh"
 	cat << EOF >> .build/start.sh
 #!/bin/bash
-$QEMU -name $VMNAME --enable-kvm -bios $DIR/../OVMF/OVMF-pure-efi.fd -cpu host -m 4G -smp 4 -boot menu=on $QARGS \
+$QEMU -name $VMNAME -M q35 -accel kvm -bios OVMF-pure-efi.fd -cpu host -m 4G -smp 4 -boot menu=on $QARGS \
 -device nvme,drive=NVME1,max_ioqpairs=4,physical_block_size=4096,logical_block_size=4096,use-intel-id=on,serial=$SN1 \
 -drive file=disks/boot.qcow2,if=none,id=NVME1 \
 -device nvme,drive=NVME2,max_ioqpairs=4,physical_block_size=4096,logical_block_size=4096,use-intel-id=on,serial=$SN2 \
@@ -52,9 +53,15 @@ EOF
 
 rm -f .qargs
 
-check_install_args $# $1 "$2"
-
-ISO_FILE="$1"
+ISO_FILE=$(find ../ -name boot.iso -print)
+if [ -z "$ISO_FILE" ]; then
+    check_install_args $# $1 "$2"
+    ISO_FILE="$1"
+else
+    ISO_FILE=$(realpath $ISO_FILE)
+    echo "using $ISO_FILE"
+    check_install_args $# $ISO_FILE "$2"
+fi
 
 create_mac_addresses
 

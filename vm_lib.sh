@@ -2,6 +2,21 @@
 # SPDX-License-Identifier: GPL-3.0+
 # Copyright (C) 2023 John Meneghini <jmeneghi@redhat.com> All rights reserved.
 
+display_host_install_help() {
+  echo " Usage: install.sh <\"qemu_args\">"
+  echo " "
+  echo " Installs a QEMU VM named $VMNAME"
+  echo " "
+  echo " Note: if no qemu argument is needed pass \"\""
+  echo ""
+  echo "   E.g.:"
+  echo "          $0 \"\""
+  echo "          $0 \"-vnc :1\""
+  echo "          $0 \"-m 1G\""
+  echo " "
+}
+
+
 display_install_help() {
   echo " Usage: install.sh <iso_file> [\"qemu_args\"]"
   echo " "
@@ -9,11 +24,14 @@ display_install_help() {
   echo " in $PWD using the installation ISO provided in <iso_file>"
   echo " "
   echo " Note: iso_file must be contain the full iso file location"
+  echo " Note: pass iso_file \"\" to use the default"
   echo ""
   echo "   E.g.:"
+  echo "          $0 \"\""
+  echo "          $0 \"\" \"-vnc :0\""
   echo "          $0 /root/rh-linux-poc/images/boot.iso \"-vnc :0\""
-  echo "          $0 /home/jmeneghi/rh-linux-poc/ISO/Fedora-Server-dvd-x86_64-37-1.7.iso \"-vnc :0 -m 1G\""
-  echo "          $0 /home/jmeneghi/rh-linux-poc/lorax_results/images/boot.iso"
+  echo "          $0 /home/jmeneghi/rh-linux-poc/lorax_results/mages/boot.iso"
+  echo "          $0 /data/jmeneghi/ISO/Fedora-Server-dvd-x86_64-37-1.7.iso \"-m 1G\""
   echo " "
 }
 
@@ -68,6 +86,36 @@ check_qemu_command() {
     else
             BRIDGE="/usr/libexec/qemu-bridge-helper"
     fi
+}
+
+check_host_depends() {
+    if [ ! -f efi/NvmeOfCli.efi ]; then
+        echo "Error: $PWD/efi/NvmeOfCli.efi not found!"
+        exit 1
+    fi
+
+    if [ ! -f vm_vars.fd ]; then
+        echo "Error: $PWD/vm_vars.fd not found!"
+        exit 1
+    fi
+
+    if [ ! -f OVMF_CODE.fd ]; then
+        echo "Error: $PWD/OVMF_CODE.fd not found!"
+        exit 1
+    fi
+}
+
+check_host_install_args() {
+    if [ $1 -lt 1 ] ; then
+        display_host_install_help
+        exit 1
+    fi
+
+    QARGS="$2"
+
+    check_qemu_command
+
+    check_host_depends
 }
 
 check_install_args() {

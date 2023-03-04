@@ -1,0 +1,17 @@
+HostNqn:nqn.2014-08.org.nvmexpress:uuid:f8131bac-cdef-4165-866b-5998c1e67890
+HostId:4e16bbb4-097f-44be-8c7f-77d8b4fc9f39
+$Start
+AttemptName:Attempt1
+HostName:host-vm
+MacString:53:64:74:01:01:30
+TargetPort:4420
+Enabled:1
+IpMode:0
+LocalIp:192.168.101.30
+SubnetMask:255.255.255.0
+Gateway:192.168.101.1
+TargetIp:192.168.101.20
+NQN:nqn.2014-08.org.nvmexpress:uuid:0c468c4d-a385-47e0-8299-6e95051277db
+ConnectTimeout:6000
+DnsMode:FALSE
+$End
