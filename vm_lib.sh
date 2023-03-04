@@ -5,7 +5,7 @@
 display_host_install_help() {
   echo " Usage: install.sh <\"qemu_args\">"
   echo " "
-  echo " Installs a QEMU VM named $VMNAME"
+  echo " Creates qcow2 disk files and installs a QEMU VM named $VMNAME"
   echo " "
   echo " Note: if no qemu argument is needed pass \"\""
   echo ""
@@ -15,7 +15,6 @@ display_host_install_help() {
   echo "          $0 \"-m 1G\""
   echo " "
 }
-
 
 display_install_help() {
   echo " Usage: install.sh <iso_file> [\"qemu_args\"]"
@@ -52,9 +51,9 @@ create_mac_addresses() {
                         MAC3="52:63:73:01:02:20"
                         ;;
                 host-vm)
-                        MAC1="53:63:73:01:13:01"
-                        MAC2="53:64:74:01:01:30"
-                        MAC3="53:65:75:01:02:30"
+                        MAC1="53:61:71:01:14:01"
+                        MAC2="53:62:72:01:01:30"
+                        MAC3="53:63:73:01:02:30"
                         ;;
                 *)
 						echo " Error: $VMNAME - not found!"
@@ -116,6 +115,10 @@ check_host_install_args() {
     check_qemu_command
 
     check_host_depends
+
+    SN1=$(hexdump -vn8 -e'4/4 "%08X" 1 "\n"' /dev/urandom)
+    SN2=$(hexdump -vn8 -e'4/4 "%08X" 1 "\n"' /dev/urandom)
+
 }
 
 check_install_args() {
