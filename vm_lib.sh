@@ -46,14 +46,14 @@ display_mac_help() {
 create_mac_addresses() {
         case "$VMNAME" in
                 target-vm)
-                        MAC1="52:61:71:01:13:01"
-                        MAC2="52:62:72:01:01:20"
-                        MAC3="52:63:73:01:02:20"
+                        MAC1="CA:4B:D6:8D:94:01"
+                        MAC2="EA:EB:D3:56:89:56"
+                        MAC3="EA:EB:D3:57:89:57"
                         ;;
                 host-vm)
-                        MAC1="53:61:71:01:14:01"
-                        MAC2="53:62:72:01:01:30"
-                        MAC3="53:63:73:01:02:30"
+                        MAC1="CA:4B:D6:8E:94:01"
+                        MAC2="EA:EB:D3:58:89:58"
+                        MAC3="EA:EB:D3:59:89:59"
                         ;;
                 *)
 						echo " Error: $VMNAME - not found!"

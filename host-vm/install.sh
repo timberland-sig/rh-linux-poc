@@ -40,25 +40,19 @@ EOF
 	echo " creating .build/install.sh"
 	cat << EOF >> .build/install.sh
 #!/bin/bash
-$QEMU -name $VMNAME -M q35 -accel kvm -bios OVMF-pure-efi.fd -cpu host -m 4G -smp 4 $QARGS \
--cdrom $ISO_FILE \
--device nvme,drive=NVME1,max_ioqpairs=4,physical_block_size=4096,logical_block_size=4096,use-intel-id=on,serial=$SN1 \
--drive file=disks/boot.qcow2,if=none,id=NVME1 \
--netdev bridge,br=br0,id=net0,helper=$BRIDGE \
--device virtio-net-pci,netdev=net0,mac=$MAC1 
-EOF
-	echo " creating .build/install_save.sh"
-	cat << EOF >> .build/install_save.sh
-#!/bin/bash
 $QEMU -name $VMNAME -M q35 -accel kvm -cpu host -m 4G -smp 4 $QARGS \
 -cdrom $ISO_FILE \
--device nvme,drive=NVME1,max_ioqpairs=4,physical_block_size=4096,logical_block_size=4096,use-intel-id=on,serial=$SN1 \
--drive file=disks/boot.qcow2,if=none,id=NVME1 \
+-device nvme,drive=NVME1,max_ioqpairs=4,physical_block_size=4096,logical_block_size=4096,use-intel-id=on,serial=CCF091CE810DE6F1 \
+-drive file=$BOOT_DISK,if=none,id=NVME1 \
 -device virtio-rng -boot menu=on,splash-time=2000 \
 -drive if=pflash,format=raw,readonly=on,file=OVMF_CODE.fd \
 -drive if=pflash,format=raw,file=vm_vars.fd \
 -netdev bridge,br=br0,id=net0,helper=$BRIDGE \
--device virtio-net-pci,netdev=net0,mac=$MAC1 
+-device virtio-net-pci,netdev=net0,mac=$MAC1 \
+-netdev bridge,br=virbr1,id=net1,helper=$BRIDGE \
+-device virtio-net-pci,netdev=net1,mac=$MAC2 \
+-netdev bridge,br=virbr2,id=net2,helper=$BRIDGE \
+-device virtio-net-pci,netdev=net2,mac=$MAC3 
 EOF
 	echo " creating .build/start.sh"
 	cat << EOF >> .build/start.sh
@@ -83,19 +77,25 @@ check_host_install_args $# "$1"
 
 ISO_FILE=$(find ../ -name boot.iso -print)
 if [ -z "$ISO_FILE" ]; then
-	echo " Error: lorax_results/images/boot.iso not found."
-	echo " run setup.sh iso."
+	echo " Error: lorax_results/images/boot.iso not found"
+	echo " run setup.sh iso"
 	exit 1
 else
     ISO_FILE=$(realpath $ISO_FILE)
     echo "using $ISO_FILE"
 fi
 
+BOOT_DISK=$(find ../target-vm/ -name nvme2.qcow2 -print)
+if [ -z "$ISO_FILE" ]; then
+	echo " Error: target-vm/disks/nvme2.qcow2 not found"
+	echo " run cd ../target-vm; ./install.sh"
+	exit 1
+else
+    BOOT_DISK=$(realpath $BOOT_DISK)
+    echo "using $BOOT_DISK"
+fi
+
 create_mac_addresses
-
-create_disks
-
-rm -f disks/nvme2.qcow2
 
 create_install_startup
 
