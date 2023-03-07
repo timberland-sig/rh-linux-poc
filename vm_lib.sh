@@ -62,16 +62,14 @@ create_mac_addresses() {
         esac
 }
 
-create_disks() {
+create_target_disk() {
         if [ ! -d disks ]; then
                 mkdir disks
         fi
 
-        echo " creating disks"
+        echo " creating target-vm disk"
         rm -f disks/boot.qcow2
-        rm -f disks/nvme2.qcow2
         qemu-img create -f qcow2 disks/boot.qcow2 50G
-        qemu-img create -f qcow2 disks/nvme2.qcow2 50G
 }
 
 create_host_disk() {
@@ -98,8 +96,8 @@ check_qemu_command() {
 }
 
 check_host_depends() {
-    if [ ! -f efi/NvmeOfCli.efi ]; then
-        echo "Error: $PWD/efi/NvmeOfCli.efi not found!"
+    if [ ! -f eficonfig/NvmeOfCli.efi ]; then
+        echo "Error: $PWD/eficonfig/NvmeOfCli.efi not found!"
         exit 1
     fi
 

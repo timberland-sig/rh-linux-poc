@@ -10,6 +10,11 @@ if [ ! -d disks ]; then
 	exit 1
 fi
 
+if [ ! -f disks/nvme2.qcow2 ]; then
+	echo "Error: $PWD/disks/nvme2.qcow2 not found!"
+	exit 1
+fi
+
 if [ ! -d .build ]; then
 	echo "Error: $PWD/.build not found!"
 	exit 1
@@ -21,8 +26,10 @@ if [ ! -f .build/start.sh ]; then
 fi
 
 if [  -f .qargs ]; then
+	QARGS="$(cat .qargs)"
+	NUM=$(echo "$QARGS" | cut -d ':' -f 2)
     echo ""
-    echo "Connect with \"vncviewer $HOST :0\""
+    echo "Connect with \"vncviewer $HOST:$NUM\""
     echo ""
 fi
 

@@ -21,8 +21,10 @@ if [ ! -f .build/start.sh ]; then
 fi
 
 if [  -f .qargs ]; then
+	QARGS="$(cat .qargs)"
+	NUM=$(echo "$QARGS" | cut -d ':' -f 2)
     echo ""
-    echo "Connect with \"vncviewer $HOST:1\""
+    echo "Connect with \"vncviewer $HOST:$NUM\""
     echo ""
 fi
 

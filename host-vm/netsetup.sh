@@ -4,12 +4,12 @@
 #
 
 DIR="$(dirname -- "$(realpath -- "$0")")"
-. $DIR/../vm_lib.sh
 . $DIR/../global_vars.sh
+. $DIR/../vm_lib.sh
 
 VMNAME=`basename $PWD`
 TESTUSR="$USER"
-HOST-EFI-DIR="$PWD"
+HOSTEFIDIR="$PWD"
 
 add_host_netsetup() {
     cat << EOF >> .build/netsetup.sh
@@ -17,7 +17,7 @@ add_host_netsetup() {
 dnf copr enable -y $COPR_USER/$COPR_PROJECT
 dnf install -y git tar vim nvme-cli
 dnf update -y dracut
-dnf update -y dracut-network
+dnf install -y dracut-network
 
 echo "$HOSTNQN" > /etc/nvme/hostnqn
 echo "$HOSTID" > /etc/nvme/hostid
@@ -31,7 +31,14 @@ pushd /boot
 tar cvzf ~/efi.tgz efi
 popd
 
-scp efi.tgz $TESTUSR@$host-gw:$HOST-EFI-DIR/efi.tgz
+echo ""
+echo " scp the efi.tgz file to the hypervisor host"
+scp efi.tgz $TESTUSR@host-gw:$HOSTEFIDIR/efi.tgz
+
+echo ""
+echo " Please shutdown this VM and run the \"./create_efidisk.sh\" script."
+#echo " Please shutdown this VM and run the \"target-vm/start.sh\" script."
+echo ""
 
 EOF
 }
@@ -46,6 +53,8 @@ create_hosts_file "$3"
 
 chmod 775 .build/netsetup.sh
 chmod 775 .build/hosts.txt
+
+rm -rf efi efi.tgz
 
 echo ""
 echo " scp  .build/{netsetup.sh,hosts.txt} root@$3:"

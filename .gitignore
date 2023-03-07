@@ -21,6 +21,8 @@ edk2/*
 lorax_results/*
 mock_result/*
 ISO/*
-*/efi/NvmeOfCli.efi
+*/efi
 */OVMF_CODE.fd
 */vm_vars.fd
+host-vm/eficonfig/NvmeOfCli.efi
+*/efi.tgz
