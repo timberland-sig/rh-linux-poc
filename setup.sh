@@ -4,6 +4,7 @@
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 #echo "DIR = $DIR"
+. $DIR/global_vars.sh
 
 # Configuraiton
 NOOP=0
@@ -15,7 +16,6 @@ RPM_VERSIONS="fedora-36|fedora-37|fedora-38|centos-stream-9|opensuse-tumbleweed"
 RH_VERSIONS="fedora-36|fedora-37|fedora-38|centos-stream-9"
 ISO_VERSIONS="fedora-36|fedora-37|fedora-38"
 MOCK_VERSION=fedora-36-x86_64
-COPR_PROJECT=timberland-sig
 
 display_help() {
         echo
@@ -222,10 +222,10 @@ install_edk2() {
     build -t GCC5 -a X64 -p OvmfPkg/OvmfPkgX64.dsc
     rm -f  $DIR/host-vm/OVMF_CODE.fd
     rm -f  $DIR/host-vm/vm_vars.fd
-    rm -f  $DIR/host-vm/efi/NvmeOfCli.efi
+    rm -f  $DIR/host-vm/eficonfig/NvmeOfCli.efi
     cp Build/OvmfX64/DEBUG_GCC5/FV/OVMF_CODE.fd $DIR/host-vm/OVMF_CODE.fd
     cp Build/OvmfX64/DEBUG_GCC5/FV/OVMF_VARS.fd $DIR/host-vm/vm_vars.fd
-    cp Build/OvmfX64/DEBUG_GCC5/X64/NvmeOfCli.efi $DIR/host-vm/efi/NvmeOfCli.efi
+    cp Build/OvmfX64/DEBUG_GCC5/X64/NvmeOfCli.efi $DIR/host-vm/eficonfig/NvmeOfCli.efi
     popd
 }
 

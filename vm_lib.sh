@@ -12,7 +12,6 @@ display_host_install_help() {
   echo "   E.g.:"
   echo "          $0 \"\""
   echo "          $0 \"-vnc :1\""
-  echo "          $0 \"-m 1G\""
   echo " "
 }
 
@@ -30,7 +29,7 @@ display_install_help() {
   echo "          $0 \"\" \"-vnc :0\""
   echo "          $0 /root/rh-linux-poc/images/boot.iso \"-vnc :0\""
   echo "          $0 /home/jmeneghi/rh-linux-poc/lorax_results/mages/boot.iso"
-  echo "          $0 /data/jmeneghi/ISO/Fedora-Server-dvd-x86_64-37-1.7.iso \"-m 1G\""
+  echo "          $0 /data/jmeneghi/ISO/Fedora-Server-dvd-x86_64-37-1.7.iso"
   echo " "
 }
 
@@ -75,6 +74,17 @@ create_disks() {
         qemu-img create -f qcow2 disks/nvme2.qcow2 50G
 }
 
+create_host_disk() {
+        if [ ! -d disks ]; then
+                mkdir disks
+        fi
+
+        echo " creating host-vm disk"
+        rm -f disks/nvme2.qcow2
+        qemu-img create -f qcow2 disks/nvme2.qcow2 50G
+}
+
+
 check_qemu_command() {
     command -v qemu-system-x86_64
     if [ $? -ne 0 ]; then echo " qemu-system-x86_64 is not installed"; exit 1; fi
@@ -116,9 +126,6 @@ check_host_install_args() {
 
     check_host_depends
 
-    SN1=$(hexdump -vn8 -e'4/4 "%08X" 1 "\n"' /dev/urandom)
-    SN2=$(hexdump -vn8 -e'4/4 "%08X" 1 "\n"' /dev/urandom)
-
 }
 
 check_install_args() {
@@ -137,9 +144,6 @@ check_install_args() {
     fi
 
     check_qemu_command
-
-    SN1=$(hexdump -vn8 -e'4/4 "%08X" 1 "\n"' /dev/urandom)
-    SN2=$(hexdump -vn8 -e'4/4 "%08X" 1 "\n"' /dev/urandom)
 }
 
 display_netsetup_help() {

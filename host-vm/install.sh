@@ -112,9 +112,9 @@ fi
 echo ""
 echo " Be sure to create the root account with ssh access."
 echo " Reboot to complete the install and login to the root account."
-echo " Record the host interface name and ip address with \"ip -br address show\" command and shutdown."
+echo " Record the host interface name and ip address with \"ip -br address show\" command."
 echo ""
-#echo " Next step will be to start the vm with the \"./start.sh\" script."
-#echo ""
+echo " Next step will be to the \"./netconfig.sh\" script."
+echo ""
 
-bash .build/install.sh
+bash .build/install.sh &
