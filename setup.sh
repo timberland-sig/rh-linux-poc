@@ -60,7 +60,7 @@ install_user() {
     echo " : Installing user environment"
 
     if [ ! -f .usr ]; then
-        sudo dnf install -y --skip-broken vim git tar gpg wget ethtool pciutils net-tools
+        sudo dnf install -y --skip-broken vim git tar gpg wget ethtool pciutils net-tools copr-cli
         touch .usr
     fi
 
@@ -189,8 +189,7 @@ build_libnvme_rpms() {
 }
 
 create_copr_project() {
-#    copr-cli delete $COPR_PROJECT
-    echo "Create copr $COPR_PROJECT project. NOTE: you must disable \"Follow Fedora branching\" manually"
+    echo "Create copr $COPR_PROJECT project."
     copr-cli create --chroot centos-stream-9-x86_64 --chroot fedora-38-x86_64 --chroot fedora-37-x86_64 --chroot fedora-36-x86_64 \
     --description "Timberland-sig NVMe/TCP Boot support" \
     --instructions "File bugs and propose patches at https://github.com/timberland-sig" \
@@ -239,7 +238,7 @@ install_pkgs() {
             net-tools wget bison acpica-tools binutils gcc gcc-c++ git meson cmake dbus-devel libuuid libuuid-devel \
             json-c-devel json-c json-c-doc clang openssl kmod-devel \
             python3-sphinx python3-sphinx_rtd_theme swig \
-            systemd-devel copr-cli mock lorax
+            systemd-devel mock lorax
 
         sudo usermod -a -G mock $USER
         touch .pkgs

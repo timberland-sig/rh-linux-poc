@@ -90,7 +90,7 @@ chmod 755 .build/install.sh
 chmod 755 .build/start.sh
 
 if [ ! -z "${QARGS}" ]; then
-	echo "$QRGS" > .qargs
+	echo "$QARGS" > .qargs
 	NUM=$(echo "$QARGS" | cut -d ':' -f 2)
 	echo ""
 	echo "Connect with \"vncviewer $HOST:$NUM\""
@@ -101,7 +101,7 @@ echo " Be sure to create the root account with ssh access."
 echo " Reboot to complete the install and login to the root account."
 echo " Record the host interface name and ip address with \"ip -br address show\" command."
 echo ""
-echo " Next step will be to the \"./netconfig.sh\" script."
+echo " Next step will be to the \"./netsetup.sh\" script."
 echo ""
 
 bash .build/install.sh &

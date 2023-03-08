@@ -18,6 +18,7 @@ cscope.*
 .pkgs
 .usr
 edk2/*
+lorax/*
 lorax_results/*
 mock_result/*
 ISO/*

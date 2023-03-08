@@ -75,7 +75,7 @@ fi
 echo ""
 echo " Be sure to create the root account with ssh access."
 echo " Reboot to complete the install and login to the root account."
-echo " Then \"shutdown -h now\" the VM.
+echo " Then \"shutdown -h now\" the VM."
 echo ""
 echo " Next step will be restart the VM with \"./start.sh\" script."
 echo ""
