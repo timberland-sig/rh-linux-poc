@@ -177,13 +177,13 @@ install_network() {
 
     nmcli dev show virbr1 &>/dev/null
     if [ $? -ne 0 ]; then
-        sudo nmcli conn add type bridge ifname virbr1 con-name virbr1 stp yes ipv4.addresses 192.168.101.1/24 ipv4.method manual ipv6.method shared
+        sudo nmcli conn add type bridge ifname virbr1 con-name virbr1 stp yes ipv4.addresses $HOSTGW_CIDR2 ipv4.method manual ipv6.method shared
         ip -h -c -o -br address show virbr1
     fi
 
     nmcli dev show virbr2 &>/dev/null
     if [ $? -ne 0 ]; then
-        sudo nmcli conn add ifname virbr2 type bridge con-name virbr2 stp yes ipv4.addresses 192.168.110.1/24 ipv4.method manual ipv6.method shared
+        sudo nmcli conn add ifname virbr2 type bridge con-name virbr2 stp yes ipv4.addresses $HOSTGW_CIDR3 ipv4.method manual ipv6.method shared
         ip -h -c -o -br address show virbr2
     fi
 }
