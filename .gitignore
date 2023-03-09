@@ -17,6 +17,7 @@ cscope.*
 .edk2pkgs
 .pkgs
 .usr
+.macaddr
 edk2/*
 lorax/*
 lorax_results/*

@@ -47,6 +47,7 @@ create_copy_efi() {
     rm -f efi.tgz
 
     cat << EOF >> copy_efi.sh
+#!/bin/bash
 rm -f efi.tgz
 
 echo ""
@@ -60,6 +61,17 @@ echo ""
 EOF
 }
 
+create_discover_target() {
+    cat << EOF >> discovery_target.sh
+#!/bin/bash
+sudo modprobe nvme_fabrics
+sudo modprobe nvme_tcp
+sudo nvme discover --hostnqn=$HOSTNQN --transport=tcp --traddr=$TARGET_IP2 --trsvcid=4420
+EOF
+}
+
+
+$TARGET_IP2
 check_netsetup_args $#
 
 create_netsetup "$1" "$2" "$3"
@@ -70,9 +82,12 @@ create_hosts_file "$3"
 
 create_copy_efi "$3"
 
-chmod 775 copy_efi.sh
-chmod 775 .build/netsetup.sh
-chmod 775 .build/hosts.txt
+create_discover_target
+
+chmod 755 copy_efi.sh
+chmod 755 discover_target.sh
+chmod 755 .build/netsetup.sh
+chmod 755 .build/hosts.txt
 
 rm -rf efi efi.tgz
 

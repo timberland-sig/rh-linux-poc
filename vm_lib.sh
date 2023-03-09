@@ -2,6 +2,8 @@
 # SPDX-License-Identifier: GPL-3.0+
 # Copyright (C) 2023 John Meneghini <jmeneghi@redhat.com> All rights reserved.
 
+# NOTE: caller must include global_vars.sh before including this file.
+
 display_host_install_help() {
   echo " Usage: install.sh <\"qemu_args\">"
   echo " "
@@ -21,14 +23,13 @@ display_install_help() {
   echo " Creates qcow2 disk files and installs a QEMU VM named $VMNAME"
   echo " in $PWD using the installation ISO provided in <iso_file>"
   echo " "
-  echo " Note: iso_file must be contain the full iso file location"
-  echo " Note: pass iso_file \"\" to use the default"
+  echo " Note: the <iso_file> must be contain the full iso file location"
+  echo " Note: pass \"\" in <iso_file> to use the default"
   echo ""
   echo "   E.g.:"
   echo "          $0 \"\""
   echo "          $0 \"\" \"-vnc :0\""
   echo "          $0 /root/rh-linux-poc/images/boot.iso \"-vnc :0\""
-  echo "          $0 /home/jmeneghi/rh-linux-poc/lorax_results/mages/boot.iso"
   echo "          $0 /data/jmeneghi/ISO/Fedora-Server-dvd-x86_64-37-1.7.iso"
   echo " "
 }
@@ -45,17 +46,17 @@ display_mac_help() {
 create_mac_addresses() {
         case "$VMNAME" in
                 target-vm)
-                        MAC1="CA:4B:D6:8D:94:01"
-                        MAC2="EA:EB:D3:56:89:56"
-                        MAC3="EA:EB:D3:57:89:57"
+                        MAC1="$TARGET_MAC1"
+                        MAC2="$TARGET_MAC2"
+                        MAC3="$TARGET_MAC3"
                         ;;
                 host-vm)
-                        MAC1="CA:4B:D6:8E:94:01"
-                        MAC2="EA:EB:D3:58:89:58"
-                        MAC3="EA:EB:D3:59:89:59"
+                        MAC1="$HOST_MAC1"
+                        MAC2="$HOST_MAC2"
+                        MAC3="$HOST_MAC3"
                         ;;
                 *)
-						echo " Error: $VMNAME - not found!"
+			echo " Error: $VMNAME - not found!"
                         display_mac_help >&2
                         exit 1
                         ;;
@@ -173,25 +174,25 @@ check_netsetup_args() {
 }
 
 create_ip_gw() {
-    IP2GW="192.168.101.1/24"
-    IP3GW="192.168.110.1/24"
+    IP2GW="$HOSTGW_CIDR2"
+    IP3GW="$HOSTGW_CIDR3"
 }
 
 create_ip_addresses() {
         case "$VMNAME" in
                 target-vm)
-						IP2="192.168.101.20/24"
-						IP3="192.168.110.20/24"
-                        ;;
+		IP2="$TARGET_CIDR2"
+		IP3="$TARGET_CIDR3"
+                ;;
                 host-vm)
-						IP2="192.168.101.30/24"
-						IP3="192.168.110.30/24"
-                        ;;
+		IP2="$HOST_CIDR2"
+		IP3="$HOST_CIDR3"
+                ;;
                 *)
-						echo "Error: $VMNAME - not found!"
-                        display_netsetup_help >&2
-                        exit 1
-                        ;;
+                echo "Error: $VMNAME - not found!"
+                display_netsetup_help >&2
+                exit 1
+                ;;
         esac
 }
 
@@ -207,12 +208,12 @@ create_hosts_file() {
 
 	cat << EOF >> .build/hosts.txt
 
-192.168.101.1    host-gw-br2
-192.168.110.1    host-gw-br3
-192.168.101.20   target-vm-br2
-192.168.110.20   target-vm-br3
-192.168.101.30   host-vm-br2
-192.168.110.30   host-vm-br3
+$HOSTGW_IP2    host-gw-br2
+$HOSTGW_IP3    host-gw-br3
+$TARGET_IP2  target-vm-br2
+$TARGET_IP3  target-vm-br3
+$HOST_IP2   host-vm-br2
+$HOST_IP3   host-vm-br3
 
 $TARGET_ADDR    $VMNAME
 $HOST_GW_ADDR   host-gw

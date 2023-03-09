@@ -60,34 +60,63 @@ install_user() {
     echo " : Installing user environment"
 
     if [ ! -f .usr ]; then
-        sudo dnf install -y --skip-broken vim git tar gpg wget ethtool pciutils net-tools copr-cli
+
+        sudo dnf install -y --skip-broken vim git tar gpg wget ethtool pciutils net-tools copr-cli nvme-cli
+
+        if [ ! -f ~/.gitconfig ]; then
+            echo " : You must setup ~/.gitconfig"
+            exit 1
+        fi
+
+        if [ ! -d ~/.ssh ]; then
+            echo " : You must setup setup ~/.ssh"
+            exit 1
+        else
+            ssh -o StrictHostKeyChecking=no -T git@github.com
+            if [ $? -ne 1 ]; then
+                echo " : You must setup your ssh key for github.com"
+                exit 1
+            fi
+        fi
+
+        if [ ! -f ~/.config/copr ]; then
+            echo " : You must setup setup ~/.config/copr"
+            exit 1
+        fi
+
+        FOO="$(copr-cli whoami)"
+        if [ -z "$FOO" ]; then
+            echo " : No copr user found! "
+            exit 1
+        else
+            sed -i "s/^COPR_USER.*/COPR_USER\=$FOO/" global_vars.sh
+        fi
+
+        FOO="$(copr-cli list | grep "Name..$COPR_PROJECT")"
+        if [ -z "$FOO" ]; then
+            create_copr_project
+        fi
+
         touch .usr
     fi
 
-    if [ ! -f ~/.gitconfig ]; then
-        echo " : You must setup ~/.gitconfig"
-        exit 1
-    fi
-
-    if [ ! -d ~/.ssh ]; then
-        echo " : You must setup setup ~/.ssh"
-        exit 1
-    else
-        ssh -o StrictHostKeyChecking=no -T git@github.com
-        if [ $? -ne 1 ]; then
-            echo " : You must setup your ssh key for github.com"
+    if [ ! -f .macaddr ]; then
+        FOO="$(./gen_macaddr.py)"
+        if [ -z "$FOO" ]; then
+            echo " : gen_macaddr.py failed! "
             exit 1
+        else
+            sed -i "s/^TARGET_MAC1.*/TARGET_MAC1\=$FOO/" global_vars.sh
         fi
-    fi
+        FOO="$(./gen_macaddr.py)"
+        if [ -z "$FOO" ]; then
+            echo " : gen_macaddr.py failed! "
+            exit 1
+        else
+            sed -i "s/^HOST_MAC1.*/HOST_MAC1\=$FOO/" global_vars.sh
+        fi
 
-    if [ ! -f ~/.config/copr ]; then
-        echo " : You must setup setup ~/.config/copr"
-        exit 1
-    fi
-
-    FOO="$(copr-cli list | grep "Name..$COPR_PROJECT")"
-    if [ -z "$FOO" ]; then
-        create_copr_project
+        touch .macaddr
     fi
 
     git submodule update --init --recursive
