@@ -62,7 +62,7 @@ EOF
 }
 
 create_discover_target() {
-    cat << EOF >> discovery_target.sh
+    cat << EOF >> discover_target.sh
 #!/bin/bash
 sudo modprobe nvme_fabrics
 sudo modprobe nvme_tcp
@@ -70,8 +70,6 @@ sudo nvme discover --hostnqn=$HOSTNQN --transport=tcp --traddr=$TARGET_IP2 --trs
 EOF
 }
 
-
-$TARGET_IP2
 check_netsetup_args $#
 
 create_netsetup "$1" "$2" "$3"

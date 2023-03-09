@@ -29,4 +29,5 @@ ISO/*
 host-vm/eficonfig/NvmeOfCli.efi
 */efi.tgz
 host-vm/copy_efi.sh
+host-vm/discover_target.sh
 host-vm/eficonfig/config
