@@ -66,7 +66,7 @@ chmod 755 .build/install.sh
 chmod 755 .build/start.sh
 
 if [ ! -z "${QARGS}" ]; then
-	echo "$QRGS" > .qargs
+	echo "$QARGS" > .qargs
 	NUM=$(echo "$QARGS" | cut -d ':' -f 2)
 	echo ""
 	echo "Connect with \"vncviewer $HOST:$NUM\""
