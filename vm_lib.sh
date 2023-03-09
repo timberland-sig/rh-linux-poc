@@ -160,7 +160,8 @@ display_netsetup_help() {
   echo " These valuse are obtains from \"ip -br address show\" after booting $VMNAME the first time"
   echo " "
   echo "   E.g.:"
-  echo "          $0 ens6 ens7 192.168.0.154"
+  echo "          $0 enp0s5 enp0s6 192.168.0.63"
+  echo "          $0 enp0s5 enp0s6 10.16.188.66"
   echo " "
 }
 

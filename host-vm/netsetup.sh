@@ -33,13 +33,30 @@ popd
 
 echo ""
 echo " scp the efi.tgz file to the hypervisor host"
-scp efi.tgz $TESTUSR@host-gw:$HOSTEFIDIR/efi.tgz
+scp -o StrictHostKeyChecking=no efi.tgz $TESTUSR@host-gw:$HOSTEFIDIR/efi.tgz
 
 echo ""
 echo " Please shutdown this VM and run the \"./create_efidisk.sh\" script."
 #echo " Please shutdown this VM and run the \"target-vm/start.sh\" script."
 echo ""
 
+EOF
+}
+
+create_copy_efi() {
+    rm -f efi.tgz
+
+    cat << EOF >> copy_efi.sh
+rm -f efi.tgz
+
+echo ""
+echo "scp the efi.tgz from the host-vm at $1"
+
+scp -o StrictHostKeyChecking=no root@$1:efi.tgz .
+
+echo ""
+echo "Shutdown the host-vm and run the \"./create_efidisk.sh\" script."
+echo ""
 EOF
 }
 
@@ -51,6 +68,9 @@ add_host_netsetup
 
 create_hosts_file "$3"
 
+create_copy_efi "$3"
+
+chmod 775 copy_efi.sh
 chmod 775 .build/netsetup.sh
 chmod 775 .build/hosts.txt
 
@@ -59,7 +79,7 @@ rm -rf efi efi.tgz
 echo ""
 echo " scp  .build/{netsetup.sh,hosts.txt} root@$3:"
 echo ""
-scp .build/{netsetup.sh,hosts.txt} root@$3:
+scp -o StrictHostKeyChecking=no .build/{netsetup.sh,hosts.txt} root@$3:
 
 echo ""
 echo " Login to $VMNAME/root and run \"./netsetup.sh\" to complete the VM configuration"

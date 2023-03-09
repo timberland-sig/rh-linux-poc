@@ -25,20 +25,20 @@ This POC was developed on a [ThinkPad T Series Laptop](https://www.lenovo.com/us
 6. Run the following commands to build and install your QEMU test environment:
 
 ```
-  ./setup.sh user           # this will validate your user account - run this multiple times
-  ./setup.sh net            # this will modify your hypervisor network - run this only once
-  ./setup.sh virt           # this will install QEMU - run this only once
-  ./setup.sh build          # this will build all needed rpms and artifacts and create a bootable iso
+  ./setup.sh user             # this will validate your user account - run this multiple times
+  ./setup.sh net              # this will modify your hypervisor network - run this only once
+  ./setup.sh virt             # this will install QEMU - run this only once
+  ./setup.sh build fedora-37  # this will build all needed rpms and artifacts and create a fedora-37 bootable iso
   pushd host-vm             # you must change directories
-  ./install.sh "" "-vnc :0" # creates and installs the QEMU host-vm
-  ./netsetup.sh             # configures the QEMU host-vm
-  ./create_efidisk.sh       # creates the boot/efi partition
+  ./install.sh "" "-vnc :0"   # creates and installs the QEMU host-vm
+  ./netsetup.sh               # configures the QEMU host-vm
+  ./create_efidisk.sh         # creates the boot/efi partition
   pushd ../target-vm        # you must change directories
-  ./install.sh "-vnc :1"    # creates and installs the target-vm
-  ./start.sh                # starts the targe-vm
-  ./netsetup.sh             # configures the target-vm network
+  ./install.sh "-vnc :1"      # creates and installs the target-vm
+  ./start.sh                  # starts the targe-vm
+  ./netsetup.sh               # configures the target-vm network
   popd                      # you must change directories back to the host-vm
-  ./start.sh                # starts the host-vm with NVMe/TCP boot
+  ./start.sh                  # starts the host-vm with NVMe/TCP boot
 ```
 # How does it work:
 

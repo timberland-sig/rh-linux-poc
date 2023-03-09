@@ -69,7 +69,7 @@ chmod 775 .build/hosts.txt
 echo ""
 echo " scp  .build/{netsetup.sh,tcp-target.sh,hosts.txt,tcp.json} root@$3:"
 echo ""
-scp .build/{netsetup.sh,hosts.txt,tcp-target.sh,tcp.json} root@$3:
+scp -o StrictHostKeyChecking=no .build/{netsetup.sh,hosts.txt,tcp-target.sh,tcp.json} root@$3:
 
 echo ""
 echo " Login to $VMNAME/root and run \"./netsetup.sh\" to complete the VM configuration"

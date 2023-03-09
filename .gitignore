@@ -27,3 +27,4 @@ ISO/*
 */vm_vars.fd
 host-vm/eficonfig/NvmeOfCli.efi
 */efi.tgz
+host-vm/copy_efi.sh
