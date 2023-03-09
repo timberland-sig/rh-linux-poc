@@ -97,6 +97,8 @@ install_user() {
             create_copr_project
         fi
 
+        git update-index --assume-unchanged host-vm/efidisk
+
         touch .usr
     fi
 
