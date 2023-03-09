@@ -23,6 +23,7 @@ rm -f eficonfig/config
 cp -v eficonfig/config.in eficonfig/config
 
 sed -i "s/HOSTNQN/$HOSTNQN/" eficonfig/config
+sed -i "s/HOSTID/$HOSTID/" eficonfig/config
 sed -i "s/HOST_MAC2/$HOST_MAC2/" eficonfig/config
 sed -i "s/HOST_IP2/$HOST_IP2/" eficonfig/config
 sed -i "s/HOSTGW_IP2/$HOSTGW_IP2/" eficonfig/config

@@ -1,5 +1,5 @@
 HostNqn:HOSTNQN
-HostId:0
+HostId:HOSTID
 $Start
 AttemptName:Attempt1
 HostName:host-vm
