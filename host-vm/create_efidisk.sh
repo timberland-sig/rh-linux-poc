@@ -19,17 +19,19 @@ if [ ! -f eficonfig/NvmeOfCli.efi ]; then
 	exit 1
 fi
 
-sudo losetup -P loop1 efidisk
-
+sudo losetup -D loop1
+sudo losetup -P loop1 $PWD/efidisk
 sudo mkfs.vfat /dev/loop1p1
 sudo losetup -D loop1
+
 mkdir -p efi
-sudo mount -t vfat -o loop,offset=1048576 efidisk efi
+sudo mount -t vfat -o loop,offset=1048576 $PWD/efidisk $PWD/efi
 df efi
 sudo tar xzvf efi.tgz
-sudo cp eficonfig/* efi/EFI/BOOT
+sudo cp -v $PWD/eficonfig/* $PWD/efi/EFI/BOOT
+sudo umount $PWD/efi
+rmdir efi
 
 echo ""
-echo " Unmount the efidisk with \"sudo umount efi\" and run \"../target-vm/install.sh\" before starting the $VMNAME"
 echo " Next step will be to the to install and configure the target-vm"
 echo ""
