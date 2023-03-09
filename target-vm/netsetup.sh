@@ -11,9 +11,17 @@ VMNAME=`basename $PWD`
 
 create_nvme_target_config() {
     rm -f .build/tcp.json
+
     cp tcp.json.in .build/tcp.json
 
-    cat << EOF >> .build/tcp-target.sh
+    sed -i "s/HOSTNQN/$HOSTNQN/" .build/tcp.json
+    sed -i "s/SUBNQN/$SUBNQN/" .build/tcp.json
+    sed -i "s/TARGET_IP2/$TARGET_IP2/" .build/tcp.json
+    sed -i "s/TARGET_IP3/$TARGET_IP3/" .build/tcp.json
+    sed -i "s/NSNGUID/$NSNGUID/" .build/tcp.json
+    sed -i "s/NSUUID/$NSUUID/" .build/tcp.json
+
+    cat << EOF >> .build/start-tcp-target.sh
 #!/bin/bash
 modprobe nvme_fabrics
 modprobe nvmet_tcp
@@ -61,15 +69,15 @@ create_hosts_file "$3"
 
 create_nvme_target_config
 
-chmod 775 .build/netsetup.sh
-chmod 775 .build/tcp-target.sh
-chmod 775 .build/tcp.json
-chmod 775 .build/hosts.txt
+chmod 755 .build/netsetup.sh
+chmod 755 .build/start-tcp-target.sh
+chmod 755 .build/tcp.json
+chmod 755 .build/hosts.txt
 
 echo ""
-echo " scp  .build/{netsetup.sh,tcp-target.sh,hosts.txt,tcp.json} root@$3:"
+echo " scp  .build/{netsetup.sh,start-tcp-target.sh,hosts.txt,tcp.json} root@$3:"
 echo ""
-scp -o StrictHostKeyChecking=no .build/{netsetup.sh,hosts.txt,tcp-target.sh,tcp.json} root@$3:
+scp -o StrictHostKeyChecking=no .build/{netsetup.sh,hosts.txt,start-tcp-target.sh,tcp.json} root@$3:
 
 echo ""
 echo " Login to $VMNAME/root and run \"./netsetup.sh\" to complete the VM configuration"
