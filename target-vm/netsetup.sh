@@ -79,6 +79,7 @@ chmod 755 .build/hosts.txt
 echo ""
 echo " scp  .build/{netsetup.sh,start-tcp-target.sh,hosts.txt,tcp.json} root@$3:"
 echo ""
+ssh-keygen -R $3
 scp -o StrictHostKeyChecking=no .build/{netsetup.sh,hosts.txt,start-tcp-target.sh,tcp.json} root@$3:
 
 echo ""
