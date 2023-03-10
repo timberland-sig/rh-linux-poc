@@ -23,11 +23,12 @@ lorax/*
 lorax_results/*
 mock_result/*
 ISO/*
-*/efi
-*/OVMF_CODE.fd
-*/vm_vars.fd
+host-vm/efi
+host-vm/OVMF_CODE.fd
+host-vm/vm_vars.fd
 host-vm/eficonfig/NvmeOfCli.efi
-*/efi.tgz
-host-vm/copy_efi.sh
+host-vm/efi.tgz
 host-vm/discover_target.sh
+host-vm/copy_efi.sh
 host-vm/eficonfig/config
+host-vm/efidisk
