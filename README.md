@@ -150,13 +150,22 @@ create a root account with ssh access*.
 
 | Fedora Install Step  | Action |
 | :-----               | :----      |
-| **Select Timezone**  | Click `Done` to Continue |
-| **This is unstable, pre-released software**  |  Click `I want to procced` |
-| **Installation Destination** | Click `Done` |
+| **Select Language**  | Click `Continue` |
+| **This is unstable, pre-release software**  |  Click `I want to procced` |
+| **Installation Destination** | The disk is pre-selected.  Simply Click `Done` |
 | **Root Account** | Click `Enable root account` |
-| enter password | - [x] Allow root SSH login with password |
+| enter Root Password | - [x] Allow root SSH login with password |
+| **User Creation** | *Optional: Create a user account if wanted. All POC configuration will use the root account.* |
 | final step | Click `Begin installation` |
-| finish install | Click `Reboot System`|
+| **INSTALLATION PROGRESS** | Click `Reboot System` when done|
+| Complete the installation | It is important to wait for the VM to cleanly reboot in order to complete the installation. |
+
+After the VM reboots login to the *root* account to be sure everything is
+working. The VM should now be reachable through `enp0s4` which is the DHCP
+controlled management network on the hypervisor's *br0* bridged network;
+`enp0s5` and `enp0s6` are statically configured and unconnected. Use the `ip
+-br addr show` and `nmcli dev status` commands to see if the networks are there
+and correctly working.
 
 ## The ./netsetup.sh script
 
