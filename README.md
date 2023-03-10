@@ -6,39 +6,53 @@ This repository contains packages, scripts and instructions to assit in the set 
 2. A hardwired ethernet connection with access to a DHCP server and the public network.
 3. A recent version of CentOS Stream 9, RHEL 9 or Fedora 36/37 installed on your host - this will be your hypervisor.
 4. A user account with [git](https://git-scm.com/book/en/v2/Getting-Started-First-Time-Git-Setup) configured and root access so you can administer the hypervisor.
-5. A valid [copr](https://docs.pagure.org/copr.copr/user_documentation.html#quick-start) account, with a login. This requires a [FAS](https://accounts.fedoraproject.org/) account.
+5. A valid [copr](https://docs.pagure.org/copr.copr/user_documentation.html#quick-start) account. This requires a [FAS](https://accounts.fedoraproject.org/) account.
 6. A valid github login with a [ssh key](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/adding-a-new-ssh-key-to-your-github-account) configured
 
-*NOTE: The scripts included in this repository are all designed to be run from a user account with sudo root access. It is not advised to run these scripts on a production machine unless you know what you are doing. Some scripts will modify the configuration of your host computer with sudo access by: installing packages, creating networks, mounting and unmounting file systems and modifying some configuration settings in `/etc` and `/usr/libexec`.*
+*NOTE: The scripts included in this repository are all designed to be run from
+a user account with sudo root access. It is not advised to run these scripts on
+a production machine unless you know what you are doing. Some scripts will
+modify the configuration of your host computer with sudo access by: installing
+packages, creating networks, mounting and unmounting file systems and modifying
+some configuration settings in `/etc` and `/usr/libexec`.*
 
-This POC was developed on a [ThinkPad T Series Laptop](https://www.lenovo.com/us/en/c/laptops/thinkpad/thinkpadt) using a modified version of RHEL 8.7 with an [upstream QEMU library](https://www.qemu.org/download/) installed. Note that the QEMU version distributed with CensOS 9, RHEL 9 and RHEL 8 will not support this POC. It's best to use a current version of Fedora for a hypervisor, if possible. To run this POC on RHEL or Centos stream you must *deinstall* all libvirt and qemu related RPMs and manually compile and install an upstream version of QEMU.  QEMU version 6.0 and 7.0 are supported.
+This POC was developed on a [ThinkPad T Series
+Laptop](https://www.lenovo.com/us/en/c/laptops/thinkpad/thinkpadt) using a
+modified version of RHEL 8.7 with an [upstream QEMU
+library](https://www.qemu.org/download/) installed. Note that the QEMU version
+distributed with CensOS 9, RHEL 9 and RHEL 8 will not support this POC. It's
+best to use a current version of Fedora for a hypervisor, if possible. To run
+this POC on RHEL or Centos stream you must *deinstall* all libvirt and qemu
+related RPMs and manually compile and install an upstream version of QEMU.
+QEMU version 6.0 and 7.0 are supported.
 
-*NOTE: Currently this POC has only been tested and proven to work with Fedora 36 and Fedora 37.  Support for Centos 9 and RHEL 9 are still TBD.*
+*NOTE: Currently this POC has only been tested and proven to work with Fedora
+36 and Fedora 37.  Support for Centos 9 and RHEL 9 are still TBD.*
 
 # Quick start
 
 1. Create your user account, enable [sudo](https://developers.redhat.com/blog/2018/08/15/how-to-enable-sudo-on-rhel#:~:text=DR%3A%20Basic%20sudo-,TL%3BDR%3A%20Basic%20sudo,out%20and%20back%20in%20again) access, and configure your github [ssh-key](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/adding-a-new-ssh-key-to-your-github-account).
 2. Set up a [copr](https://docs.pagure.org/copr.copr/user_documentation.html#quick-start) user account and add [.config/copr](https://copr.fedorainfracloud.org/api/) to your user account.
-3. `git clone git@gitlab.com:johnmeneghini/rh-linux-poc.git` and `cd rh-linux-poc`.
-4. `git checkout -b MYBRANCH` to create a working branch, This is used to keep any configuration specific changes for your testbed.
-5. Edit the `global_vars.sh` file and set the `COPR_USER` variable to match your copr account (seen with `corp-cli whoami`).
+3. Clone this repository with `git clone git@gitlab.com:johnmeneghini/rh-linux-poc.git`.
+4. Create a working branch with `git checkout -b MYBRANCH`. This is needed keep configuration specific changes for your testbed.
+5. Edit *global_vars.sh* file and set the `COPR_USER` and `COPR_PROJECT` variables (c.f. `corp-cli whoami` and `corp-cli list`).
 6. Run the following commands to build and install your QEMU test environment:
 
 ```
-  ./setup.sh user             # this will validate your user account - run this multiple times
-  ./setup.sh net              # this will modify your hypervisor network - run this only once
-  ./setup.sh virt             # this will install QEMU - run this only once
-  ./setup.sh build fedora-37  # this will build all needed rpms and artifacts and create a fedora-37 bootable iso
-  pushd host-vm             # you must change directories
-  ./install.sh "" "-vnc :0"   # creates and installs the QEMU host-vm
-  ./netsetup.sh               # configures the QEMU host-vm
-  ./create_efidisk.sh         # creates the boot/efi partition
-  pushd ../target-vm        # you must change directories
-  ./install.sh "-vnc :1"      # creates and installs the target-vm
-  ./start.sh                  # starts the targe-vm
-  ./netsetup.sh               # configures the target-vm network
-  popd                      # you must change directories back to the host-vm
-  ./start.sh                  # starts the host-vm with NVMe/TCP boot
+  ./setup.sh user                # this will validate your user account - run this multiple times
+  ./setup.sh net                 # this will modify your hypervisor network - run this only once
+  ./setup.sh virt                # this will install QEMU - run this only once
+  ./setup.sh build -m fedora-37  # this will build all needed rpms and artifacts and create a fedora-37 bootable iso
+  pushd host-vm                  # you must change directories
+  ./install.sh "" "-vnc :0"      # creates and installs the QEMU host-vm
+  ./netsetup.sh                  # configures the QEMU host-vm
+  ./create_efidisk.sh            # creates the boot/efi partition
+  pushd ../target-vm             # you must change directories
+  ./install.sh "-vnc :1"         # creates and installs the target-vm
+  ./start.sh                     # starts the targe-vm
+  ./netsetup.sh                  # configures the target-vm network
+  popd                           # you must change directories back to the host-vm
+  ./start.sh                     # starts the host-vm with NVMe/TCP boot
 ```
 # How does it work:
 
@@ -66,11 +80,11 @@ firmware via the NBFT table.
 
 ## Set up your Hypervisor
 
-Run `setup.sh user` - This script will install some prerequisite rpms and
+Run `./setup.sh user` - This script will install some prerequisite rpms and
 validate that your user account is correctly configured.  If this script shows
 an error. Correct the problem and run it again.
 
-Run `setup.sh net` - This will modify your hypervisor network configuration and
+Run `./setup.sh net` - This will modify your hypervisor network configuration and
 create three bridged networks. Run this script with caution because it will
 change your network config.  You should not run this script from a remote shell
 because the 'br0' network will be disconnected and reconfigured by this script.
@@ -83,19 +97,20 @@ the bridged networks yourself, manually.`
 | `virbr1` | a virtual bridged network with the static address `192.168.101.1/24` |
 | `virbr2` | a virtual bridged network with the static address `192.168.110.1/24` |
 
-Run `setup.sh virt` - This script will install the needed qemu-kvm packages and
-change the permissions of `/etc/qemu/bridge.conf` and
+Run `./setup.sh virt` - This script will install the needed qemu-kvm packages
+and change the permissions of `/etc/qemu/bridge.conf` and
 `/usr/libexec/qemu-bridge-helper`. This will allow qemu to run from your user
 account.
 
-*Note: this only works with Fedora and should only be run with
-caution. When in doubt, install and setup qemu yourself, manually.*
+*Note: this only works with Fedora and should only be run with caution. When in
+doubt, install and setup qemu yourself, manually.*
 
-Run `setup.sh pkgs` - This script will install all needed rpms to complete your dev/test environment.
+Run `./setup.sh pkgs` - This script will install all needed rpms to complete your
+dev/test environment.
 
 ## Build all Timberland-sig artifacts
 
-Run `setup.sh build` - This script clones all of the timberland-sig
+Run `./setup.sh -m build` - This script clones all of the timberland-sig
 repositories, builds all needed artifiacts and rpms, and installs them in your
 personal copr repo. It then to creates a bootable iso image with the
 [lorax](https://weldr.io/lorax/lorax.html) uility. Artifacts and rpms are
@@ -117,81 +132,31 @@ Other directories are explained here:
 | `host-vm` | Contains the scripts and files needed to host your QEMU host virtual machine. |
 | `target-vm` | Contains the scripts and files needed to host your QEMU target virtual machine. |
 
+Proposed changes and patches should be sent to the repsective repositories at:
+https://github.com/timberland-sig
 
-Proposed changes and patches should be sent to the repsective repositories at: https://github.com/timberland-sig
+## Installing Fedora
 
-## Create the host-vm
+Each QEMU VM (*host-vm* and *target-vm*) will need to be installed as a part of
+the testbed setup.  During the installation processyou can use all of the
+defaults for installation.  The only change in defaults needs be: *be sure to
+create a root account with ssh access*.
 
-You now `cd` to the *host-vm* directory and create your host virtual machine.
+| Fedora Install Step  | Action |
+| :-----               | :----      |
+| **Select Timezone**  | Click `Done` to Continue |
+| **This is unstable, pre-released software**  |  Click `I want to procced` |
+| **Installation Destination** | Click `Done` |
+| **Root Account** | Click `Enable root account` |
+| Enter password | - [x] Allow root SSH login with password |
+| Click `Begin installation` | Click `Reboot System`|
 
-*Note that changing the specfic configuration - in terms of IP and MAC
-addresses, HOSTNQNs, etc. - is not currently supported.  A future version will
-allow these parameters to be changed by modifying the global_vars.sh file.
-The current version uses the values from this file a default setting.*
+## The ./netsetup.sh script
 
-Also note that the scripts in the *host-vm* and *target-vm* directories are
-context sensative. You can only run these scripts as: `./install.sh` or
-`./start.sh` in the directory where they exist.
-
-```
- Usage: install.sh <"qemu_args">
-
- Creates qcow2 disk files and installs a QEMU VM named host-vm
-
- Note: if no qemu argument is needed pass ""
-
-   E.g.:
-          ./install.sh ""
-          ./install.sh "-vnc :1"
-```
-
-### Step 1 ./install.sh
-
-If your hypervisor is not on a remote system, you can use `./install.sh ""`.
-Otherwise pass the `-vnc :` argment and connect to the VM console with
-`vncviewer` on your local machine. E.g:
-
-```
-rhel-storage-105:host-vm(john_fix_7) > ./install.sh "-vnc :1"
- using /home/test/rh-linux-poc/lorax_results/images/boot.iso
- creating host-vm disk
- using /home/test/rh-linux-poc/target-vm/disks/nvme2.qcow2
- creating .build/install.sh
- creating .build/start.sh
-
-Connect with "vncviewer rhel-storage-105.storage.lab.eng.bos.redhat.com:1"
-
- Be sure to create the root account with ssh access.
- Reboot to complete the install and login to the root account.
- Record the host interface name and ip address with "ip -br address show" command.
-
- Next step will be to the "./netsetup.sh" script.
-```
-
-Follow the instructions on the screen by connecting to the VM console with
-`vncviewer rhel-storage-105.storage.lab.eng.bos.redhat.com:1` and complete the
-Fedora installation. Note: You can use all of the defaults for installation.
-The only change in defaults needs be: *be sure to create a root account with
-ssh access*.
-
-1. **This is unstable, pre-released software**  - Click `I want to procced`
-2. **Installation Destination** - Click `Done`
-3. **Root Account** - Click `Enable root account` and
-- [x] Allow root SSH login with password
-4. Click `Begin installation`
-5. Click `Reboot System`
-
-After the installation reboot login to the root account on the host-vm and display the network configuration. For example:
-
-```
-[root@dhcp-189-65 ~]# ip -br addr show
-lo               UNKNOWN        127.0.0.1/8 ::1/128
-enp0s4           UP             10.16.189.65/23 2620:52:0:10bc:c84b:d6ff:fe8e:9401/64 fe80::c84b:d6ff:fe8e:9401/64
-enp0s5           UP             fe80::e8eb:d3ff:fe58:8958/64
-enp0s6           UP             fe80::e8eb:d3ff:fe59:8959/64
-```
-
-### Step 2 run ./netsetup.sh on the hypervisor
+During the installation of both QEMU VMs the `./netsetup.sh` script will be
+run.  This script is script will create a VM specific configuration file and
+`scp` it to the newly installed VM.  It is important to specify the ifname and
+ipaddr parameters correctly.
 
 ```
  Usage: netsetup.sh <ifname2> <ifname3> <ipaddr>
@@ -211,7 +176,78 @@ enp0s6           UP             fe80::e8eb:d3ff:fe59:8959/64
           ./netsetup.sh ens6 ens7 192.168.0.154
 ```
 
-The `./netsetup.sh` utility is run on the hypervisor in the *host-vm* directory.  Using the infromation from the `ip -br addr show` command on the `host-vm`, run the `./netsetup.sh` utility.
+# Step by Step Instructions
+
+## Create the host-vm
+
+You need to `cd` to the *host-vm* directory and create your host virtual machine.
+
+*Note that changing the specfic configuration - in terms of IP and MAC
+addresses, HOSTNQNs, etc. can be done by modifying the *global_vars.sh* file.*
+
+Also note that the scripts in the *host-vm* and *target-vm* directories are
+context sensative. You can only run these scripts as: `./install.sh` or
+`./start.sh` in the directory where they exist.
+
+### The host-vm ./install.sh script
+```
+ Usage: install.sh <"qemu_args">
+
+ Creates qcow2 disk files and installs a QEMU VM named host-vm
+
+ Note: if no qemu argument is needed pass ""
+
+   E.g.:
+          ./install.sh ""
+          ./install.sh "-vnc :1"
+```
+
+### Step 1 ./install.sh the host-vm
+
+If your hypervisor is not on a remote system, you can use `./install.sh ""`.
+Otherwise pass the `-vnc :` argment and connect to the VM console with
+`vncviewer` on your local machine.
+
+E.g:
+
+```
+rhel-storage-105:host-vm(john_fix_7) > ./install.sh "-vnc :1"
+ using /home/test/rh-linux-poc/lorax_results/images/boot.iso
+ creating host-vm disk
+ using /home/test/rh-linux-poc/target-vm/disks/nvme2.qcow2
+ creating .build/install.sh
+ creating .build/start.sh
+
+Connect with "vncviewer rhel-storage-105.storage.lab.eng.bos.redhat.com:1"
+
+ Be sure to create the root account with ssh access.
+ Reboot to complete the install and login to the root account.
+ Record the host interface name and ip address with "ip -br address show" command.
+
+ Next step will be to the "./netsetup.sh" script.
+```
+
+Follow the instructions on the screen by connecting to the VM console with
+`vncviewer` and complete the Fedora installation.
+
+After the installation reboot login to the root account on the host-vm and
+display the network configuration.
+
+For example:
+
+```
+[root@dhcp-189-65 ~]# ip -br addr show
+lo               UNKNOWN        127.0.0.1/8 ::1/128
+enp0s4           UP             10.16.189.65/23 2620:52:0:10bc:c84b:d6ff:fe8e:9401/64 fe80::c84b:d6ff:fe8e:9401/64
+enp0s5           UP             fe80::e8eb:d3ff:fe58:8958/64
+enp0s6           UP             fe80::e8eb:d3ff:fe59:8959/64
+```
+
+### Step 2 run ./netsetup.sh on the hypervisor
+
+The `./netsetup.sh` utility is run on the hypervisor in the *host-vm*
+directory.  Using the infromation from the `ip -br addr show` command on the
+`host-vm`, run the `./netsetup.sh` utility.
 
 For example:
 
@@ -223,20 +259,17 @@ rhel-storage-105:host-vm(john_fix_7) > ./netsetup.sh enp0s5 enp0s6 10.16.189.65
  creating .build/hosts.txt
 
  scp  .build/{netsetup.sh,hosts.txt} root@10.16.189.65:
-
-The authenticity of host '10.16.189.65 (10.16.189.65)' can't be established.
-ED25519 key fingerprint is SHA256:EwFmv5GIKAFRiz0mA4SM2T34Xk1QYMakwX9hs6v2UY4.
-This key is not known by any other names
-Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
-Warning: Permanently added '10.16.189.65' (ED25519) to the list of known hosts.
 root@10.16.189.65's password:
-netsetup.sh                                                                                                    100% 2108     3.4MB/s   00:00
-hosts.txt                                                                                                      100%  229   750.1KB/s   00:00
+netsetup.sh 100% 2108     3.4MB/s   00:00
+hosts.txt   100%  229   750.1KB/s   00:00
 
  Login to host-vm/root and run "./netsetup.sh" to complete the VM configuration
 ```
 
 ### Step 3 run ./netsetup.sh on the host-vm
+
+The newly created netsetup.sh script has been trasfered to the host-vm.  Now
+login to the root account on the host vm and run `./netconfig.sh`.
 
 ```
 [root@dhcp-189-65 ~]# ls
@@ -272,18 +305,16 @@ efi/EFI/fedora/grub.cfg.rpmsave
 efi/EFI/fedora/BOOTX64.CSV
 ~
  scp the efi.tgz file to the hypervisor host
- The authenticity of host 'host-gw (10.16.188.143)' can't be established.
-ED25519 key fingerprint is SHA256:RL36RvWuGMoiTvDjYsxCTE51TMxpWe6NAxOHjzBkr4A.
-This key is not known by any other names
-Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
-Warning: Permanently added 'host-gw' (ED25519) to the list of known hosts.
 test@host-gw's password:
-efi.tgz                                                                                                                 100% 2996KB 236.1MB/s   00:00
+efi.tgz  100% 2996KB 236.1MB/s   00:00
 
  Please shutdown this VM and run the "./create_efidisk.sh" script.
 ```
 
-What happened?  After configuring the virbr1 and virbr2 networks and installing all needed rpms the following steps are taken on the `host-vm`:
+What happened?
+
+After configuring the virbr1 and virbr2 networks and installing all needed rpms
+the following steps are taken on the `host-vm`:
 
 ```
 # Update the network configuration
@@ -333,7 +364,7 @@ sudo cp -v eficonfig/* efi/EFI/BOOT
 sudo umount efi
 ```
 
-To modify the NBFT Attempt Configuration simply edit the *eficonfig/config* config file.
+To modify the NBFT Attempt Configuration simply edit the *eficonfig/config.in* config file.
 
 ### Step 5 shutdown the host-vm
 
@@ -348,7 +379,7 @@ You must `cd ../target-vm` to run the scripts needed to start the `target-vm`.
 The `target-vm` install script is slightly different because it doesn't require
 the use of the pre-production `boot.iso`.
 
-### Step 1 install the target-vm
+### The target-vm ./install.sh script
 
 ```
  Usage: install.sh <iso_file> ["qemu_args"]
@@ -367,9 +398,13 @@ the use of the pre-production `boot.iso`.
           ./install.sh /data/jmeneghi/ISO/Fedora-Server-dvd-x86_64-37-1.7.iso
 ```
 
+### Step 1 install the target-vm
+
 By default the pre-production *boot.iso* can be used by specifying
 `./install.sh ""`. Otherwise, you'll need to download your own *.iso* file as
-shown above. E.g.:
+shown above.
+
+E.g.:
 
 ```
 rhel-storage-105:target-vm(john_fix_7) > ./install.sh "" "-vnc :0"
@@ -387,11 +422,10 @@ Connect with "vncviewer rhel-storage-105.storage.lab.eng.bos.redhat.com:0"
  Next step will be restart the VM with "./start.sh" script.
 ```
 
-Follow the instructions on the screen by connecting to the VM console with e.g.:
-`vncviewer rhel-storage-105.storage.lab.eng.bos.redhat.com:0` and complete the
-Fedora installation. Note: You can use all of the defaults for installation.
-The only change in defaults needs be: *be sure to create a root account with
-ssh access*.
+Follow the instructions on the screen by connecting to the VM console with
+`vncviewer` (if needed) complete the Fedora installation. Note: You can use all
+of the defaults for installation, as before.  The only change in defaults needs
+be: *be sure to create a root account with ssh access*.
 
 1. **This is unstable, pre-released software**  - Click `I want to procced`
 2. **Installation Destination** - Click `Done`
@@ -439,20 +473,16 @@ rhel-storage-105:target-vm(john_fix_7) > ./netsetup.sh enp0s5 enp0s6 10.16.189.6
 
  creating .build/hosts.txt
 
- scp  .build/{netsetup.sh,tcp-target.sh,hosts.txt,tcp.json} root@10.16.189.66:
+ scp  .build/{netsetup.sh,start-tcp-target.sh,hosts.txt,tcp.json} root@10.16.189.66:
 
-The authenticity of host '10.16.189.66 (10.16.189.66)' can't be established.
-ED25519 key fingerprint is SHA256:B/NSAFjmf5VhkLX4HPwoxx1H4s6Dn57kIZho/49U9H0.
-This key is not known by any other names
-Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
-Warning: Permanently added '10.16.189.66' (ED25519) to the list of known hosts.
 root@10.16.189.66's password:
-netsetup.sh                                                                                                    100% 1666     2.9MB/s   00:00
-hosts.txt                                                                                                      100%  231   749.8KB/s   00:00
-tcp-target.sh                                                                                                  100%  121   337.0KB/s   00:00
-tcp.json                                                                                                       100% 2030     5.2MB/s   00:00
+netsetup.sh           100% 1666     2.9MB/s   00:00
+hosts.txt             100%  231   749.8KB/s   00:00
+start-tcp-target.sh   100%  121   337.0KB/s   00:00
+tcp.json              100% 2030     5.2MB/s   00:00
 
  Login to target-vm/root and run "./netsetup.sh" to complete the VM configuration
+
 ```
 
 ### Step 5 run ./netsetup.sh on the target-vm
@@ -476,22 +506,27 @@ enp0s6           UP             192.168.110.20/24 fe80::5961:dc0a:6f92:4a70/64
 .
 ```
 
-### Step 6 run tcp-target.sh on the target-vm
+### Step 6 run start-tcp-target.sh on the target-vm
 
-The following step configures and runs the NVMe/TCP softarget on the `target-vm`.  Following this step the `target-vm` is now serving the `host-vm's` boot disk through nvme-tcp.
+The following step configures and runs the NVMe/TCP softarget on the
+`target-vm`.  Following this step the `target-vm` is now serving the
+`host-vm's` boot disk through nvme-tcp.
 
 ```
-[root@dhcp16-189-66 ~]# ./tcp-target.sh
+[root@dhcp16-189-66 ~]# ./start-tcp-target.sh
 [ 1473.611529] nvmet: adding nsid 1 to subsystem nqn.2014-08.org.nvmexpress:uuid:0c468c4d-a385-47e0-8299-6e95051277db
 [ 1473.612700] nvmet_tcp: enabling port 1 (192.168.101.20:4420)
 [ 1473.613096] nvmet_tcp: enabling port 2 (192.168.110.20:4420)
 Redirecting to /bin/systemctl stop firewalld.service
 ```
 
-To verify this working run the following command from the hypervisor. E.g.:
+To verify this working run the `./discover_target.sh` command in the *host-vm* dirctory.
+following command from the hypervisor.
+
+E.g.:
 
 ```
-rhel-storage-105:target-vm(john_fix_7) > sudo nvme discover --hostnqn=nqn.2014-08.org.nvmexpress:uuid:f8131bac-cdef-4165-866b-5998c1e67890
+rhel-storage-105:host-vm(john_fix_7) > ./discover_target.sh
 
 Discovery Log Number of Records 2, Generation counter 3
 =====Discovery Log Entry 0======
@@ -514,43 +549,18 @@ portid:  1
 trsvcid: 4420
 subnqn:  nqn.2014-08.org.nvmexpress:uuid:0c468c4d-a385-47e0-8299-6e95051277db
 traddr:  192.168.101.20
-eflags:  none
-sectype: none
-
-Discovery Log Number of Records 2, Generation counter 3
-=====Discovery Log Entry 0======
-trtype:  tcp
-adrfam:  ipv4
-subtype: current discovery subsystem
-treq:    not specified, sq flow control disable supported
-portid:  2
-trsvcid: 4420
-subnqn:  nqn.2014-08.org.nvmexpress.discovery
-traddr:  192.168.110.20
-eflags:  none
-sectype: none
-=====Discovery Log Entry 1======
-trtype:  tcp
-adrfam:  ipv4
-subtype: nvme subsystem
-treq:    not specified, sq flow control disable supported
-portid:  2
-trsvcid: 4420
-subnqn:  nqn.2014-08.org.nvmexpress:uuid:0c468c4d-a385-47e0-8299-6e95051277db
-traddr:  192.168.110.20
 eflags:  none
 sectype: none
 ```
 
 ## Start the host-vm
 
-Now `cd ../host-vm` and run the `./start.sh` script to start the host-vm and begin the NVMe/TCP NBFT boot process.  E.g.:
+Now `cd ../host-vm` and run the `./start.sh` script to start the host-vm and
+begin the NVMe/TCP NBFT boot process.
+
+E.g.:
 
 ```
-rhel-storage-105:target-vm(john_fix_7) > pwd
-/home/test/rh-linux-poc/target-vm
-rhel-storage-105:target-vm(john_fix_7) > dirs
-~/rh-linux-poc/target-vm ~/rh-linux-poc/host-vm
 rhel-storage-105:target-vm(john_fix_7) > popd
 ~/rh-linux-poc/host-vm
 rhel-storage-105:host-vm(john_fix_7) > ./start.sh
