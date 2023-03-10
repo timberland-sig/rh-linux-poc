@@ -36,8 +36,8 @@ echo " scp the efi.tgz file to the hypervisor host"
 scp -o StrictHostKeyChecking=no efi.tgz $TESTUSR@host-gw:$HOSTEFIDIR/efi.tgz
 
 echo ""
-echo " Please shutdown this VM and run the \"./create_efidisk.sh\" script."
-#echo " Please shutdown this VM and run the \"target-vm/start.sh\" script."
+echo " Shutdown this VM and run the \"./create_efidisk.sh\" script on the hypervisor."
+echo " Then run the \"target-vm/install.sh\" script to create the target-vm."
 echo ""
 
 EOF

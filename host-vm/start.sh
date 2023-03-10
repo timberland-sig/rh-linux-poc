@@ -28,15 +28,11 @@ if [  -f .qargs ]; then
     echo ""
 fi
 
-#if [ ! -f .start ]; then
-#    echo ""
-#    echo " Log into the root account and record the interface names for networks 2 and 3."
-#    echo " Use the \"ip -br address show\" command to display interface names"
-#    echo ""
-#    echo " Next step will be to run the \"./netsetup.sh\" script."
-#    echo ""
-#fi
-
-#touch .start
+echo ""
+echo " Connect to the `host-vm` console and immediately Press the ESC button to enter the UEFI setup menu."
+echo " - Change the device boot order so the EFI Internal Shell starts first. Exit to continue."
+echo " - The UEFI Shell will execute the startup script, let the countdown expire."
+echo " - Then Reset to reboot the VM. The UEFI will connect to the NVMe/TCP target and boot."
+echo ""
 
 bash .build/start.sh &

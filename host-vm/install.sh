@@ -17,7 +17,7 @@ create_install_startup() {
     rm -rf .build
     mkdir .build
 
-	echo " creating .build/install.sh"
+	echo "creating .build/install.sh"
 	cat << EOF >> .build/install.sh
 #!/bin/bash
 $QEMU -name $VMNAME -M q35 -accel kvm -cpu host -m 4G -smp 4 $QARGS \
@@ -34,7 +34,7 @@ $QEMU -name $VMNAME -M q35 -accel kvm -cpu host -m 4G -smp 4 $QARGS \
 -netdev bridge,br=virbr2,id=net2,helper=$BRIDGE \
 -device virtio-net-pci,netdev=net2,mac=$MAC3 
 EOF
-	echo " creating .build/start.sh"
+	echo "creating .build/start.sh"
 	cat << EOF >> .build/start.sh
 #!/bin/bash
 $QEMU -name $VMNAME -M q35 -accel kvm -cpu host -m 4G -smp 4 $QARGS \
@@ -58,7 +58,7 @@ check_host_install_args $# "$1"
 ISO_FILE=$(find ../ -name boot.iso -print)
 if [ -z "$ISO_FILE" ]; then
 	echo " Error: lorax_results/images/boot.iso not found"
-	echo " run setup.sh iso"
+	echo " run setup.sh -m iso"
 	exit 1
 else
     ISO_FILE=$(realpath $ISO_FILE)

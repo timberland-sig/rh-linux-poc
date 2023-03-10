@@ -42,7 +42,8 @@ echo "$TARGETNQN" > /etc/nvme/hostnqn
 echo "$TARGETID" > /etc/nvme/hostid
 
 echo ""
-echo " Shutdown and run \"host-vm/install.sh\" to complete the host"
+echo " Run \"./start-tcp-target.sh\" to start the NVMe/TCP soft target."
+echo " Then run \"host-vm/start.sh\" on the hypervisor to boot the host-vm with NVMe/TCP "
 echo ""
 
 EOF
