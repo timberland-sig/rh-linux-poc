@@ -20,6 +20,7 @@ create_nvme_target_config() {
     sed -i "s/TARGET_IP3/$TARGET_IP3/" .build/tcp.json
     sed -i "s/NSNGUID/$NSNGUID/" .build/tcp.json
     sed -i "s/NSUUID/$NSUUID/" .build/tcp.json
+    sed -i "s/CTRLSN/$SN2/" .build/tcp.json
 
     cat << EOF >> .build/start-tcp-target.sh
 #!/bin/bash

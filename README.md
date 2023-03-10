@@ -1,4 +1,4 @@
-# Red Hat NVMe/TCP Boot POC
+# The Red Hat NVMe/TCP Boot POC
 
 This repository contains packages, scripts and instructions to assit in the set up and deployment of a QEMU based NVMe/TCP boot POC. The prerequisites for this POC include:
 
@@ -34,24 +34,25 @@ QEMU version 6.0 and 7.0 are supported.
 1. Create your user account, enable [sudo](https://developers.redhat.com/blog/2018/08/15/how-to-enable-sudo-on-rhel#:~:text=DR%3A%20Basic%20sudo-,TL%3BDR%3A%20Basic%20sudo,out%20and%20back%20in%20again) access, and configure your github [ssh-key](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/adding-a-new-ssh-key-to-your-github-account).
 2. Set up a [copr](https://docs.pagure.org/copr.copr/user_documentation.html#quick-start) user account and add [.config/copr](https://copr.fedorainfracloud.org/api/) to your user account.
 3. Clone this repository with `git clone git@gitlab.com:johnmeneghini/rh-linux-poc.git`.
-4. Create a working branch with `git checkout -b MYBRANCH`. This is needed keep configuration specific changes for your testbed.
-5. Edit *global_vars.sh* file and set the `COPR_USER` and `COPR_PROJECT` variables (c.f. `corp-cli whoami` and `corp-cli list`).
-6. Run the following commands to build and install your QEMU test environment:
+4. Create a working branch with `git checkout -b MYBRANCH` to keep configuration specific changes for your testbed.
+5. Edit the *global_vars.sh* file and set the `COPR_USER` and `COPR_PROJECT` variables (c.f. `corp-cli whoami` and `corp-cli list`).
+
+Now run the following commands to build and install your NVMe/TCP Boot test environment:
 
 ```
   ./setup.sh user                # this will validate your user account - run this multiple times
   ./setup.sh net                 # this will modify your hypervisor network - run this only once
-  ./setup.sh virt                # this will install QEMU - run this only once
+  ./setup.sh virt                # this will install QEMU (only on Fedora) - run this only once
   ./setup.sh build -m fedora-37  # this will build all needed rpms and artifacts and create a fedora-37 bootable iso
-  pushd host-vm                  # you must change directories
-  ./install.sh "" "-vnc :0"      # creates and installs the QEMU host-vm
+  pushd host-vm                  # change directories
+  ./install.sh "" "-vnc :0"      # creates and installs the QEMU host-vm (-vnc is optional)
   ./netsetup.sh                  # configures the QEMU host-vm
   ./create_efidisk.sh            # creates the boot/efi partition
-  pushd ../target-vm             # you must change directories
+  pushd ../target-vm             # change directories
   ./install.sh "-vnc :1"         # creates and installs the target-vm
   ./start.sh                     # starts the targe-vm
   ./netsetup.sh                  # configures the target-vm network
-  popd                           # you must change directories back to the host-vm
+  popd                           # change directories back to the host-vm
   ./start.sh                     # starts the host-vm with NVMe/TCP boot
 ```
 # How does it work:
@@ -102,7 +103,7 @@ and change the permissions of `/etc/qemu/bridge.conf` and
 `/usr/libexec/qemu-bridge-helper`. This will allow qemu to run from your user
 account.
 
-*Note: this only works with Fedora and should only be run with caution. When in
+*Note: this only works with Fedora and should be run with caution. When in
 doubt, install and setup qemu yourself, manually.*
 
 Run `./setup.sh pkgs` - This script will install all needed rpms to complete your
@@ -110,7 +111,7 @@ dev/test environment.
 
 ## Build all Timberland-sig artifacts
 
-Run `./setup.sh -m build` - This script clones all of the timberland-sig
+Run `./setup.sh -m build fedora-37` - This script clones all of the timberland-sig
 repositories, builds all needed artifiacts and rpms, and installs them in your
 personal copr repo. It then to creates a bootable iso image with the
 [lorax](https://weldr.io/lorax/lorax.html) uility. Artifacts and rpms are
@@ -122,15 +123,16 @@ created in the follow directories:
 | `lorax_results` | contains the bootable iso generated from the build process. This iso is created using the generated rpm from your `copr.fedorainfracloud.org` project. The specific location of the iso is: *lorax_results/images/boot.iso*`.  This is the default iso used by the *host-vm\install.sh* and *target-vm\install.sh* scripts.|
 | `copr.fedorainfracloud.org` | Contains rpms for nvme-cli, libnvme and dracut. (e.g.: see [johnmeneghini's](https://copr.fedorainfracloud.org/coprs/johnmeneghini/timberland-sig/) copr repository. |
 
-Other directories are explained here:
+Other directories and files are explained here:
 
 | Directory  | Decription |
 | :-----   | :----      |
 | `nvme_rpm` |  Contains the git submodule for https://github.com/timberland-sig/nvme-cli. The rpm is generated using this source code with the `nvme-cli.spec` file located in this directory. The code used to generate the rpm can be developed and changed by working in the provided *nvme_rpm/nvme-cli* git repository.  Normal git workflows apply. |
 | `libnvme_rpm` | Contains the git submodule for https://github.com/timberland-sig/libnvme. The rpm is generated using this source code with the `libnvme.spec` file located in this directory. The code used to generate the rpm can be developed and changed by working in the provided *libnvme_rpm/libnvme* git repository.  Normal git workflows apply. |
 | `dracut_rpm` | Contains the git submodule for https://github.com/timberland-sig/dracut. The rpm is generated using this source code with the `dracut.spec` file located in this directory. The code used to generate the rpm can be developed and changed by working in the provided *dracut_rpm/dracut* git repository.  Normal git workflows apply. |
-| `host-vm` | Contains the scripts and files needed to host your QEMU host virtual machine. |
-| `target-vm` | Contains the scripts and files needed to host your QEMU target virtual machine. |
+| `global_vars.sh` | Contains global variables which control the test bed configuration. If you need to change sometihing, look here first. |
+| `host-vm` | Contains the scripts and files needed to create and run your QEMU host virtual machine. |
+| `target-vm` | Contains the scripts and files needed to create and run your QEMU target virtual machine. |
 
 Proposed changes and patches should be sent to the repsective repositories at:
 https://github.com/timberland-sig
@@ -154,10 +156,10 @@ create a root account with ssh access*.
 
 ## The ./netsetup.sh script
 
-During the installation of both QEMU VMs the `./netsetup.sh` script will be
-run.  This script is script will create a VM specific configuration file and
-`scp` it to the newly installed VM.  It is important to specify the ifname and
-ipaddr parameters correctly.
+During the installation of both VMs the `./netsetup.sh` script will be
+run.  This script will create a VM specific *netsetup.sh* configuration script and
+`scp` it to the newly installed VM.  It is important to specify the `ifname` and
+`ipaddr` parameters correctly.
 
 ```
  Usage: netsetup.sh <ifname2> <ifname3> <ipaddr>
@@ -168,7 +170,7 @@ ipaddr parameters correctly.
            - corresponds to virbr1 on the hypervisor host
   ifname3  - third vm network interface device name (e.g. ens7)
            - corresponds to virbr2 on the hypervisor host
-  ipaddr - dhcp assigned ipv4 address of host-vm
+  ipaddr - dhcp assigned ipv4 address of the host-vm or target-vm
            - corresponds to br0 on the hypervisor host
 
  These valuse are obtains from "ip -br address show" after booting host-vm the first time
@@ -181,7 +183,7 @@ ipaddr parameters correctly.
 
 ## Create the host-vm
 
-You need to `cd` to the *host-vm* directory and create your host virtual machine.
+You need to `cd` to the *host-vm* directory to create your host virtual machine.
 
 *Note that changing the specfic configuration - in terms of IP and MAC
 addresses, HOSTNQNs, etc. can be done by modifying the *global_vars.sh* file.*
@@ -564,6 +566,19 @@ rhel-storage-105:host-vm(john_fix_7) > ./start.sh
 Connect with "vncviewer rhel-storage-105.storage.lab.eng.bos.redhat.com:0"
 ```
 
-Once you connect to the `host-vm` console, you will observe the NVMe/TCP NBFT boot process starting to occur.
+Once you connect to the `host-vm` console, you will observe the NVMe/TCP NBFT boot process starting.
+
+Immediately Press the ESC button to enter the UEFI setup menu and change the
+device boot order so the EFI Internal Shell will start first, then reboot the VM.
+
+![alt uefi boot order](images/uefi_boot_order.png)
+
+The UEFI Shell will execute the startup script, let the countdown expire.
+
+![alt uefi count down](images/uefi_countdown.png)
+
+The firmware will now try to connect to the target, the process may take a few seconds.
+
+![alt uefi connect ongoing](images/uefi_connection_ongoing.png)
 
 **END**

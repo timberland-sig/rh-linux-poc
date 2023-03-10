@@ -67,10 +67,10 @@
         "allow_any_host": "0",
         "cntlid_max": "65519",
         "cntlid_min": "1",
-        "model": "Linux",
+        "model": "Linux-Ctrl",
         "pi_enable": "0",
-        "serial": "deadbeef2feedface321",
-        "version": "1.3"
+        "serial": "CTRLSN",
+        "version": "1.4"
       },
       "namespaces": [
         {
