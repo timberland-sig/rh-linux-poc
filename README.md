@@ -148,8 +148,9 @@ create a root account with ssh access*.
 | **This is unstable, pre-released software**  |  Click `I want to procced` |
 | **Installation Destination** | Click `Done` |
 | **Root Account** | Click `Enable root account` |
-| Enter password | - [x] Allow root SSH login with password |
-| Click `Begin installation` | Click `Reboot System`|
+| enter password | - [x] Allow root SSH login with password |
+| final step | Click `Begin installation` |
+| finish install | Click `Reboot System`|
 
 ## The ./netsetup.sh script
 
@@ -427,15 +428,8 @@ Follow the instructions on the screen by connecting to the VM console with
 of the defaults for installation, as before.  The only change in defaults needs
 be: *be sure to create a root account with ssh access*.
 
-1. **This is unstable, pre-released software**  - Click `I want to procced`
-2. **Installation Destination** - Click `Done`
-3. **Root Account** - Click `Enable root account` and
-- [x] Allow root SSH login with password
-4. Click `Begin installation`
-5. Click `Reboot System`
-6. Login and shut down the VM.
-
-After the installation reboot login to the root account on the target-vm and `shutdown -h now` the VM.
+After the installation reboot login to the root account on the target-vm and
+`shutdown -h now` the VM.
 
 ### Step 2 start the target-vm
 
@@ -448,7 +442,9 @@ Connect with "vncviewer rhel-storage-105.storage.lab.eng.bos.redhat.com:0"
 ```
 ### Step 3 login to the target-vm
 
-Login to the root account on the target-vm and display the network configuration. For example:
+Login to the root account on the target-vm and display the network configuration.
+
+For example:
 
 ```
 [root@dhcp16-189-66 ~]# ip -br addr
