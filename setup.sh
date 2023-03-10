@@ -97,11 +97,6 @@ install_user() {
             create_copr_project
         fi
 
-       # Use this to ignore the efidisk
-       # WARNING: changing the efidisk can cause the host-vm to fail
-       
-       # git update-index --assume-unchanged host-vm/efidisk
-
         touch .usr
     fi
 
