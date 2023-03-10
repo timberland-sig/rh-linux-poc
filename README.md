@@ -33,8 +33,8 @@ QEMU version 6.0 and 7.0 are supported.
 
 1. Create your user account, enable [sudo](https://developers.redhat.com/blog/2018/08/15/how-to-enable-sudo-on-rhel#:~:text=DR%3A%20Basic%20sudo-,TL%3BDR%3A%20Basic%20sudo,out%20and%20back%20in%20again) access, and configure your github [ssh-key](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/adding-a-new-ssh-key-to-your-github-account).
 2. Set up a [copr](https://docs.pagure.org/copr.copr/user_documentation.html#quick-start) user account and add [.config/copr](https://copr.fedorainfracloud.org/api/) to your user account.
-3. Clone this repository with `git clone git@gitlab.com:johnmeneghini/rh-linux-poc.git`.
-4. Create a working branch with `git checkout -b MYBRANCH` to keep configuration specific changes for your testbed.
+3. Clone this repository with `git clone git@github.com:timberland-sig/rh-linux-poc.git`.
+4. Create a working branch with `git checkout -b MYBRANCH` to keep configuration changes for your test bed.
 5. Edit the *global_vars.sh* file and set the `COPR_USER` and `COPR_PROJECT` variables (c.f. `corp-cli whoami` and `corp-cli list`).
 
 Now run the following commands to build and install your NVMe/TCP Boot test environment:
@@ -58,25 +58,29 @@ Now run the following commands to build and install your NVMe/TCP Boot test envi
 # How does it work:
 
 We create two Virtual Machines connected with two virtual networks.  The first
-is an nvme/tcp soft target (`target-vm`), the second is a nvme/tcp host
-(`host-vm`).  On the `host-vm` we will execute the UEFI firmware with QEMU. The
-firmware will connect to the nvme1n1 device on the remote `target-vm` with nvme/tcp,
+is a nvme/tcp soft target (*target-vm*), the second is a nvme/tcp host
+(*host-vm*).  On the *host-vm* we will execute the UEFI firmware with QEMU. The
+firmware will connect to the nvme1n1 device on the remote *target-vm* with nvme/tcp,
 load the kernel, take over the boot process by using the information provided by the UEFI
 firmware via the NBFT table.
 
 ```
-            host-vm                                                 target-vm
-       ------------------                                      -----------------------
-       |                |  <------- br0 WAN (dhcp) -------->   |                     |
-       |                |                                      |      nvme0n1        |
-       |                |                                      |  target-vm rootfs   |
-       |                |  <---- virbr1 LAN (static) ----->    |                     |
-       |   QEMU + UEFI  |                                      |   NVMe/TCP target   |
-       |   + EFIDISK    |                                      |         |           |
-       |                |  <---- virbr2 LAN (static) ----->    |      nvme1n1        |
-       |                |                                      |   host-vm rootfs    |
-       |                |                                      |                     |
-       ------------------                                      -----------------------
+                                         host-gw
+           host-vm               -----------------------             target-vm
+     ----------------------      |      hypervisor     |      -------------------------
+     |     QEMU+UEFI      |      |                     |      |         QEMU          |
+     |                 enp0s4 <--|--- br0 WAN (dhcp) --|--> enp0s4                    |
+     |      nvme0n1       |      |                     |      |        nvme0n1        |
+     |      EFIDISK       |      |                     |      |    target-vm rootfs   |
+     |                    |      |                     |      |                       |
+     |  NVMe/TCP host     |      |                     |      |     NVMe/TCP target   |
+     |        |        enp0s5 <--| virbr1 LAN (static) |--> enp0s5        |           |
+     |        |           |      |                     |      |           |           |
+     |     nvme1n1     enp0s6 <--| virbr2 LAN (static) |--> enp0s6     nvme1n1        |
+     |     rootfs         |      |                     |      |     host-vm rootfs    |
+     |                    |      |                     |      |                       |
+     ----------------------      |                     |      -------------------------
+                                 -----------------------
 ```
 
 ## Set up your Hypervisor
@@ -140,7 +144,7 @@ https://github.com/timberland-sig
 ## Installing Fedora
 
 Each QEMU VM (*host-vm* and *target-vm*) will need to be installed as a part of
-the testbed setup.  During the installation processyou can use all of the
+the test bed setup.  During the installation processyou can use all of the
 defaults for installation.  The only change in defaults needs be: *be sure to
 create a root account with ssh access*.
 
