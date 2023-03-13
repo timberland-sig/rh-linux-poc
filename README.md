@@ -579,19 +579,51 @@ rhel-storage-105:host-vm(john_fix_7) > ./start.sh
 Connect with "vncviewer rhel-storage-105.storage.lab.eng.bos.redhat.com:0"
 ```
 
-Once you connect to the `host-vm` console, you will observe the NVMe/TCP NBFT boot process starting.
+Once you connect to the `host-vm` console, you will observe the UEFI boot process starting.
 
-Immediately Press the ESC button to enter the UEFI setup menu and change the
-device boot order so the EFI Internal Shell will start first, then reboot the VM.
+Immediately Press the ESC button to enter the UEFI setup menu.
 
-![alt uefi boot order](images/uefi_boot_order.png)
+![alt uefi boot menu](images/uefi_boot_menu.png)
 
-The UEFI Shell will execute the startup script, let the countdown expire.
+Select the Boot Manager.
 
-![alt uefi count down](images/uefi_countdown.png)
+![alt uefi boot menu](images/uefi_boot_manager.png)
 
-The firmware will now try to connect to the target, the process may take a few seconds.
+Select the EFI Internal Shell and hit `Enter`.
 
-![alt uefi connect ongoing](images/uefi_connection_ongoing.png)
+![alt uefi boot select uefi](images/uefi_boot_select.png)
+
+The EFI Internal Shell will run and `NvmeOfCli setattempt Config` will run.
+Allow the coutdown to expire so that `startup.nsh` runs.  This only needs to be
+done once. This will program your NBFT/ACPI table with the information
+programmed in the *host-vm/eficonfig/config* attempt file.
+
+![alt uefi count down](images/uefi_count_down.png)
+
+After `!!!The UEFI variables has been set successfully!!!` the EFI Shell will
+return to the Boot Manager menu. Select `Reset` to continue.
+
+![alt uefi reset](images/uefi_reset.png)
+
+The EFI firmware will reset the system an boot from NVMe/TCP.
+
+![alt uefi reset](images/uefi_tcp_boot.png)
+
+## To Restart the host-vm
+
+**To restart the host-vm after shutdown -h**
+
+Subsequent to booting the *host-vm* for the first time the NBFT/ACPI table
+should not need to be programmed by running `startup.nsh` again. To boot the
+*host-vm* after shutdown run the `./start.sh` script again. Connect to the
+*host-vm* console and immediately press the ESC button to stop the
+`startup.nsh` countdown. If needed, type `exit` at the *Shell>* prompt.
+
+![alt uefi reset](images/uefi_no_attempt.png)
+
+Then Enter `Reset` at the UEFI setup menu to boot the VM. The UEFI will connect
+to the NVMe/TCP target and boot.
+
+![alt uefi reset](images/uefi_reset.png)
 
 **END**
