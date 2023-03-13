@@ -28,11 +28,21 @@ if [  -f .qargs ]; then
     echo ""
 fi
 
-echo ""
-echo " Connect to the \"host-vm\" console and immediately Press the ESC button to enter the UEFI setup menu."
-echo " - Change the device boot order so the EFI Internal Shell starts first. Exit to continue."
-echo " - The UEFI Shell will execute the startup script, let the countdown expire."
-echo " - Then Reset to reboot the VM. The UEFI will connect to the NVMe/TCP target and boot."
-echo ""
+if [ ! -f .start ]; then
+    echo ""
+    echo " Connect to the \"host-vm\" console and immediately Press the ESC button to enter the UEFI setup menu."
+    echo " - Change the device boot order so the EFI Internal Shell starts first. Exit to continue."
+    echo " - The UEFI Shell will execute the \"startup.nsh\" script, let the countdown expire."
+    echo " - Then Reset to reboot the VM. The UEFI will connect to the NVMe/TCP target and boot."
+    echo ""
+    touch .start
+else
+    echo ""
+    echo " Connect to the \"host-vm\" console and immediately Press the ESC button to stop the \"startup.nsh\" countdown"
+    echo " - There is no need to run the \"startup.nsh\" EFI Shell script again."
+    echo " - Enter exit at the Shell prompt to reach the UEFI setup menu"
+    echo " - Enter Reset at the UEFI setup menu to boot the VM. The UEFI will connect to the NVMe/TCP target and boot."
+    echo ""
+fi
 
 bash .build/start.sh &
