@@ -39,7 +39,6 @@ add_target_netsetup() {
 dnf copr enable -y $COPR_USER/$COPR_PROJECT
 dnf install -y nvme-cli nvmetcli
 
-echo "$TARGETNQN" > /etc/nvme/hostnqn
 echo "$TARGETID" > /etc/nvme/hostid
 
 echo ""

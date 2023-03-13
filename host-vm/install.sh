@@ -21,6 +21,7 @@ create_install_startup() {
     cat << EOF >> .build/install.sh
 #!/bin/bash
 $QEMU -name $VMNAME -M q35 -accel kvm -cpu host -m 4G -smp 4 $QARGS \
+-uuid $HOST_SYS_UUID \
 -cdrom $ISO_FILE \
 -device nvme,drive=NVME2,max_ioqpairs=4,physical_block_size=4096,logical_block_size=4096,use-intel-id=on,serial=$SN2 \
 -drive file=$BOOT_DISK,if=none,id=NVME2 \
@@ -38,6 +39,7 @@ EOF
 	cat << EOF >> .build/start.sh
 #!/bin/bash
 $QEMU -name $VMNAME -M q35 -accel kvm -cpu host -m 4G -smp 4 $QARGS \
+-uuid $HOST_SYS_UUID \
 -device virtio-rng -boot menu=on,splash-time=2000 \
 -drive if=pflash,format=raw,readonly=on,file=OVMF_CODE.fd \
 -drive if=pflash,format=raw,file=vm_vars.fd \
