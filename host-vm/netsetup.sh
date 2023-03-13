@@ -19,7 +19,6 @@ dnf install -y git tar vim nvme-cli
 dnf update -y dracut
 dnf install -y dracut-network
 
-echo "$HOSTNQN" > /etc/nvme/hostnqn
 echo "$HOSTID" > /etc/nvme/hostid
 
 modprobe nvme_fabrics
@@ -44,8 +43,7 @@ EOF
 }
 
 create_copy_efi() {
-    rm -f efi.tgz
-
+    rm -f copy_efi.sh
     cat << EOF >> copy_efi.sh
 #!/bin/bash
 rm -f efi.tgz
@@ -62,6 +60,7 @@ EOF
 }
 
 create_discover_target() {
+    rm -f discover_target.sh
     cat << EOF >> discover_target.sh
 #!/bin/bash
 sudo modprobe nvme_fabrics

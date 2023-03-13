@@ -20,6 +20,7 @@ create_install_startup() {
 	cat << EOF >> .build/install.sh
 #!/bin/bash
 $QEMU -name $VMNAME -M q35 -accel kvm -bios OVMF-pure-efi.fd -cpu host -m 4G -smp 4 $QARGS \
+-uuid $TARGET_SYS_UUID \
 -cdrom $ISO_FILE \
 -device nvme,drive=NVME1,max_ioqpairs=4,physical_block_size=4096,logical_block_size=4096,use-intel-id=on,serial=$SN1 \
 -drive file=disks/boot.qcow2,if=none,id=NVME1 \
@@ -30,6 +31,7 @@ EOF
 	cat << EOF >> .build/start.sh
 #!/bin/bash
 $QEMU -name $VMNAME -M q35 -accel kvm -bios OVMF-pure-efi.fd -cpu host -m 4G -smp 4 -boot menu=on $QARGS \
+-uuid $TARGET_SYS_UUID \
 -device nvme,drive=NVME1,max_ioqpairs=4,physical_block_size=4096,logical_block_size=4096,use-intel-id=on,serial=$SN1,bootindex=1 \
 -drive file=disks/boot.qcow2,if=none,id=NVME1 \
 -device nvme,drive=NVME2,max_ioqpairs=4,physical_block_size=4096,logical_block_size=4096,use-intel-id=on,serial=$SN2 \

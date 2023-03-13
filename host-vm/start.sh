@@ -29,7 +29,7 @@ if [  -f .qargs ]; then
 fi
 
 echo ""
-echo " Connect to the `host-vm` console and immediately Press the ESC button to enter the UEFI setup menu."
+echo " Connect to the \"host-vm\" console and immediately Press the ESC button to enter the UEFI setup menu."
 echo " - Change the device boot order so the EFI Internal Shell starts first. Exit to continue."
 echo " - The UEFI Shell will execute the startup script, let the countdown expire."
 echo " - Then Reset to reboot the VM. The UEFI will connect to the NVMe/TCP target and boot."
