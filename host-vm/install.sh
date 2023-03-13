@@ -17,8 +17,8 @@ create_install_startup() {
     rm -rf .build
     mkdir .build
 
-	echo "creating .build/install.sh"
-	cat << EOF >> .build/install.sh
+    echo "creating .build/install.sh"
+    cat << EOF >> .build/install.sh
 #!/bin/bash
 $QEMU -name $VMNAME -M q35 -accel kvm -cpu host -m 4G -smp 4 $QARGS \
 -cdrom $ISO_FILE \

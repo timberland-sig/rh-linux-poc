@@ -11,6 +11,7 @@ VMNAME=`basename $PWD`
 
 create_nvme_target_config() {
     rm -f .build/tcp.json
+    rm -f .build/start-tcp-target.sh
 
     cp tcp.json.in .build/tcp.json
 
@@ -36,7 +37,7 @@ add_target_netsetup() {
     cat << EOF >> .build/netsetup.sh
 
 dnf copr enable -y $COPR_USER/$COPR_PROJECT
-dnf install -y git tar vim nvme-cli nvmetcli
+dnf install -y nvme-cli nvmetcli
 
 echo "$TARGETNQN" > /etc/nvme/hostnqn
 echo "$TARGETID" > /etc/nvme/hostid
@@ -45,18 +46,6 @@ echo ""
 echo " Run \"./start-tcp-target.sh\" to start the NVMe/TCP soft target."
 echo " Then run \"host-vm/start.sh\" on the hypervisor to boot the host-vm with NVMe/TCP "
 echo ""
-
-EOF
-}
-
-add_target_netsetup() {
-    cat << EOF >> .build/netsetup.sh
-
-dnf copr enable -y $COPR_USER/$COPR_PROJECT
-dnf install -y git tar vim nvme-cli nvmetcli
-
-echo "$TARGETNQN" > /etc/nvme/hostnqn
-echo "$TARGETID" > /etc/nvme/hostid
 
 EOF
 }

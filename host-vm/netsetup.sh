@@ -44,8 +44,7 @@ EOF
 }
 
 create_copy_efi() {
-    rm -f efi.tgz
-
+    rm -f copy_efi.sh
     cat << EOF >> copy_efi.sh
 #!/bin/bash
 rm -f efi.tgz
@@ -62,6 +61,7 @@ EOF
 }
 
 create_discover_target() {
+    rm -f discover_target.sh
     cat << EOF >> discover_target.sh
 #!/bin/bash
 sudo modprobe nvme_fabrics
