@@ -55,7 +55,7 @@ Now run the following commands to build and install your NVMe/TCP Boot test envi
   popd                           # change directories back to the host-vm
   ./start.sh                     # starts the host-vm with NVMe/TCP boot
 ```
-# How does it work:
+# How it workis:
 
 We create two Virtual Machines connected with two virtual networks.  The first
 is a nvme/tcp soft target (*target-vm*), the second is a nvme/tcp host
@@ -82,6 +82,26 @@ firmware via the NBFT table.
      ----------------------      |                     |      -------------------------
                                  -----------------------
 ```
+# Directories and files
+
+Directories and files are explained here:
+
+| Directory | File  | Decription |
+| :-----   | :----  | :----      |
+| `nvme_rpm` |  -  | Contains the git submodule for https://github.com/timberland-sig/nvme-cli. The rpm is generated using this source code with the `nvme-cli.spec` file located in this directory. The code used to generate the rpm can be developed and changed by working in the provided *nvme_rpm/nvme-cli* git repository.  Normal git workflows apply. |
+| - | nvme-cli.spec | A modified version of the Fedora nvme-cli.spec file from: https://src.fedoraproject.org/rpms/nvme-cli/blob/rawhide/f/nvme-cli.spec. This spec file has been modified to work with the timberland-sig nvme-cli source code in this submodule.
+| `libnvme_rpm` | - | Contains the git submodule for https://github.com/timberland-sig/libnvme. The rpm is generated using this source code with the `libnvme.spec` file located in this directory. The code used to generate the rpm can be developed and changed by working in the provided *libnvme_rpm/libnvme* git repository.  Normal git workflows apply. |
+| `dracut_rpm` | - | Contains the git submodule for https://github.com/timberland-sig/dracut. The rpm is generated using this source code with the `dracut.spec` file located in this directory. The code used to generate the rpm can be developed and changed by working in the provided *dracut_rpm/dracut* git repository.  Normal git workflows apply. |
+|  - | `global_vars.sh` | Contains global variables which control the test bed configuration. If you need to change sometihing, look here first. |
+| `host-vm` | - |Contains the scripts and files needed to create and run your QEMU host virtual machine. |
+| `target-vm` | - | Contains the scripts and files needed to create and run your QEMU target virtual machine. |
+
+Proposed changes and patches should be sent to the repsective repositories at:
+https://github.com/timberland-sig
+
+# Getting Started
+
+Step by step instructions for creating your using this repo.
 
 ## Set up your Hypervisor
 
@@ -127,19 +147,7 @@ created in the follow directories:
 | `lorax_results` | contains the bootable iso generated from the build process. This iso is created using the generated rpm from your `copr.fedorainfracloud.org` project. The specific location of the iso is: *lorax_results/images/boot.iso*`.  This is the default iso used by the *host-vm\install.sh* and *target-vm\install.sh* scripts.|
 | `copr.fedorainfracloud.org` | Contains rpms for nvme-cli, libnvme and dracut. (e.g.: see [johnmeneghini's](https://copr.fedorainfracloud.org/coprs/johnmeneghini/timberland-sig/) copr repository. |
 
-Other directories and files are explained here:
-
-| Directory  | Decription |
-| :-----   | :----      |
-| `nvme_rpm` |  Contains the git submodule for https://github.com/timberland-sig/nvme-cli. The rpm is generated using this source code with the `nvme-cli.spec` file located in this directory. The code used to generate the rpm can be developed and changed by working in the provided *nvme_rpm/nvme-cli* git repository.  Normal git workflows apply. |
-| `libnvme_rpm` | Contains the git submodule for https://github.com/timberland-sig/libnvme. The rpm is generated using this source code with the `libnvme.spec` file located in this directory. The code used to generate the rpm can be developed and changed by working in the provided *libnvme_rpm/libnvme* git repository.  Normal git workflows apply. |
-| `dracut_rpm` | Contains the git submodule for https://github.com/timberland-sig/dracut. The rpm is generated using this source code with the `dracut.spec` file located in this directory. The code used to generate the rpm can be developed and changed by working in the provided *dracut_rpm/dracut* git repository.  Normal git workflows apply. |
-| `global_vars.sh` | Contains global variables which control the test bed configuration. If you need to change sometihing, look here first. |
-| `host-vm` | Contains the scripts and files needed to create and run your QEMU host virtual machine. |
-| `target-vm` | Contains the scripts and files needed to create and run your QEMU target virtual machine. |
-
-Proposed changes and patches should be sent to the repsective repositories at:
-https://github.com/timberland-sig
+# Setup your Virtual Machines
 
 ## Installing Fedora
 
@@ -192,7 +200,6 @@ run.  This script will create a VM specific *netsetup.sh* configuration script a
           ./netsetup.sh ens6 ens7 192.168.0.154
 ```
 
-# Step by Step Instructions
 
 ## Create the host-vm
 
