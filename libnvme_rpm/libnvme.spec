@@ -3,8 +3,8 @@
 
 Name: libnvme
 Summary: Linux-native nvme device management library
-Version: 1.3
-Release: 2%{?dist}
+Version: 1.4
+Release: 1%{?dist}
 License: LGPL-2.1-or-later
 URL: https://github.com/timberland-sig/libnvme
 Source: %{name}-%{version_no_tilde}.tar.gz
@@ -18,7 +18,6 @@ BuildRequires: python3-devel
 BuildRequires: meson >= 0.50
 BuildRequires: json-c-devel >= 0.13
 BuildRequires: openssl-devel
-BuildRequires: libuuid-devel
 BuildRequires: dbus-devel
 %if (0%{?rhel} == 0)
 BuildRequires: kernel-headers >= 5.15

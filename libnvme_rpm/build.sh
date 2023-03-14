@@ -5,7 +5,7 @@
 DIR="$(dirname -- "$(realpath -- "$0")")"
 . $DIR/../rpm_lib.sh
 
-VERSION=1.3
+VERSION=1.4
 RELEASE=1
 MODE=blank
 COPR_PROJECT=blank
