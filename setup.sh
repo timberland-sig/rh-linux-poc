@@ -196,10 +196,6 @@ build_dracut_rpms() {
 }
 
 build_nvme_rpms() {
-    if [ ! -f .pkgs ]; then
-        sudo dnf install -y meson cmake dbus-devel libuuid libuuid-devel libuuid-debuginfo json-c-devel json-c-debuginfo json-c json-c-doc
-        sudo dnf install -y libhugetlbfs libhugetlbfs-devel libhugetlbfs-lib clang openssl openssl-devel
-    fi
     if [ ! -d $DIR/nvme_rpm ]; then
         echo "$DIR/nvme_rpm not found!"
         exit 1
