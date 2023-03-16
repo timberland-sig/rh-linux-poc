@@ -3,7 +3,7 @@
 
 Name:           nvme-cli
 Version:        2.3
-Release:        3%{?dist}
+Release:        4%{?dist}
 Summary:        NVMe management command line interface (timberland-sig)
 
 License:        GPLv2
@@ -20,7 +20,6 @@ BuildRequires:  systemd-devel
 BuildRequires:  systemd-rpm-macros
 BuildRequires:  zlib-devel
 BuildRequires:  openssl-devel
-BuildRequires:  libuuid-devel
 BuildRequires:  libnvme-devel >= 1.3
 BuildRequires:  json-c-devel >= 0.13
 
