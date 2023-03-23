@@ -13,31 +13,32 @@ HOSTEFIDIR="$PWD"
 
 add_host_netsetup() {
     cat << EOF >> .build/netsetup.sh
+ dnf copr enable -y $COPR_USER/$COPR_PROJECT
+ dnf install -y git tar vim nvme-cli systemd-networkd jq dbus-daemon memstrack
+ dnf update -y dracut
+ dnf install -y dracut-network
 
-dnf copr enable -y $COPR_USER/$COPR_PROJECT
-dnf install -y git tar vim nvme-cli
-dnf update -y dracut
-dnf install -y dracut-network
+ echo "$HOSTID" > /etc/nvme/hostid
 
-echo "$HOSTID" > /etc/nvme/hostid
+ modprobe nvme_fabrics
+ modprobe nvme_tcp
 
-modprobe nvme_fabrics
-modprobe nvme_tcp
+ dracut -f -v --add nvmf
 
-dracut -f -v --add nvmf
+ pushd /boot
+ tar cvzf ~/efi.tgz efi
+ popd
 
-pushd /boot
-tar cvzf ~/efi.tgz efi
-popd
+ echo ""
+ echo " scp the efi.tgz file to the hypervisor host, "
+ echo " or use \"./copy_efi.sh\" to retrieve efi.tgz"
+ echo ""
+ scp -o StrictHostKeyChecking=no efi.tgz $TESTUSR@host-gw:$HOSTEFIDIR/efi.tgz
 
-echo ""
-echo " scp the efi.tgz file to the hypervisor host"
-scp -o StrictHostKeyChecking=no efi.tgz $TESTUSR@host-gw:$HOSTEFIDIR/efi.tgz
-
-echo ""
-echo " Shutdown this VM and run the \"./create_efidisk.sh\" script on the hypervisor."
-echo " Then run the \"target-vm/install.sh\" script to create the target-vm."
-echo ""
+ echo ""
+ echo " Shutdown this VM and run the \"./create_efidisk.sh\" script on the hypervisor."
+ echo " Then run the \"target-vm/install.sh\" script to create the target-vm."
+ echo ""
 
 EOF
 }

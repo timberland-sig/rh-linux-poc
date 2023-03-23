@@ -14,7 +14,6 @@ MOCKBUILD=0
 ALL_VERSIONS="fedora-36|fedora-37|fedora-38|centos-stream-9|opensuse-tumbleweed"
 RPM_VERSIONS="fedora-36|fedora-37|fedora-38|centos-stream-9|opensuse-tumbleweed"
 RH_VERSIONS="fedora-36|fedora-37|fedora-38|centos-stream-9"
-ISO_VERSIONS="fedora-36|fedora-37|fedora-38"
 MOCK_VERSION=fedora-36-x86_64
 
 display_help() {
@@ -43,14 +42,21 @@ display_help() {
         echo "                : install packages, build edk2, create copr repository, and build iso"
         echo "                : - results appear in 'lorax/results' directory"
         echo ""
-        echo " Examples:"
-        echo "       ${0##*/} "
-        echo "       ${0##*/} user "
-        echo "       ${0##*/} pkgs "
-        echo "       ${0##*/} edk2 "
-        echo "       ${0##*/} copr "
-        echo "       ${0##*/} -m iso fedora-36 "
-        echo "       ${0##*/} -h "
+        echo "  prebuilt < $ISO_VERSIONS > "
+        echo "                : Download Fedora release ISO and install prebuilt Timberland SIG packages"
+        echo "                : - ISOs appear in 'ISO' directory"
+        echo "                : - Prebuilt RPMs come from 'https://copr.fedorainfracloud.org/coprs/johnmeneghini/timberland-sig/'"
+        echo ""
+        echo " Examples: "
+        echo "  Install qemu and configure hypervisor networks"
+        echo "       ./${0##*/} virt "
+        echo "       ./${0##*/} net "
+        echo "  Configure hypervisor and install prebuilt bits"
+        echo "       ./${0##*/} prebuilt fedora-36 "
+        echo "  Configure user/dev environment, clone all repositories and build all bits"
+        echo "       ./${0##*/} -m build fedora-37"
+        echo "  Build an ISO with local RPMs and Artifacts"
+        echo "       ./${0##*/} -m iso fedora-36 "
         echo ""
         exit 1
 }
@@ -261,10 +267,9 @@ install_pkgs() {
             libcap-ng-devel libmnl-devel llvm ncurses-devel newt-devel nss-tools numactl-devel pciutils-devel perl perl-generators \
             pesign python3-devel python3-docutils xmlto rpm-build yum-utils sg3_utils dwarves libbabeltrace-devel libbpf-devel openssl-devel \
             net-tools wget bison acpica-tools binutils gcc gcc-c++ git meson cmake dbus-devel libuuid libuuid-devel \
-            json-c-devel json-c json-c-doc clang openssl kmod-devel \
+            json-c-devel json-c json-c-doc clang openssl kmod-devel zip unzip\
             python3-sphinx python3-sphinx_rtd_theme swig \
             systemd-devel mock lorax
-
         sudo usermod -a -G mock $USER
         touch .pkgs
     else
@@ -413,15 +418,68 @@ install_centos_iso() {
     popd
 }
 
-install_fedora_iso() {
+install_edk2_zip() {
     pushd $DIR
+
     if [ ! -d ISO ]; then
         mkdir -p ISO
     fi
 
-    if [ ! -f ISO/Fedora-Server-dvd-x86_64-37-1.7.iso ]; then
+    if [ ! -f ISO/$OVMF_ZIP ]; then
         pushd ISO
-        wget https://download.fedoraproject.org/pub/fedora/linux/releases/37/Server/x86_64/iso/Fedora-Server-dvd-x86_64-37-1.7.iso
+        wget $OVMF_URL/$OVMF_ZIP
+        unzip $OVMF_ZIP
+        popd
+    fi
+
+    if [ ! -f ISO/OVMF_CODE.fd ]; then
+        echo "file ISO/OVMF_CODE.fd not found!"
+        exit 1
+    fi
+
+    rm -f  host-vm/OVMF_CODE.fd
+    rm -f  host-vm/vm_vars.fd
+    rm -f  host-vm/eficonfig/NvmeOfCli.efi
+    rm -f  host-vm/eficonfig/VConfig.efi
+    cp -fv ISO/OVMF_CODE.fd host-vm/OVMF_CODE.fd
+    cp -fv ISO/OVMF_VARS.fd host-vm/vm_vars.fd
+    cp -fv ISO/NvmeOfCli.efi host-vm/eficonfig/NvmeOfCli.efi
+    cp -fv ISO/VConfig.efi host-vm/eficonfig/VConfig.efi
+    popd
+}
+
+install_prebuilt_iso() {
+    pushd $DIR
+    if [ ! -f .pkgs2 ]; then
+        sudo dnf -y --skip-broken install vim tar wget net-tools zip unzip
+        touch .pkgs2
+    fi
+    if [ ! -d ISO ]; then
+        mkdir -p ISO
+    fi
+    case "${VERSION}" in
+        fedora-36)
+            VER=36
+            ISOVERSION="$ISOVERSION_F36"
+        ;;
+        fedora-37)
+            VER=37
+            ISOVERSION="$ISOVERSION_F37"
+        ;;
+        fedora-38)
+            VER="test\/38_Beta"
+            ISOVERSION="$ISOVERSION_F38"
+        ;;
+        *)
+            echo "  Invalid argument: $VERSION" >&2
+            echo "  use: \"$0 $MODE <$ISO_VERSIONS>\"" >&2
+            exit 1
+        ;;
+    esac
+
+    if [ ! -f ISO/$ISOVERSION ]; then
+        pushd ISO
+        wget https://download.fedoraproject.org/pub/fedora/linux/releases/$VER/Everything/x86_64/iso/$ISOVERSION
         popd
     fi
     popd
@@ -536,8 +594,6 @@ NEWARGS="$@"
 MODE=$(echo "${NEWARGS}" | tr -t '/' ' ' | awk '{print $1}')
 
 if [ -z "${MODE}" ]; then
-     MODE=user
-     echo "Using default arg $MODE"
      echo "Try: \"$0 -h\"" >&2
 fi
 
@@ -588,9 +644,10 @@ case "${MODE}" in
            edk2)
               install_edk2
            ;;
-           fedora)
-              exit 0
-              install_fedora_iso
+           prebuilt)
+              check_version_iso
+              install_prebuilt_iso
+              install_edk2_zip
            ;;
            centos)
                exit 0
@@ -599,6 +656,7 @@ case "${MODE}" in
            iso)
               check_version_iso
               install_user
+              install_pkgs
               build_copr_iso $VERSION
            ;;
            build)

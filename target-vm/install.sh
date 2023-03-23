@@ -47,16 +47,9 @@ EOF
 }
 
 rm -f .qargs
+rm -f .start
 
-ISO_FILE=$(find ../ -name boot.iso -print)
-if [ -z "$ISO_FILE" ]; then
-    check_install_args $# $1 "$2"
-    ISO_FILE="$1"
-else
-    ISO_FILE=$(realpath $ISO_FILE)
-    echo "using $ISO_FILE"
-    check_install_args $# $ISO_FILE "$2"
-fi
+check_install_args $# "$1" "$2"
 
 create_mac_addresses
 

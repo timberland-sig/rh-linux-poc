@@ -18,19 +18,19 @@ display_host_install_help() {
 }
 
 display_install_help() {
-  echo " Usage: install.sh <iso_file> [\"qemu_args\"]"
+  echo " Usage: install.sh <$ISO_VERSION> [\"qemu_args\"]"
   echo " "
   echo " Creates qcow2 disk files and installs a QEMU VM named $VMNAME"
   echo " in $PWD using the installation ISO provided in <iso_file>"
   echo " "
-  echo " Note: the <iso_file> must be contain the full iso file location"
-  echo " Note: pass \"\" in <iso_file> to use the default"
+  echo " Note: the <iso_file> must be downloaded with \"setup.sh prebuilt\" first"
+  echo " Note: pass \"\" in <iso_file> to use the default lorax_build"
   echo ""
   echo "   E.g.:"
   echo "          $0 \"\""
   echo "          $0 \"\" \"-vnc :0\""
-  echo "          $0 /root/rh-linux-poc/images/boot.iso \"-vnc :0\""
-  echo "          $0 /data/jmeneghi/ISO/Fedora-Server-dvd-x86_64-37-1.7.iso"
+  echo "          $0 fedora-37 \"-vnc :0\""
+  echo "          $0 fedora-36"
   echo " "
 }
 
@@ -113,29 +113,40 @@ check_host_depends() {
     fi
 }
 
-check_host_install_args() {
-    if [ $1 -lt 1 ] ; then
-        display_host_install_help
-        exit 1
-    fi
-
-    QARGS="$2"
-
-    check_qemu_command
-
-    check_host_depends
-
-}
-
 check_install_args() {
     if [ $1 -lt 1 ] ; then
         display_install_help
         exit 1
     fi
 
-    if [ ! -f $2 ]; then
-        echo " iso file $1 not found!"
-        exit 1
+    if [ -z "$2" ]; then
+        ISOVERSION="boot.iso"
+    else
+        case "$2" in
+        fedora-36)
+            ISOVERSION="$ISOVERSION_F36"
+        ;;
+        fedora-37)
+            ISOVERSION="$ISOVERSION_F37"
+        ;;
+        fedora-38)
+            ISOVERSION="$ISOVERSION_F38"
+        ;;
+        *)
+	    echo " Error: $2 not found"
+            exit 1
+        ;;
+        esac
+    fi
+
+    ISO_FILE=$(find ../ -name $ISOVERSION -print)
+    if [ -z "$ISO_FILE" ]; then
+	echo " Error: $ISOVERSION not found"
+	echo " run \"setup.sh -m iso\" or \"setup.sh prebuilt\""
+	exit 1
+    else
+        ISO_FILE=$(realpath $ISO_FILE)
+        echo "using $ISO_FILE"
     fi
 
     if [ $1 -gt 1 ] ; then

@@ -10,12 +10,14 @@ a.out
 *.tar.xz
 cscope.*
 */rpmbuild/*
+*/mock_libnvme/*
 */.build/*
 */disks/*
 */.qargs
 */.start
 .edk2pkgs
 .pkgs
+.pkgs2
 .usr
 .macaddr
 edk2/*
@@ -23,10 +25,12 @@ lorax/*
 lorax_results/*
 mock_result/*
 ISO/*
+host-vm/bootlog
 host-vm/efi
 host-vm/OVMF_CODE.fd
 host-vm/vm_vars.fd
 host-vm/eficonfig/NvmeOfCli.efi
+host-vm/eficonfig/VConfig.efi
 host-vm/efi.tgz
 host-vm/discover_target.sh
 host-vm/copy_efi.sh

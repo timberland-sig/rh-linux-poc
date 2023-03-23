@@ -45,6 +45,7 @@ sudo tar xzvf efi.tgz
 sudo cp -v $PWD/eficonfig/config $PWD/efi/EFI/BOOT
 sudo cp -v $PWD/eficonfig/startup.nsh $PWD/efi/EFI/BOOT
 sudo cp -v $PWD/eficonfig/NvmeOfCli.efi $PWD/efi/EFI/BOOT
+sudo cp -v $PWD/eficonfig/VConfig.efi $PWD/efi/EFI/BOOT
 sudo umount $PWD/efi
 rmdir efi
 
