@@ -19,6 +19,7 @@ BuildRequires: meson >= 0.50
 BuildRequires: json-c-devel >= 0.13
 BuildRequires: openssl-devel
 BuildRequires: dbus-devel
+BuildRequires: keyutils-libs-devel
 %if (0%{?rhel} == 0)
 BuildRequires: kernel-headers >= 5.15
 %endif
@@ -64,7 +65,7 @@ This package contains Python bindings for libnvme.
 %autosetup -c
 
 %build
-%meson -Dpython=true -Ddocs=all -Ddocs-build=true -Dhtmldir=%{_pkgdocdir}
+%meson -Dpython=auto -Ddocs=all -Ddocs-build=true -Dhtmldir=%{_pkgdocdir}
 %meson_build
 
 %install
