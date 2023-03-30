@@ -4,7 +4,7 @@
 #
 # Global variables
 #
-COPR_PROJECT=timberland-v13
+COPR_PROJECT=timberland-v14
 COPR_USER=johnmeneghini
 
 # These are the system-uuid, Hostnqn and Hostid for the target-vm
