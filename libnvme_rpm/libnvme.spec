@@ -4,7 +4,7 @@
 Name: libnvme
 Summary: Linux-native nvme device management library
 Version: 1.4
-Release: 1%{?dist}
+Release: 6%{?dist}
 License: LGPL-2.1-or-later
 URL: https://github.com/timberland-sig/libnvme
 Source: %{name}-%{version_no_tilde}.tar.gz
@@ -65,7 +65,7 @@ This package contains Python bindings for libnvme.
 %autosetup -c
 
 %build
-%meson -Dpython=auto -Ddocs=all -Ddocs-build=true -Dhtmldir=%{_pkgdocdir}
+%meson -Dpython=enabled -Ddocs=all -Ddocs-build=true -Dhtmldir=%{_pkgdocdir}
 %meson_build
 
 %install

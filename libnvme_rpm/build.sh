@@ -6,7 +6,6 @@ DIR="$(dirname -- "$(realpath -- "$0")")"
 . $DIR/../rpm_lib.sh
 
 VERSION=1.4
-RELEASE=1
 MODE=blank
 COPR_PROJECT=blank
 
@@ -14,6 +13,7 @@ check_args $# $1 $2
 
 build_dist() {
     rm -f libnvme-${VERSION}.tar.gz
+    rm -rf mock_libnvme  rpmbuild
     cp libnvme.spec libnvme
     pushd libnvme
     make purge

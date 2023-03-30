@@ -29,12 +29,10 @@ display_help() {
         echo "  virt          : install qemu-kvm environment "
         echo "  edk2          : create and build the timberland-sig edk2 repository in the edk2 directory "
         echo "                : - install build artifacts in OVMF directory  "
-        echo ""
+        echo "  copr          : create $COPR_PROJECT copr project and upload all rpms "
+        echo "                : - results at: https://copr.fedorainfracloud.org/coprs/"
         echo "  mock  < $ALL_VERSIONS > "
         echo "                : mock build of all rpms "
-        echo "  copr  < $RH_VERSIONS > "
-        echo "                : create $COPR_PROJECT copr project and upload all rpms "
-        echo "                : - results at: https://copr.fedorainfracloud.org/coprs/"
         echo "  iso   < $ISO_VERSIONS > "
         echo "                : build bootable iso image with timberland-sig artifacts"
         echo "                : - results appear in 'lorax/results' directory"
@@ -96,11 +94,6 @@ install_user() {
             exit 1
         else
             sed -i "s/^COPR_USER.*/COPR_USER\=$FOO/" global_vars.sh
-        fi
-
-        FOO="$(copr-cli list | grep "Name..$COPR_PROJECT")"
-        if [ -z "$FOO" ]; then
-            create_copr_project
         fi
 
         touch .usr
@@ -220,11 +213,13 @@ build_libnvme_rpms() {
 }
 
 create_copr_project() {
-    echo "Create copr $COPR_PROJECT project."
-    copr-cli create --chroot centos-stream-9-x86_64 --chroot fedora-38-x86_64 --chroot fedora-37-x86_64 --chroot fedora-36-x86_64 \
-    --description "Timberland-sig NVMe/TCP Boot support" \
-    --instructions "File bugs and propose patches at https://github.com/timberland-sig" \
-    $COPR_PROJECT
+    FOO="$(copr-cli list | grep "Name..$COPR_PROJECT")"
+    if [ -z "$FOO" ]; then
+        echo "Create copr $COPR_PROJECT project."
+        copr-cli create --chroot centos-stream-9-x86_64 --chroot fedora-38-x86_64 --chroot fedora-37-x86_64 --chroot fedora-36-x86_64 \
+        --description "Timberland-sig NVMe/TCP Boot support" \
+        --instructions "File bugs and propose patches at https://github.com/timberland-sig" $COPR_PROJECT
+    fi
 }
 
 install_edk2() {
@@ -616,8 +611,8 @@ case "${MODE}" in
               install_network
            ;;
            copr)
-              check_version_rh
-              install_user
+              #check_version_rh
+              create_copr_project
               build_libnvme_rpms copr $COPR_PROJECT
               build_dracut_rpms copr $COPR_PROJECT
               build_nvme_rpms copr $COPR_PROJECT

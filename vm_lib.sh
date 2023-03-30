@@ -83,6 +83,15 @@ create_host_disk() {
         qemu-img create -f qcow2 disks/nvme2.qcow2 50G
 }
 
+check_qargs() {
+    if [  -f .qargs ]; then
+        QARGS="$(cat .qargs)"
+        NUM=$(echo "$QARGS" | cut -d ':' -f 2)
+        echo ""
+        echo "Connect with \"vncviewer $HOST:$NUM\""
+        echo ""
+    fi
+}
 
 check_qemu_command() {
     command -v qemu-system-x86_64

@@ -11,35 +11,48 @@ VMNAME=`basename $PWD`
 TESTUSR="$USER"
 HOSTEFIDIR="$PWD"
 
+create_update_efi() {
+    cat << EOF >> .build/update_efi.sh
+#!/bin/bash
+dnf update -y libnvme nvme-cli
+dnf update -y dracut
+dnf update -y dracut-network
+
+modprobe nvme_fabrics
+modprobe nvme_tcp
+
+dracut -f -v --add nvmf
+
+rm -f efi.tgz
+pushd /boot
+tar cvzf ~/efi.tgz efi
+popd
+
+echo ""
+echo " scp the efi.tgz file to the hypervisor host, "
+echo " or use \"./copy_efi.sh\" to retrieve efi.tgz"
+echo ""
+scp -o StrictHostKeyChecking=no efi.tgz $TESTUSR@host-gw-br2:$HOSTEFIDIR/efi.tgz
+echo ""
+echo " Shutdown this VM and run the \"./create_efidisk.sh\" script on the hypervisor."
+echo ""
+EOF
+}
+
 add_host_netsetup() {
     cat << EOF >> .build/netsetup.sh
- dnf copr enable -y $COPR_USER/$COPR_PROJECT
- dnf install -y git tar vim nvme-cli systemd-networkd jq dbus-daemon memstrack
- dnf update -y dracut
- dnf install -y dracut-network
+dnf copr enable -y $COPR_USER/$COPR_PROJECT
+dnf install -y git tar vim nvme-cli systemd-networkd jq dbus-daemon memstrack
+dnf update -y dracut
+dnf install -y dracut-network
 
- echo "$HOSTID" > /etc/nvme/hostid
+echo "$HOSTID" > /etc/nvme/hostid
 
- modprobe nvme_fabrics
- modprobe nvme_tcp
+./update_efi.sh
 
- dracut -f -v --add nvmf
-
- pushd /boot
- tar cvzf ~/efi.tgz efi
- popd
-
- echo ""
- echo " scp the efi.tgz file to the hypervisor host, "
- echo " or use \"./copy_efi.sh\" to retrieve efi.tgz"
- echo ""
- scp -o StrictHostKeyChecking=no efi.tgz $TESTUSR@host-gw:$HOSTEFIDIR/efi.tgz
-
- echo ""
- echo " Shutdown this VM and run the \"./create_efidisk.sh\" script on the hypervisor."
- echo " Then run the \"target-vm/install.sh\" script to create the target-vm."
- echo ""
-
+echo ""
+echo " Run the \"target-vm/install.sh\" script to create the target-vm."
+echo ""
 EOF
 }
 
@@ -72,9 +85,17 @@ EOF
 
 check_netsetup_args $#
 
+rm -f copy_efi.sh
+rm -f discover_target.sh
+rm -f .build/netsetup.sh
+rm -f .build/update_efi.sh
+rm -f .build/hosts.txt
+
 create_netsetup "$1" "$2" "$3"
 
 add_host_netsetup
+
+create_update_efi
 
 create_hosts_file "$3"
 
@@ -85,15 +106,16 @@ create_discover_target
 chmod 755 copy_efi.sh
 chmod 755 discover_target.sh
 chmod 755 .build/netsetup.sh
+chmod 755 .build/update_efi.sh
 chmod 755 .build/hosts.txt
 
 rm -rf efi efi.tgz
 
 echo ""
-echo " scp  .build/{netsetup.sh,hosts.txt} root@$3:"
+echo " scp  .build/{netsetup.sh,update_efi.sh,hosts.txt} root@$3:"
 echo ""
 ssh-keygen -R $3
-scp -o StrictHostKeyChecking=no .build/{netsetup.sh,hosts.txt} root@$3:
+scp -o StrictHostKeyChecking=no .build/{netsetup.sh,update_efi.sh,hosts.txt} root@$3:
 
 echo ""
 echo " Login to $VMNAME/root and run \"./netsetup.sh\" to complete the VM configuration"

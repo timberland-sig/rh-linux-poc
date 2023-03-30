@@ -35,8 +35,8 @@ $QEMU -name $VMNAME -M q35 -accel kvm -cpu host -m 4G -smp 4 $QARGS \
 -netdev bridge,br=virbr2,id=net2,helper=$BRIDGE \
 -device virtio-net-pci,netdev=net2,mac=$MAC3
 EOF
-	echo "creating .build/start.sh"
-	cat << EOF >> .build/start.sh
+	echo "creating .build/start_remote.sh"
+	cat << EOF >> .build/start_remote.sh
 #!/bin/bash
 $QEMU -name $VMNAME -M q35 -accel kvm -cpu host -m 4G -smp 4 $QARGS \
 -uuid $HOST_SYS_UUID \
@@ -45,6 +45,22 @@ $QEMU -name $VMNAME -M q35 -accel kvm -cpu host -m 4G -smp 4 $QARGS \
 -drive if=pflash,format=raw,readonly=on,file=OVMF_CODE.fd \
 -drive if=pflash,format=raw,file=vm_vars.fd \
 -drive file=efidisk,format=raw,if=none,id=NVME1 -device nvme,drive=NVME1,serial=$SN3 \
+-netdev bridge,br=br0,id=net0,helper=$BRIDGE \
+-device virtio-net-pci,netdev=net0,mac=$MAC1 \
+-netdev bridge,br=virbr1,id=net1,helper=$BRIDGE \
+-device virtio-net-pci,netdev=net1,mac=$MAC2 \
+-netdev bridge,br=virbr2,id=net2,helper=$BRIDGE \
+-device virtio-net-pci,netdev=net2,mac=$MAC3
+EOF
+	echo "creating .build/start_local.sh"
+	cat << EOF >> .build/start_local.sh
+#!/bin/bash
+$QEMU -name $VMNAME -M q35 -accel kvm -cpu host -m 4G -smp 4 $QARGS \
+-uuid $HOST_SYS_UUID \
+-device nvme,drive=NVME2,max_ioqpairs=4,physical_block_size=4096,logical_block_size=4096,use-intel-id=on,serial=$SN2 \
+-drive file=$BOOT_DISK,if=none,id=NVME2 \
+-device virtio-rng -boot menu=on,splash-time=2000 \
+-drive if=pflash,format=raw,readonly=on,file=OVMF_CODE.fd \
 -netdev bridge,br=br0,id=net0,helper=$BRIDGE \
 -device virtio-net-pci,netdev=net0,mac=$MAC1 \
 -netdev bridge,br=virbr1,id=net1,helper=$BRIDGE \
@@ -74,8 +90,7 @@ else
 	echo "using $BOOT_DISK"
 fi
 
-rm -rf .build
-rmdir efi
+rm -rf efi
 rm -f efi.tgz
 
 create_mac_addresses
@@ -83,7 +98,8 @@ create_mac_addresses
 create_install_startup
 
 chmod 755 .build/install.sh
-chmod 755 .build/start.sh
+chmod 755 .build/start_local.sh
+chmod 755 .build/start_remote.sh
 
 if [ ! -z "${QARGS}" ]; then
 	echo "$QARGS" > .qargs

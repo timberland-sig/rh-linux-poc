@@ -2,8 +2,8 @@
 %{!?version_no_tilde: %define version_no_tilde %{shrink:%(echo '%{version}' | tr '~' '-')}}
 
 Name:           nvme-cli
-Version:        2.3
-Release:        4%{?dist}
+Version:        2.4
+Release:        2%{?dist}
 Summary:        NVMe management command line interface (timberland-sig)
 
 License:        GPLv2
