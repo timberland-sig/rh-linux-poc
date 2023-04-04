@@ -98,10 +98,14 @@ Directories and files are explained here:
 | Directory | File  | Decription |
 | :-----   | :----  | :----      |
 | `nvme_rpm` |  -  | Contains the git submodule for https://github.com/timberland-sig/nvme-cli. The rpm is generated using this source code with the `nvme-cli.spec` file located in this directory. The code used to generate the rpm can be developed and changed by working in the provided *nvme_rpm/nvme-cli* git repository.  Normal git workflows apply. |
-| - | nvme-cli.spec | A modified version of the Fedora nvme-cli.spec file from: https://src.fedoraproject.org/rpms/nvme-cli/blob/rawhide/f/nvme-cli.spec. This spec file has been modified to work with the timberland-sig nvme-cli source code in this submodule.
+| nvme_rpm | nvme-cli.spec | A modified version of the Fedora nvme-cli.spec file from: https://src.fedoraproject.org/rpms/nvme-cli/blob/rawhide/f/nvme-cli.spec. This spec file has been modified to work with the timberland-sig nvme-cli source code in this submodule.
 | `libnvme_rpm` | - | Contains the git submodule for https://github.com/timberland-sig/libnvme. The rpm is generated using this source code with the `libnvme.spec` file located in this directory. The code used to generate the rpm can be developed and changed by working in the provided *libnvme_rpm/libnvme* git repository.  Normal git workflows apply. |
+| nvme_rpm | libnvm.spec | A modified version of the Fedora libnvme.spec file from: https://src.fedoraproject.org/rpms/libnvme/blob/rawhide/f/libnvme.spec. This spec file has been modified to work with the timberland-sig libnvme source code in this submodule.
 | `dracut_rpm` | - | Contains the git submodule for https://github.com/timberland-sig/dracut. The rpm is generated using this source code with the `dracut.spec` file located in this directory. The code used to generate the rpm can be developed and changed by working in the provided *dracut_rpm/dracut* git repository.  Normal git workflows apply. |
+| `dracut_rpm` | dracut.spec | A modified version of the Fedora dracut.spec file from:  https://src.fedoraproject.org/rpms/dracut/blob/rawhide/f/dracut.spec. This spec file has been modified to work with the timberland-sig dracut source code in this submodule. |
 |  - | `global_vars.sh` | Contains global variables which control the test bed configuration. If you need to change sometihing, look here first. |
+|  - | `rmp_lib.sh` | Contains global functions used by the scripts in the *libnvme_rpm*, *nvme_rpm*, and *dracut_rpm*  subdirectories. |
+|  - | `vm_lib.sh` | Contains global functions used by the scripts in the *target-vm* and *host-vm* subdirectories. |
 | `host-vm` | - |Contains the scripts and files needed to create and run your QEMU host virtual machine. |
 | `target-vm` | - | Contains the scripts and files needed to create and run your QEMU target virtual machine. |
 
@@ -551,22 +555,32 @@ Redirecting to /bin/systemctl stop firewalld.service
 
 ## Start the host-vm
 
-Now `cd ../host-vm` and run the `./start.sh` script to start the host-vm and
+Now `cd ../host-vm` and run the `./start.sh attempt` script to start the host-vm and
 begin the NVMe/TCP NBFT boot process.
 
 E.g.:
 
 ```
- > ./start.sh
+> ./start.sh
+ Usage: ./start.sh <attempt|remote|local>
 
- Connect to the "host-vm" console and immediately Press the ESC button to enter the UEFI setup menu.
- - Change the device boot order so the EFI Internal Shell starts first. Exit to continue.
- - The UEFI Shell will execute the "startup.nsh" script, let the countdown expire.
- - Then Reset to reboot the VM. The UEFI will connect to the NVMe/TCP target and boot.
+ Starts the QEMU VM named host-vm
+
+    attempt - inialize vm_vars.fd and boot with efidisk and nvme/tcp - target-vm must be running
+    remote  - do not initialized vm_vars.fd and boot with efidisk and nvme/tcp - target-vm must be running
+    local -  boot with out the efidisk and mount the remote disk locally - target-vm must be shutdown
+
+   E.g.:
+          ./start.sh attempt
+          ./start.sh remote
+          ./start.sh local
 ```
-Once you connect to the `host-vm` console, you will observe the UEFI boot process starting.
 
-Immediately Press the ESC button to enter the UEFI setup menu.
+The first time the host-vm is started you need to program the nbft which is programmed by boot variables held in the `vm_vars.fd` file.  This file is initialized by using the *attempt* arguments.
+
+Once you connect to the `host-vm` console, you will observe the UEFI boot
+process starting.  Immediately Press the ESC button to enter the UEFI setup
+menu.
 
 ![alt uefi boot menu](images/uefi_boot_menu.png)
 
@@ -586,7 +600,7 @@ programmed in the *host-vm/eficonfig/config* attempt file.
 ![alt uefi count down](images/uefi_count_down.png)
 
 After `!!!The UEFI variables has been set successfully!!!` the EFI Shell will
-return to the Boot Manager menu. Select `Reset` to continue.
+return to the Boot Manager menu. Press ESC and select `Reset` to continue.
 
 ![alt uefi reset](images/uefi_reset.png)
 
@@ -600,9 +614,11 @@ The EFI firmware will reset the system an boot from NVMe/TCP.
 
 Subsequent to booting the *host-vm* for the first time the NBFT/ACPI table
 should not need to be programmed by running `startup.nsh` again. To boot the
-*host-vm* after shutdown run the `./start.sh` script again. Connect to the
+*host-vm* after shutdown run the `./start.sh remote` script. Connect to the
 *host-vm* console and immediately press the ESC button to stop the
-`startup.nsh` countdown. If needed, type `exit` at the *Shell>* prompt.
+`startup.nsh` countdown. If needed, type `reset -w` at the *Shell>* prompt to
+do a warm restart.  The host-vm should immediately find the remote disk and
+boot with nvme/tcp.
 
 ![alt uefi reset](images/uefi_no_attempt.png)
 
@@ -610,5 +626,27 @@ Then Enter `Reset` at the UEFI setup menu to boot the VM. The UEFI will connect
 to the NVMe/TCP target and boot.
 
 ![alt uefi reset](images/uefi_reset.png)
+
+## To Reprogram or update the efidisk on the host-vm
+
+Now that you have both the *host-vm* and the *target-vm* running you can update the *nvme-cli*, *libnvme* and *dracut* components with the following work flow.
+
+1. Modify the source code in the git submodules found in *libnvme_rpm/libnvme*, *nvme_rpm/nvme-cli*, or *dracut_rpm/dracut*.
+2. After compiling your changes locally generate new *copr* rpms with the `./setup.sh copr` command.
+
+Then update your running QEMU testbed with the new new *rpms* with the following prodedure.
+
+1. shutdown the host-vm
+2. shutdown the target-vm
+3. start the host-vm with `host-vm/start.sh local`
+4. login to the vm and run the `./update_efi.sh` script.
+5. run the `host-vm/copy_efi.sh` script, if needed.
+6. shutdown the host-vm
+6. start the target-vm with the `target-vm/start.sh` script
+6. start the nvme target on the target-vm with the `./start-nvme-target.sh` script
+7. create a new *efidisk* by running the `host-vm/create_efidisk.sh` script
+8. boot the host-vm with the `host-vm/start.sh attempt` script
+
+This procedure can be used to develop and test your changes to *nvme-cli* and *dracut* in support of NVMe/TCP boot.
 
 **END**

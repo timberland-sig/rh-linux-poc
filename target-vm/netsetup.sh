@@ -11,7 +11,7 @@ VMNAME=`basename $PWD`
 
 create_nvme_target_config() {
     rm -f .build/tcp.json
-    rm -f .build/start-tcp-target.sh
+    rm -f .build/start-nvme-target.sh
 
     cp tcp.json.in .build/tcp.json
 
@@ -23,7 +23,7 @@ create_nvme_target_config() {
     sed -i "s/NSUUID/$NSUUID/" .build/tcp.json
     sed -i "s/CTRLSN/$SN2/" .build/tcp.json
 
-    cat << EOF >> .build/start-tcp-target.sh
+    cat << EOF >> .build/start-nvme-target.sh
 #!/bin/bash
 modprobe nvme_fabrics
 modprobe nvmet_tcp
@@ -41,7 +41,7 @@ dnf install -y nvme-cli nvmetcli
 echo "$TARGETID" > /etc/nvme/hostid
 
 echo ""
-echo " Run \"./start-tcp-target.sh\" to start the NVMe/TCP soft target."
+echo " Run \"./start-nvme-target.sh\" to start the NVMe/TCP soft target."
 echo " Then run \"host-vm/start.sh\" on the hypervisor to boot the host-vm with NVMe/TCP "
 echo ""
 
@@ -59,15 +59,15 @@ create_hosts_file "$3"
 create_nvme_target_config
 
 chmod 755 .build/netsetup.sh
-chmod 755 .build/start-tcp-target.sh
+chmod 755 .build/start-nvme-target.sh
 chmod 755 .build/tcp.json
 chmod 755 .build/hosts.txt
 
 echo ""
-echo " scp  .build/{netsetup.sh,start-tcp-target.sh,hosts.txt,tcp.json} root@$3:"
+echo " scp  .build/{netsetup.sh,start-nvme-target.sh,hosts.txt,tcp.json} root@$3:"
 echo ""
 ssh-keygen -R $3
-scp -o StrictHostKeyChecking=no .build/{netsetup.sh,hosts.txt,start-tcp-target.sh,tcp.json} root@$3:
+scp -o StrictHostKeyChecking=no .build/{netsetup.sh,hosts.txt,start-nvme-target.sh,tcp.json} root@$3:
 
 echo ""
 echo " Login to $VMNAME/root and run \"./netsetup.sh\" to complete the VM configuration"

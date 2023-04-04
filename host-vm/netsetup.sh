@@ -14,7 +14,10 @@ HOSTEFIDIR="$PWD"
 create_update_efi() {
     cat << EOF >> .build/update_efi.sh
 #!/bin/bash
-dnf update -y libnvme nvme-cli
+dnf remove -y nvme-cli
+dnf copr disable -y $COPR_USER/$COPR_PROJECT
+dnf copr enable -y $COPR_USER/$COPR_PROJECT
+dnf install -y nvme-cli
 dnf update -y dracut
 dnf update -y dracut-network
 

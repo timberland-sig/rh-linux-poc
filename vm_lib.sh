@@ -218,15 +218,15 @@ create_ip_addresses() {
 
 create_hosts_file() {
 
-	rm -f .build/hosts.txt
+    rm -f .build/hosts.txt
 
     HOST_GW_ADDR="$(ip -br address show br0 | sed 's/\s\+/:/g' | cut -d ':' -f 3 | cut -d '/' -f 1)"
     TARGET_ADDR="$1"
 
-	echo " "
-	echo " creating .build/hosts.txt"
+    echo " "
+    echo " creating .build/hosts.txt"
 
-	cat << EOF >> .build/hosts.txt
+    cat << EOF >> .build/hosts.txt
 
 $HOSTGW_IP2    host-gw-br2
 $HOSTGW_IP3    host-gw-br3
