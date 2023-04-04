@@ -8,7 +8,7 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 # Configuraiton
 NOOP=0
-MODES="build|user|pkgs|net|virt|mock|copr|edk2|iso"
+MODES="build|user|pkgs|net|virt|mock|copr|edk2|iso|prebuilt"
 MODE="user"
 MOCKBUILD=0
 ALL_VERSIONS="fedora-36|fedora-37|fedora-38|centos-stream-9|opensuse-tumbleweed"
@@ -29,7 +29,7 @@ display_help() {
         echo "  virt          : install qemu-kvm environment "
         echo "  edk2          : create and build the timberland-sig edk2 repository in the edk2 directory "
         echo "                : - install build artifacts in OVMF directory  "
-        echo "  copr          : create $COPR_PROJECT copr project and upload all rpms "
+        echo "  copr          : create copr project $COPR_PROJECT and upload all rpms "
         echo "                : - results at: https://copr.fedorainfracloud.org/coprs/"
         echo "  mock  < $ALL_VERSIONS > "
         echo "                : mock build of all rpms "
@@ -43,7 +43,7 @@ display_help() {
         echo "  prebuilt < $ISO_VERSIONS > "
         echo "                : Download Fedora release ISO and install prebuilt Timberland SIG packages"
         echo "                : - ISOs appear in 'ISO' directory"
-        echo "                : - Prebuilt RPMs come from 'https://copr.fedorainfracloud.org/coprs/johnmeneghini/timberland-sig/'"
+        echo "                : - Prebuilt RPMs come from 'https://copr.fedorainfracloud.org/coprs/johnmeneghini/$COPR_PROJECT/'"
         echo ""
         echo " Examples: "
         echo "  Install qemu and configure hypervisor networks"
@@ -53,7 +53,7 @@ display_help() {
         echo "       ./${0##*/} prebuilt fedora-36 "
         echo "  Configure user/dev environment, clone all repositories and build all bits"
         echo "       ./${0##*/} -m build fedora-37"
-        echo "  Build an ISO with local RPMs and Artifacts"
+        echo "  Build an ISO with copr rpms and local edk2 artifacts"
         echo "       ./${0##*/} -m iso fedora-36 "
         echo ""
         exit 1
@@ -245,12 +245,16 @@ install_edk2() {
     make -C BaseTools
     source edksetup.sh
     build -t GCC5 -a X64 -p OvmfPkg/OvmfPkgX64.dsc
+    mkdir -p $DIR/ISO
     rm -f  $DIR/host-vm/OVMF_CODE.fd
     rm -f  $DIR/host-vm/vm_vars.fd
     rm -f  $DIR/host-vm/eficonfig/NvmeOfCli.efi
-    cp Build/OvmfX64/DEBUG_GCC5/FV/OVMF_CODE.fd $DIR/host-vm/OVMF_CODE.fd
-    cp Build/OvmfX64/DEBUG_GCC5/FV/OVMF_VARS.fd $DIR/host-vm/vm_vars.fd
-    cp Build/OvmfX64/DEBUG_GCC5/X64/NvmeOfCli.efi $DIR/host-vm/eficonfig/NvmeOfCli.efi
+    rm -f  $DIR/host-vm/eficonfig/VConfig.efi
+    cp -fv Build/OvmfX64/DEBUG_GCC5/FV/OVMF_CODE.fd $DIR/host-vm/OVMF_CODE.fd
+    cp -fv Build/OvmfX64/DEBUG_GCC5/FV/OVMF_VARS.fd $DIR/host-vm/vm_vars.fd
+    cp -fv Build/OvmfX64/DEBUG_GCC5/FV/OVMF_VARS.fd $DIR/ISO/OVMF_VARS.fd
+    cp -fv Build/OvmfX64/DEBUG_GCC5/X64/VConfig.efi $DIR/host-vm/eficonfig/VConfig.efi
+    cp -fv Build/OvmfX64/DEBUG_GCC5/X64/NvmeOfCli.efi $DIR/host-vm/eficonfig/NvmeOfCli.efi
     popd
 }
 
