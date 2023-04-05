@@ -48,7 +48,7 @@ case "$1" in
         echo " - Then Reset to reboot the VM. The UEFI will connect to the NVMe/TCP target and boot."
         echo ""
         check_qemu_command
-        bash .build/start_remote.sh &
+        bash .build/start_attempt.sh &
     ;;
     remote)
         echo ""

@@ -35,6 +35,24 @@ $QEMU -name $VMNAME -M q35 -accel kvm -cpu host -m 4G -smp 4 $QARGS \
 -netdev bridge,br=virbr2,id=net2,helper=$BRIDGE \
 -device virtio-net-pci,netdev=net2,mac=$MAC3
 EOF
+	echo "creating .build/start_attempt.sh"
+	cat << EOF >> .build/start_attempt.sh
+#!/bin/bash
+$QEMU -name $VMNAME -M q35 -accel kvm -cpu host -m 4G -smp 4 $QARGS \
+-uuid $HOST_SYS_UUID \
+-debugcon file:bootlog -global isa-debugcon.iobase=0x402 \
+-device virtio-rng -boot menu=on,splash-time=2000 \
+-drive if=pflash,format=raw,readonly=on,file=OVMF_CODE.fd \
+-drive if=pflash,format=raw,file=vm_vars.fd \
+-drive file=efidisk,format=raw,if=none,id=NVME1 -device nvme,drive=NVME1,serial=$SN3 \
+-netdev bridge,br=br0,id=net0,helper=$BRIDGE \
+-device virtio-net-pci,netdev=net0,mac=$MAC1 \
+-netdev bridge,br=virbr1,id=net1,helper=$BRIDGE \
+-device virtio-net-pci,netdev=net1,mac=$MAC2 \
+-netdev bridge,br=virbr2,id=net2,helper=$BRIDGE \
+-device virtio-net-pci,netdev=net2,mac=$MAC3
+EOF
+
 	echo "creating .build/start_remote.sh"
 	cat << EOF >> .build/start_remote.sh
 #!/bin/bash
@@ -44,7 +62,6 @@ $QEMU -name $VMNAME -M q35 -accel kvm -cpu host -m 4G -smp 4 $QARGS \
 -device virtio-rng -boot menu=on,splash-time=2000 \
 -drive if=pflash,format=raw,readonly=on,file=OVMF_CODE.fd \
 -drive if=pflash,format=raw,file=vm_vars.fd \
--drive file=efidisk,format=raw,if=none,id=NVME1 -device nvme,drive=NVME1,serial=$SN3 \
 -netdev bridge,br=br0,id=net0,helper=$BRIDGE \
 -device virtio-net-pci,netdev=net0,mac=$MAC1 \
 -netdev bridge,br=virbr1,id=net1,helper=$BRIDGE \
@@ -100,6 +117,7 @@ create_install_startup
 chmod 755 .build/install.sh
 chmod 755 .build/start_local.sh
 chmod 755 .build/start_remote.sh
+chmod 755 .build/start_attempt.sh
 
 if [ ! -z "${QARGS}" ]; then
 	echo "$QARGS" > .qargs
