@@ -216,7 +216,7 @@ create_copr_project() {
     FOO="$(copr-cli list | grep "Name..$COPR_PROJECT")"
     if [ -z "$FOO" ]; then
         echo "Create copr $COPR_PROJECT project."
-        copr-cli create --chroot centos-stream-9-x86_64 --chroot fedora-38-x86_64 --chroot fedora-37-x86_64 --chroot fedora-36-x86_64 \
+        copr-cli create --chroot fedora-38-x86_64 --chroot fedora-37-x86_64 --chroot fedora-36-x86_64 \
         --description "Timberland-sig NVMe/TCP Boot support" \
         --instructions "File bugs and propose patches at https://github.com/timberland-sig" $COPR_PROJECT
     fi

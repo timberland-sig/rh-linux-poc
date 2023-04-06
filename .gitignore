@@ -10,7 +10,7 @@ a.out
 *.tar.xz
 cscope.*
 */rpmbuild/*
-*/mock_libnvme/*
+*/mock_build/*
 */.build/*
 */disks/*
 */.qargs

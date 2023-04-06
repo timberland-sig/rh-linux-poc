@@ -12,8 +12,8 @@ COPR_PROJECT=blank
 check_args $# $1 $2
 
 build_dist() {
-    rm -f libnvme-${VERSION}.tar.gz
-    rm -rf mock_libnvme  rpmbuild
+    rm -f libnvme-*.tar.gz
+    rm -rf mock_build  rpmbuild
     cp libnvme.spec libnvme
     pushd libnvme
     make purge
@@ -61,7 +61,7 @@ case "${MODE}" in
              prep_rpm
              build_srpm
              RPM="$(ls rpmbuild/SRPMS/libnvme-*.src.rpm)"
-             mock -r fedora-36-x86_64 --arch=x86_64 --no-clean --resultdir $PWD/mock_libnvme "$RPM"
+             mock -r fedora-36-x86_64 --arch=x86_64 --no-clean --resultdir $PWD/mock_build "$RPM"
            ;;
            *)
            echo " Invalid argument: $MODE" >&2

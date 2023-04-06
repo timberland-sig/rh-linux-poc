@@ -14,18 +14,24 @@ HOSTEFIDIR="$PWD"
 create_update_efi() {
     cat << EOF >> .build/update_efi.sh
 #!/bin/bash
-dnf remove -y nvme-cli
+dnf remove -y nvme-cli libnvme
 dnf copr disable -y $COPR_USER/$COPR_PROJECT
 dnf copr enable -y $COPR_USER/$COPR_PROJECT
-dnf install -y nvme-cli
+dnf install -y nvme-cli libnvme
 dnf update -y dracut
 dnf update -y dracut-network
 
+echo "$HOSTID" > /etc/nvme/hostid
+
 modprobe nvme_fabrics
 modprobe nvme_tcp
+EOF
+}
 
+create_update_initramfs() {
+    cat << EOF >> .build/update_initramfs.sh
+#!/bin/bash
 dracut -f -v --add nvmf
-
 rm -f efi.tgz
 pushd /boot
 tar cvzf ~/efi.tgz efi
@@ -45,13 +51,12 @@ EOF
 add_host_netsetup() {
     cat << EOF >> .build/netsetup.sh
 dnf copr enable -y $COPR_USER/$COPR_PROJECT
-dnf install -y git tar vim nvme-cli systemd-networkd jq dbus-daemon memstrack
+dnf install -y git tar vim nvme-cli libnvme systemd-networkd jq dbus-daemon memstrack
 dnf update -y dracut
 dnf install -y dracut-network
-
 echo "$HOSTID" > /etc/nvme/hostid
 
-./update_efi.sh
+./update_initramfs.sh
 
 echo ""
 echo " Run the \"target-vm/install.sh\" script to create the target-vm."
@@ -92,33 +97,32 @@ rm -f copy_efi.sh
 rm -f discover_target.sh
 rm -f .build/netsetup.sh
 rm -f .build/update_efi.sh
+rm -f .build/update_initramfs.sh
 rm -f .build/hosts.txt
 
 create_netsetup "$1" "$2" "$3"
 
 add_host_netsetup
-
 create_update_efi
-
+create_update_initramfs
 create_hosts_file "$3"
-
 create_copy_efi "$3"
-
 create_discover_target
 
 chmod 755 copy_efi.sh
 chmod 755 discover_target.sh
 chmod 755 .build/netsetup.sh
 chmod 755 .build/update_efi.sh
+chmod 755 .build/update_initramfs.sh
 chmod 755 .build/hosts.txt
 
 rm -rf efi efi.tgz
 
 echo ""
-echo " scp  .build/{netsetup.sh,update_efi.sh,hosts.txt} root@$3:"
+echo " scp  .build/{netsetup.sh,update_initramfs.sh,update_efi.sh,hosts.txt} root@$3:"
 echo ""
 ssh-keygen -R $3
-scp -o StrictHostKeyChecking=no .build/{netsetup.sh,update_efi.sh,hosts.txt} root@$3:
+scp -o StrictHostKeyChecking=no .build/{netsetup.sh,update_initramfs.sh,update_efi.sh,hosts.txt} root@$3:
 
 echo ""
 echo " Login to $VMNAME/root and run \"./netsetup.sh\" to complete the VM configuration"
