@@ -4,7 +4,7 @@
 Name: libnvme
 Summary: Linux-native nvme device management library
 Version: 1.4
-Release: 1%{?dist}
+Release: 2%{?dist}
 License: LGPL-2.1-or-later
 URL: https://github.com/timberland-sig/libnvme
 Source: %{name}-%{version_no_tilde}.tar.gz
@@ -81,9 +81,9 @@ mv %{buildroot}/usr/*.rst %{buildroot}%{_pkgdocdir}/
 %files
 %license COPYING ccan/licenses/*
 %{_libdir}/libnvme.so.1
-%{_libdir}/libnvme.so.1.3.0
+%{_libdir}/libnvme.so.1.4.0
 %{_libdir}/libnvme-mi.so.1
-%{_libdir}/libnvme-mi.so.1.3.0
+%{_libdir}/libnvme-mi.so.1.4.0
 
 %files devel
 %{_libdir}/libnvme.so

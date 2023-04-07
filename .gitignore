@@ -24,6 +24,7 @@ edk2/*
 lorax/*
 lorax_results/*
 mock_result/*
+mock_repo/*
 ISO/*
 host-vm/bootlog
 host-vm/efi
