@@ -3,7 +3,7 @@
 
 Name:           nvme-cli
 Version:        2.4
-Release:        2%{?dist}
+Release:        3%{?dist}
 Summary:        NVMe management command line interface (timberland-sig)
 
 License:        GPLv2
