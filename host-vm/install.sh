@@ -110,6 +110,8 @@ fi
 rm -rf efi
 rm -f efi.tgz
 
+cp -fv $DIR/../ISO/OVMF_VARS.fd vm_vars.fd
+
 create_mac_addresses
 
 create_install_startup

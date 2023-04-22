@@ -7,7 +7,7 @@
 %global __requires_exclude pkg-config
 
 # rpmdev-bumpspec and releng automation compatible variable
-%global baserelease 1
+%global baserelease 2
 
 Name: dracut
 Version: 059

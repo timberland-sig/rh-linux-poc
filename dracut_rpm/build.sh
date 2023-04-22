@@ -6,7 +6,7 @@ DIR="$(dirname -- "$(realpath -- "$0")")"
 . $DIR/../rpm_lib.sh
 
 VERSION=059
-RELEASE=1
+RELEASE=2
 MODE=blank
 COPR_PROJECT=blank
 
@@ -67,7 +67,7 @@ case "${MODE}" in
              prep_rpm
              build_srpm
              RPM="$(ls rpmbuild/SRPMS/dracut-*.src.rpm)"
-             mock -r fedora-36-x86_64 --arch=x86_64 --no-clean --resultdir $PWD/mock_dracut $RPM
+             mock -r fedora-36-x86_64 --arch=x86_64 --no-clean --resultdir $PWD/mock_build $RPM
            ;;
            *)
            echo " Invalid argument: $MODE" >&2
