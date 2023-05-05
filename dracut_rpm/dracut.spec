@@ -7,7 +7,7 @@
 %global __requires_exclude pkg-config
 
 # rpmdev-bumpspec and releng automation compatible variable
-%global baserelease 2
+%global baserelease 3
 
 Name: dracut
 Version: 059
@@ -58,11 +58,10 @@ Requires: kmod
 Requires: sed
 Requires: xz
 Requires: gzip
-
+Requires: hardlink
+Requires: pigz
+Requires: kpartx
 Recommends: memstrack
-Recommends: hardlink
-Recommends: pigz
-Recommends: kpartx
 Recommends: (tpm2-tools if tpm2-tss)
 Requires: util-linux >= 2.21
 Requires: systemd >= 219
@@ -183,6 +182,9 @@ rm -fr -- $RPM_BUILD_ROOT/%{dracutlibdir}/modules.d/00dash
 
 # we do not support mksh in the initramfs
 rm -fr -- $RPM_BUILD_ROOT/%{dracutlibdir}/modules.d/00mksh
+
+# remove the new systemd-creds module
+rm -fr -- $RPM_BUILD_ROOT/%{dracutlibdir}/modules.d/01systemd-creds
 
 # remove these extra test modules
 rm -fr -- $RPM_BUILD_ROOT/%{dracutlibdir}/modules.d/80test-makeroot
