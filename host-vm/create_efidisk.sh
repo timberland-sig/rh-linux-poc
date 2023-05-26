@@ -19,16 +19,10 @@ if [ ! -f eficonfig/NvmeOfCli.efi ]; then
 	exit 1
 fi
 
-rm -f eficonfig/config
-cp -v eficonfig/config.in eficonfig/config
-
-sed -i "s/HOSTNQN/$HOSTNQN/" eficonfig/config
-sed -i "s/HOSTID/$HOSTID/" eficonfig/config
-sed -i "s/HOST_MAC2/$HOST_MAC2/" eficonfig/config
-sed -i "s/HOST_IP2/$HOST_IP2/" eficonfig/config
-sed -i "s/HOSTGW_IP2/0.0.0.0/" eficonfig/config
-sed -i "s/TARGET_IP2/$TARGET_IP2/" eficonfig/config
-sed -i "s/SUBNQN/$SUBNQN/" eficonfig/config
+if [ -d efi ]; then
+	echo " error: efi directory is present"
+	exit 1
+fi
 
 rm -f efidisk
 cp -v efidisk.in efidisk
@@ -40,7 +34,6 @@ sudo losetup -D loop1
 
 mkdir -p efi
 sudo mount -t vfat -o loop,offset=1048576 $PWD/efidisk $PWD/efi
-#df efi
 sudo tar xzvf efi.tgz
 sudo cp -v $PWD/eficonfig/config $PWD/efi/EFI/BOOT
 sudo cp -v $PWD/eficonfig/startup.nsh $PWD/efi/EFI/BOOT
@@ -50,6 +43,11 @@ sudo umount $PWD/efi
 rmdir efi
 
 echo ""
-echo " Next step is to install and configure the target-vm"
-echo " with \"cd ../target-vm; ./install.sh\""
+echo " Create a config attempt with \"./create_attempt.sh\"."
+echo ""
+
+$DIR/create_attempt.sh 2
+
+echo ""
+echo " Next step is to install and configure the target-vm with \"cd ../target-vm; ./install.sh\""
 echo ""
