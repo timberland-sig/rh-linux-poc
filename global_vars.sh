@@ -68,6 +68,5 @@ ISOVERSION_F36="Fedora-Everything-netinst-x86_64-36-1.5.iso"
 ISOVERSION_F37="Fedora-Everything-netinst-x86_64-37-1.7.iso"
 ISOVERSION_F38="Fedora-Everything-netinst-x86_64-38_Beta-1.3.iso"
 
-OVMF_ZIP="timberland-ovmf-release-9e63dc0.zip"
-OVMF_URL="https://github.com/timberland-sig/edk2/releases/download/release-9e63dc0/"
-
+OVMF_ZIP="timberland-ovmf-release-0f54758.zip"
+OVMF_URL="https://github.com/timberland-sig/edk2/releases/download/release-0f54758/"
