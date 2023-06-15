@@ -31,11 +31,10 @@ sudo losetup -D loop1
 sudo losetup -P loop1 $PWD/efidisk
 sudo mkfs.vfat /dev/loop1p1
 sudo losetup -D loop1
-
+sleep 2
 mkdir -p efi
 sudo mount -t vfat -o loop,offset=1048576 $PWD/efidisk $PWD/efi
 sudo tar xzvf efi.tgz
-sudo cp -v $PWD/eficonfig/config $PWD/efi/EFI/BOOT
 sudo cp -v $PWD/eficonfig/startup.nsh $PWD/efi/EFI/BOOT
 sudo cp -v $PWD/eficonfig/NvmeOfCli.efi $PWD/efi/EFI/BOOT
 sudo cp -v $PWD/eficonfig/VConfig.efi $PWD/efi/EFI/BOOT

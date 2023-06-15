@@ -80,3 +80,7 @@ case "$1" in
     exit 1
     ;;
 esac
+
+check_qargs
+check_netport
+

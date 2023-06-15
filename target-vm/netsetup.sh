@@ -63,13 +63,25 @@ chmod 755 .build/start-nvme-target.sh
 chmod 755 .build/tcp.json
 chmod 755 .build/hosts.txt
 
-echo ""
-echo " scp  .build/{netsetup.sh,start-nvme-target.sh,hosts.txt,tcp.json} root@$3:"
-echo ""
-ssh-keygen -R $3
-scp -o StrictHostKeyChecking=no .build/{netsetup.sh,hosts.txt,start-nvme-target.sh,tcp.json} root@$3:
+case "$3" in
+    localhost)
+        echo ""
+        echo " scp -o StrictHostKeyChecking=no -P 5556 .build/{netsetup.sh,start-nvme-target.sh,hosts.txt,tcp.json} root@localhost:"
+        echo ""
+        ssh-keygen -R [localhost]:5556
+        scp -o StrictHostKeyChecking=no -P 5556 .build/{netsetup.sh,hosts.txt,start-nvme-target.sh,tcp.json} root@localhost:
+        ;;
+        *)
+        echo ""
+        echo " scp .build/{netsetup.sh,update_initramfs.sh,update_efi.sh,hosts.txt} root@$3:"
+        echo ""
+        ssh-keygen -R $3
+        scp -o StrictHostKeyChecking=no .build/{netsetup.sh,hosts.txt,start-nvme-target.sh,tcp.json} root@$3:
+        ;;
+   esac
 
 echo ""
 echo " Login to $VMNAME/root and run \"./netsetup.sh\" to complete the VM configuration"
 echo ""
 
+check_netport

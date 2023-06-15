@@ -25,12 +25,14 @@ display_help() {
         echo ""
         echo "  user          : setup basic user environment (default)"
         echo "  pkgs          : install all pkgs needed for host build environment "
-        echo "  net           : configure bridged network environment "
         echo "  virt          : install qemu-kvm environment "
         echo "  edk2          : create and build the timberland-sig edk2 repository in the edk2 directory "
         echo "                : - install build artifacts in OVMF directory  "
         echo "  copr          : create copr project $COPR_PROJECT and upload all rpms "
         echo "                : - results at: https://copr.fedorainfracloud.org/coprs/"
+        echo "  net           : configure network environment "
+        echo "                : - script prompts for \"bridged\" primary interface."
+        echo "                :   Enter \"local\" to skip primary interace reconfiguration."
         echo "  mock  < $ALL_VERSIONS > "
         echo "                : mock build of all rpms "
         echo "  iso   < $ISO_VERSIONS > "
@@ -137,39 +139,43 @@ install_network() {
         netdev=""
         nmcli dev status
         echo ""
-        read -r -p "enter name of default network managment device: " netdev
+        read -r -p "enter name of default network managment device or \"local\" to skip configuration: " netdev
 
         if [ -z netdev ]; then
             exit 1
         fi
 
-        nmcli dev show $netdev &>/dev/null
-        if [ $? -ne 0 ]; then
-           echo "Interface $netdev does not exist!"
-            exit 1
-        fi
+        if [[ "$netdev" == *"local"* ]]; then
+            echo " : local - skipping default bridged network setup"
+        else
+            nmcli dev show $netdev &>/dev/null
+            if [ $? -ne 0 ]; then
+                echo "Interface $netdev does not exist!"
+                exit 1
+            fi
 
-        if check_conn $netdev; then
+            if check_conn $netdev; then
+                MAC=$(nmcli -t -f general.hwaddr -e yes dev show $netdev | sed 's/^GENERAL.HWADDR://')
+                sudo nmcli con down $netdev
+                sudo nmcli con add type bridge ifname br0 autoconnect yes stp off ethernet.cloned-mac-address $MAC
+                sudo nmcli con add type bridge-slave ifname $netdev master br0
+                sudo nmcli con up bridge-br0
+                sudo nmcli con up bridge-slave-$netdev
+            else
+                echo "Interface $netdev is down!"
+                echo " try: nmcli con add type ethernet ifname $netdev con-name $netdev autoconnect yes"
+               exit 1
+            fi
+
+            set -
             MAC=$(nmcli -t -f general.hwaddr -e yes dev show $netdev | sed 's/^GENERAL.HWADDR://')
             sudo nmcli con down $netdev
             sudo nmcli con add type bridge ifname br0 autoconnect yes stp off ethernet.cloned-mac-address $MAC
             sudo nmcli con add type bridge-slave ifname $netdev master br0
             sudo nmcli con up bridge-br0
-            sudo nmcli con up bridge-slave-$netdev
-        else
-            echo "Interface $netdev is down!"
-            echo " try: nmcli con add type ethernet ifname $netdev con-name $netdev autoconnect yes"
-           exit 1
+            ip -h -c -o -br address show br0
+            set +
         fi
-
-        set -
-        MAC=$(nmcli -t -f general.hwaddr -e yes dev show $netdev | sed 's/^GENERAL.HWADDR://')
-        sudo nmcli con down $netdev
-        sudo nmcli con add type bridge ifname br0 autoconnect yes stp off ethernet.cloned-mac-address $MAC
-        sudo nmcli con add type bridge-slave ifname $netdev master br0
-        sudo nmcli con up bridge-br0
-        ip -h -c -o -br address show br0
-        set +
     fi
 
     nmcli dev show virbr1 &>/dev/null

@@ -18,19 +18,30 @@ display_host_install_help() {
 }
 
 display_install_help() {
-  echo " Usage: install.sh <$ISO_VERSION> [\"qemu_args\"]"
+  echo " Usage: install.sh <iso_file> <bridged|localhost> [\"qemu_args\"] [-n]"
   echo " "
   echo " Creates qcow2 disk files and installs a QEMU VM named $VMNAME"
-  echo " in $PWD using the installation ISO provided in <iso_file>"
+  echo " in $PWD using the installation ISO provided in <iso_file>."
   echo " "
-  echo " Note: the <iso_file> must be downloaded with \"setup.sh prebuilt\" first"
-  echo " Note: pass \"\" in <iso_file> to use the default lorax_build"
+  echo " The QMEU network configuration is either \"bridged\" or \"localhost\"."
+  echo " "
+  echo "   bridged   : use a QEMU \"netdev bridge\" interface - requires a bridged \"br0\" interface to be configured."
+  echo "   localhost : use a QEMU \"netdev user\" interface - requires no bridged network interface on the hypervisor." 
+  echo " "
+  echo " Optional QEMU command line arguments can be passed with [\"qemu_args\"]."
+  echo " E.g. to pass the -vnc argument to QEMU."
+  echo " "
+  echo " Note: the <iso_file> must be downloaded with \"setup.sh prebuilt\" before calling this script."
+  echo " Pass \"\" in <iso_file> if you are not using the prebuilt option (use the default lorax_build)"
+  echo ""
+  echo " -n : Do not destroy existing qcow2 image files. Good for testing."
   echo ""
   echo "   E.g.:"
-  echo "          $0 \"\""
-  echo "          $0 \"\" \"-vnc :0\""
-  echo "          $0 fedora-37 \"-vnc :0\""
-  echo "          $0 fedora-36"
+  echo "          $0 \"\" localhost"
+  echo "          $0 fedora-37 localhost"
+  echo "          $0 fedora-37 bridged \"-vnc :0\""
+  echo "          $0 fedora-37 localhost \"-vnc :1\""
+  echo "          $0 fedora-37 localhost \"\" -n"
   echo " "
 }
 
@@ -68,7 +79,7 @@ create_target_disk() {
                 mkdir disks
         fi
 
-        echo " creating target-vm disk"
+        echo "creating target-vm disk"
         rm -f disks/boot.qcow2
         qemu-img create -f qcow2 disks/boot.qcow2 50G
 }
@@ -88,20 +99,40 @@ check_qargs() {
         QARGS="$(cat .qargs)"
         NUM=$(echo "$QARGS" | cut -d ':' -f 2)
         echo ""
-        echo "Connect with \"vncviewer $HOST:$NUM\""
+        echo "Connect to console with \"vncviewer $HOST:$NUM\""
+    fi
+}
+
+check_netport() {
+    if ! [ -f .netaddr ]; then
+        echo "Error: file .netaddr not found!"
+        exit 1
+    else
+        NETADDR="$(cat .netaddr)"
+    fi
+
+    if [ -f .netport ]; then
+        NETPORT="$(cat .netport)"
+        echo ""
+        echo "Use \"ssh -p $NETPORT root@localhost\" to login to the $VMNAME"
+        echo ""
+    else 
+        echo ""
+        echo "Use \"ssh root@$NETADDR\" to login to the $VMNAME"
         echo ""
     fi
 }
 
 check_qemu_command() {
+    echo -n "using "
     command -v qemu-system-x86_64
     if [ $? -ne 0 ]; then echo " qemu-system-x86_64 is not installed"; exit 1; fi
 
     QEMU="$(command -v qemu-system-x86_64)"
     if [[ $QEMU =~ "/usr/local" ]]; then
-            BRIDGE="/usr/local/libexec/qemu-bridge-helper"
+            BRIDGE_HELPER="/usr/local/libexec/qemu-bridge-helper"
     else
-            BRIDGE="/usr/libexec/qemu-bridge-helper"
+            BRIDGE_HELPER="/usr/libexec/qemu-bridge-helper"
     fi
 }
 
@@ -123,10 +154,12 @@ check_host_depends() {
 }
 
 check_install_args() {
-    if [ $1 -lt 1 ] ; then
+    if [ $1 -lt 2 ] ; then
         display_install_help
         exit 1
     fi
+
+#    echo "args 1 = $1, 2 = $2, 3 = $3, 4 = $4"
 
     if [ -z "$2" ]; then
         ISOVERSION="boot.iso"
@@ -158,16 +191,51 @@ check_install_args() {
         echo "using $ISO_FILE"
     fi
 
-    if [ $1 -gt 1 ] ; then
-        QARGS="$3"
+    rm -f .qargs
+
+    if [ $1 -gt 2 ] ; then
+        QARGS="$4"
+        echo "using $QARGS"
+        echo "$QARGS" > .qargs
     fi
 
     check_qemu_command
+
+    create_mac_addresses
+
+    if [[ "$VMNAME" == *"host"* ]]; then
+	NET_PORT="5555"
+        NET_CIDR="10.1.2.15/24"
+    else 
+	NET_PORT="5556"
+        NET_CIDR="10.0.2.15/24"
+    fi
+
+    rm -f .netport
+
+    case "$3" in
+        localhost)
+            NET0_NET="-netdev user,id=net0,net=$NET_CIDR,hostfwd=tcp::$NET_PORT-:22"
+            NET0_DEV="-device e1000,netdev=net0"
+            echo "$NET_PORT" > .netport
+        ;;
+        bridged)
+            NET0_NET="-netdev bridge,br=br0,id=net0,helper=$BRIDGE_HELPER"
+            NET0_DEV="-device virtio-net-pci,netdev=net0,mac=$MAC1"
+        ;;
+        *)
+	    echo " Error: invalid argument $3"
+            exit 1
+        ;;
+    esac
+
+    echo "using $NET0_NET"
+    echo "using $NET0_DEV"
 }
 
 display_netsetup_help() {
   echo " "
-  echo " Usage: netsetup.sh <ifname2> <ifname3> <ipaddr>"
+  echo " Usage: netsetup.sh <ifname2> <ifname3> <ipaddr | localhost>"
   echo " "
   echo " Creates creates a network configuration script called .build/netsetup.sh for $VMNAME"
   echo " "
@@ -177,12 +245,16 @@ display_netsetup_help() {
   echo "           - corresponds to virbr2 on the hypervisor host"
   echo "  ipaddr - dhcp assigned ipv4 address of $VMNAME"
   echo "           - corresponds to br0 on the hypervisor host"
-  echo " "
+  echo ""
   echo " These valuse are obtains from \"ip -br address show\" after booting $VMNAME the first time"
-  echo " "
+  echo ""
+  echo "   Passing \"localhost\" in the ipaddr field is used with there is no br0 interface"
+  echo "   configured on the hypervisor. See \"./install.sh\" help for more information."
+  echo ""
   echo "   E.g.:"
   echo "          $0 enp0s5 enp0s6 192.168.0.63"
   echo "          $0 enp0s5 enp0s6 10.16.188.66"
+  echo "          $0 enp0s5 enp0s6 localhost"
   echo " "
 }
 
@@ -216,29 +288,42 @@ create_ip_addresses() {
         esac
 }
 
-create_hosts_file() {
-
-    rm -f .build/hosts.txt
-
-    HOST_GW_ADDR="$(ip -br address show br0 | sed 's/\s\+/:/g' | cut -d ':' -f 3 | cut -d '/' -f 1)"
-    TARGET_ADDR="$1"
-
+make_hosts_file() {
     echo " "
     echo " creating .build/hosts.txt"
-
     cat << EOF >> .build/hosts.txt
-
 $HOSTGW_IP2    host-gw-br2
 $HOSTGW_IP3    host-gw-br3
 $TARGET_IP2  target-vm-br2
 $TARGET_IP3  target-vm-br3
 $HOST_IP2   host-vm-br2
 $HOST_IP3   host-vm-br3
+EOF
+}
 
+add_hosts_file_gw_addr() {
+    echo " "
+    echo " adding host-gw to .build/hosts.txt"
+    cat << EOF >> .build/hosts.txt
 $TARGET_ADDR    $VMNAME
 $HOST_GW_ADDR   host-gw
-
 EOF
+}
+
+create_hosts_file() {
+
+    rm -f .build/hosts.txt
+    rm -f .netaddr
+
+    make_hosts_file
+
+    TARGET_ADDR="$1"
+    echo "$TARGET_ADDR" > .netaddr
+
+    if ! [ "$TARGET_ADDR" == "localhost" ]; then
+        HOST_GW_ADDR="$(ip -br address show br0 | sed 's/\s\+/:/g' | cut -d ':' -f 3 | cut -d '/' -f 1)"
+        add_hosts_file_gw_addr
+    fi
 }
 
 create_netsetup() {

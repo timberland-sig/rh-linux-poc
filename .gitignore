@@ -14,7 +14,9 @@ cscope.*
 */.build/*
 */disks/*
 */.qargs
+*/.netaddr
 */.start
+*/.netport
 .edk2pkgs
 .pkgs
 .pkgs2
