@@ -29,9 +29,10 @@ NSUUID="bee9c2b7-1761-44b5-a4e6-0f690498a94b"
 # Serial numbers for nvme disks, used by target-vm/install.sh
 # Generated with SN=$(hexdump -vn8 -e'4/4 "%08X" 1 "\n"' /dev/urandom)
 
-SN1=2AF557665E8B11C0
+SN0=7E1250DCD4B0A268
+SN1=3A44B3E2177CA6D9
 SN2=97A28D5D3ECDE7F2
-SN3=3A44B3E2177CA6D9
+SN3=2AF557665E8B11C0
 
 # Note that TARGET_MAC1 and HOST_MAC1 are used with DHCP and must be unique to
 # your testbed.  Use the ./gen_macaddr.py script and replace these values

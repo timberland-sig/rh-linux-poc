@@ -8,14 +8,25 @@ DIR="$(dirname -- "$(realpath -- "$0")")"
 HOST=`hostname`
 VMNAME=`basename $PWD`
 
-if [ ! -d disks ]; then
-	echo "Error: $PWD/disks not found!"
-	exit 1
-fi
+START_ACTION="nbft|local"
 
-if [ ! -f disks/nvme2.qcow2 ]; then
-	echo "Error: $PWD/disks/nvme2.qcow2 not found!"
-	exit 1
+display_start_help() {
+  echo " Usage: ./start.sh <$START_ACTION> "
+  echo " "
+  echo " Starts the QEMU VM named $VMNAME"
+  echo ""
+  echo "    local   - boot $VMNAME without the host-vm disk"
+  echo "    nbft    - boot $VMNAME with host-vm disk - the host-vm must be shutdown"
+  echo ""
+  echo "   E.g.:"
+  echo "          $0 local"
+  echo "          $0 nbft"
+  echo " "
+}
+
+if [ $# -lt 1 ] ; then
+        display_start_help
+        exit 1
 fi
 
 if [ ! -d .build ]; then
@@ -23,25 +34,38 @@ if [ ! -d .build ]; then
 	exit 1
 fi
 
-if [ ! -f .build/start.sh ]; then
-	echo "Error: .build/start.sh not found!"
+if [ ! -d disks ]; then
+	echo "Error: $PWD/disks not found!"
+	exit 1
+fi
+
+if [ ! -f disks/nvme1.qcow2 ]; then
+	echo "Error: $PWD/disks/nvme1.qcow2 not found!"
 	exit 1
 fi
 
 check_qargs
 
-if [ ! -f .start ]; then
-    echo ""
-    echo " Log into the root account and record the interface names for networks 2 and 3."
-    echo " Use the \"ip -br address show\" command to display interface names"
-    echo ""
-    echo " Next step will be to run the \"./netsetup.sh\" script."
-    echo ""
-    touch .start
-else
-    echo ""
-    echo " Log into the root account and run \"./start-nvme-target.sh\" to start the NVMe/TCP soft target."
-    check_netport
-fi
-
-bash .build/start.sh &
+case "$1" in
+    nbft)
+		if [ ! -f disks/nvme2.qcow2 ]; then
+			echo "Error: $PWD/disks/nvme2.qcow2 not found!"
+			exit 1
+		fi
+        echo ""
+        echo " Log into the root account and run \"./start-nbft-target.sh\" to start the NVMe/TCP soft target."
+        check_netport
+        bash .build/start_nbft.sh &
+    ;;
+    local)
+        echo ""
+        echo " Log into the root account and run \"./start-nvme-target.sh\" to start the NVMe/TCP soft target."
+        check_netport
+        bash .build/start_local.sh &
+    ;;
+    *)
+    echo " Error: $1 not valid"
+    display_start_help
+    exit 1
+    ;;
+esac

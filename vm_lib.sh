@@ -26,7 +26,7 @@ display_install_help() {
   echo " The QMEU network configuration is either \"bridged\" or \"localhost\"."
   echo " "
   echo "   bridged   : use a QEMU \"netdev bridge\" interface - requires a bridged \"br0\" interface to be configured."
-  echo "   localhost : use a QEMU \"netdev user\" interface - requires no bridged network interface on the hypervisor." 
+  echo "   localhost : use a QEMU \"netdev user\" interface - requires no bridged network interface on the hypervisor."
   echo " "
   echo " Optional QEMU command line arguments can be passed with [\"qemu_args\"]."
   echo " E.g. to pass the -vnc argument to QEMU."
@@ -79,9 +79,13 @@ create_target_disk() {
                 mkdir disks
         fi
 
-        echo "creating target-vm disk"
+        echo "creating target-vm disk 1"
         rm -f disks/boot.qcow2
-        qemu-img create -f qcow2 disks/boot.qcow2 50G
+        qemu-img create -f qcow2 disks/boot.qcow2 70G
+
+		echo "creating target-vm disk 2"
+        rm -f disks/nvme1.qcow2
+        qemu-img create -f qcow2 disks/nvme1.qcow2 50G
 }
 
 create_host_disk() {
@@ -116,7 +120,7 @@ check_netport() {
         echo ""
         echo "Use \"ssh -p $NETPORT root@localhost\" to login to the $VMNAME"
         echo ""
-    else 
+    else
         echo ""
         echo "Use \"ssh root@$NETADDR\" to login to the $VMNAME"
         echo ""
@@ -206,7 +210,7 @@ check_install_args() {
     if [[ "$VMNAME" == *"host"* ]]; then
 	NET_PORT="5555"
         NET_CIDR="10.1.2.15/24"
-    else 
+    else
 	NET_PORT="5556"
         NET_CIDR="10.0.2.15/24"
     fi

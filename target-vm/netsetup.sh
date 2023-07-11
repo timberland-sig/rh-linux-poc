@@ -12,6 +12,7 @@ VMNAME=`basename $PWD`
 create_nvme_target_config() {
     rm -f .build/tcp.json
     rm -f .build/start-nvme-target.sh
+    rm -f .build/start-nbft-target.sh
 
     cp tcp.json.in .build/tcp.json
 
