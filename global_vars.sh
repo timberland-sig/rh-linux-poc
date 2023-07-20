@@ -14,11 +14,11 @@ TARGET_SYS_UUID="a53caec2-eb2d-4bca-819e-f2bbfb10e1fa"
 TARGETNQN="nqn.2014-08.org.nvmexpress:uuid:$TARGET_SYS_UUID"
 
 # These are the system-uuid, Hostnqn and Hostid for the host-vm
-HOSTID="4e16bbb4-097f-44be-8c7f-77d8b4fc9f39"
 # This HostNQN appears in the target-vm/tcp.json file and in the host-vm/discover_target.sh file
 # The HOST_SYS_UUID is generated with HOST_SYS_UUID="$(uuidgen)"
 HOST_SYS_UUID="f8131bac-cdef-4165-866b-5998c1e67890"
 HOSTNQN="nqn.2014-08.org.nvmexpress:uuid:$HOST_SYS_UUID"
+HOSTID="$HOST_SYS_UUID"
 
 # These are the Namespace identifiers and Subsystem NQN for the Linux Ctrl soft target.
 # See the target-vm/tcp.json.in file for more information.

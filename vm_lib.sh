@@ -379,8 +379,8 @@ ip -h -c -o -br address show
 
 cat hosts.txt >> /etc/hosts
 
-if [[ $(grep EDITOR ~/.bashrc) =~ vim ]] ; then
-   echo "$EDITOR"
+if [[ \$(grep EDITOR ~/.bashrc) =~ vim ]] ; then
+   echo "\$EDITOR"
 else
 	echo "EDITOR=vim; export EDITOR;" >> ~/.bashrc
 	echo "alias ipshow='ip -h -c -o -br address show'" >> ~/.bashrc
@@ -389,7 +389,7 @@ else
     USR=""
     echo ""
     read -r -p "enter user account name [none] : " USR
-	if ! [ -z USR ]; then
+	if ! [ -z \$USR ]; then
 		usermod -aG wheel \$USR
     fi
 fi
