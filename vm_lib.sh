@@ -4,37 +4,32 @@
 
 # NOTE: caller must include global_vars.sh before including this file.
 
-display_host_install_help() {
-  echo " Usage: install.sh <\"qemu_args\">"
-  echo " "
-  echo " Creates qcow2 disk files and installs a QEMU VM named $VMNAME"
-  echo " "
-  echo " Note: if no qemu argument is needed pass \"\""
-  echo ""
-  echo "   E.g.:"
-  echo "          $0 \"\""
-  echo "          $0 \"-vnc :1\""
-  echo " "
-}
-
 display_install_help() {
-  echo " Usage: install.sh <iso_file> <bridged|localhost> [\"qemu_args\"] [-n]"
+  echo " Usage: install.sh <iso_file> <bridged|localhost> [\"qemu_args\"] [-n | -f]"
   echo " "
   echo " Creates qcow2 disk files and installs a QEMU VM named $VMNAME"
   echo " in $PWD using the installation ISO provided in <iso_file>."
-  echo " "
-  echo " The QMEU network configuration is either \"bridged\" or \"localhost\"."
-  echo " "
-  echo "   bridged   : use a QEMU \"netdev bridge\" interface - requires a bridged \"br0\" interface to be configured."
-  echo "   localhost : use a QEMU \"netdev user\" interface - requires no bridged network interface on the hypervisor."
-  echo " "
-  echo " Optional QEMU command line arguments can be passed with [\"qemu_args\"]."
-  echo " E.g. to pass the -vnc argument to QEMU."
-  echo " "
-  echo " Note: the <iso_file> must be downloaded with \"setup.sh prebuilt\" before calling this script."
-  echo " Pass \"\" in <iso_file> if you are not using the prebuilt option (use the default lorax_build)"
   echo ""
-  echo " -n : Do not destroy existing qcow2 image files. Good for testing."
+  echo " Required arguments:"
+  echo ""
+  echo " The <iso_file> must be downloaded by runnning \"setup.sh prebuilt\" before calling this script."
+  echo " Pass \"\" in <iso_file> if you are not using the prebuilt option (requires lorax_build)"
+  echo ""
+  echo " The <bridged|localhost> argument sets the QMEU network configuration:"
+  echo ""
+  echo "   bridged  : uses a QEMU \"netdev bridge\" interface - requires a bridged \"br0\" interface to be configured."
+  echo "   localhost : uses a QEMU \"netdev user\" interface - requires no bridged interface to be configured."
+  echo ""
+  echo " Optional arguments:"
+  echo ""
+  echo " [\"qemu_args\"] is passed and added to the qemu command line. For example, use \"-vnc: 0\""
+  echo " to pass the -vnc argument to command line."
+  echo " "
+  echo " Note: this install script will destroy and recreate the existing disk image files."
+  echo " Be sure to backup or copy any data on the existing qcow2 disks before running \"./install.sh\"."
+  echo ""
+  echo " [ -n ] : Re-install over existing disk files."
+  echo " [ -f ] : Reuse existing disk files and don't run the install script."
   echo ""
   echo "   E.g.:"
   echo "          $0 \"\" localhost"
@@ -95,7 +90,7 @@ create_host_disk() {
 
         echo " creating host-vm disk"
         rm -f disks/nvme2.qcow2
-        qemu-img create -f qcow2 disks/nvme2.qcow2 50G
+        qemu-img create -f qcow2 disks/nvme2.qcow2 70G
 }
 
 check_qargs() {
@@ -383,6 +378,21 @@ nmcli g hostname $VMNAME
 ip -h -c -o -br address show
 
 cat hosts.txt >> /etc/hosts
+
+if [[ $(grep EDITOR ~/.bashrc) =~ vim ]] ; then
+   echo "$EDITOR"
+else
+	echo "EDITOR=vim; export EDITOR;" >> ~/.bashrc
+	echo "alias ipshow='ip -h -c -o -br address show'" >> ~/.bashrc
+	echo "alias ipmac=\"ip -o link show | cut -d ' ' -f 2,20\"" >> ~/.bashrc
+	sed -i "s/# %wheel/%wheel/g" /etc/sudoers
+    USR=""
+    echo ""
+    read -r -p "enter user account name [none] : " USR
+	if ! [ -z USR ]; then
+		usermod -aG wheel \$USR
+    fi
+fi
 
 EOF
 }

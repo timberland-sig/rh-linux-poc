@@ -97,7 +97,7 @@ create_copy_efi() {
         *)
         create_bridge_copy_efi $1
         ;;
-    esac  
+    esac
 }
 
 create_discover_target() {
@@ -111,7 +111,7 @@ sudo nvme discover --hostnqn=$HOSTNQN --transport=tcp --traddr=$TARGET_IP3 --trs
 EOF
 }
 
-check_netsetup_args $# 
+check_netsetup_args $#
 
 rm -f copy_efi.sh
 rm -f discover_target.sh

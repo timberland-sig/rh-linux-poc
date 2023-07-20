@@ -36,6 +36,7 @@ EOF
 
 add_target_netsetup() {
     cat << EOF >> .build/netsetup.sh
+
 dnf copr enable -y $COPR_USER/$COPR_PROJECT
 dnf install -y nvme-cli nvmetcli
 

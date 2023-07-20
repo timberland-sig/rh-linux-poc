@@ -74,28 +74,28 @@ case "${MODE}" in
 			cp -v eficonfig/config.in eficonfig/config
 			config_host
 			config_target1
-			config_subnqn $SUBNQN 
+			config_subnqn $SUBNQN
 	   ;;
 	   2)
 			cp -v eficonfig/config2.in eficonfig/config
 			config_host
 			config_target1
 			config_target2
-			config_subnqn $SUBNQN 
+			config_subnqn $SUBNQN
 	   ;;
 	   3)
 			cp -v eficonfig/config2.in eficonfig/config
 			config_host
 			config_target1
 			config_target2
-			config_subnqn "nqn.2014-08.org.nvmexpress.discovery" 
+			config_subnqn "nqn.2014-08.org.nvmexpress.discovery"
 	   ;;
 	   4)
 			cp -v eficonfig/config3.in eficonfig/config
 			config_host
 			config_target1
 			config_target2
-			config_subnqn $SUBNQN 
+			config_subnqn $SUBNQN
 			config_nid $NSUUID
 	   ;;
 	   5)
@@ -103,7 +103,7 @@ case "${MODE}" in
 			config_host
 			config_target1
 			config_target2
-			config_subnqn $SUBNQN 
+			config_subnqn $SUBNQN
 			config_nid $NSNGUID
 	   ;;
 	   *)

@@ -39,6 +39,11 @@ if [ ! -d disks ]; then
 	exit 1
 fi
 
+if [ ! -f disks/boot.qcow2 ]; then
+	echo "Error: $PWD/disks/boot.qcow2 not found!"
+	exit 1
+fi
+
 if [ ! -f disks/nvme1.qcow2 ]; then
 	echo "Error: $PWD/disks/nvme1.qcow2 not found!"
 	exit 1
@@ -52,14 +57,10 @@ case "$1" in
 			echo "Error: $PWD/disks/nvme2.qcow2 not found!"
 			exit 1
 		fi
-        echo ""
-        echo " Log into the root account and run \"./start-nbft-target.sh\" to start the NVMe/TCP soft target."
         check_netport
         bash .build/start_nbft.sh &
     ;;
     local)
-        echo ""
-        echo " Log into the root account and run \"./start-nvme-target.sh\" to start the NVMe/TCP soft target."
         check_netport
         bash .build/start_local.sh &
     ;;
@@ -69,3 +70,7 @@ case "$1" in
     exit 1
     ;;
 esac
+
+echo ""
+echo " Log into the root account and run \"./start-nvme-target.sh\" to start the NVMe/TCP soft target."
+
