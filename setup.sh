@@ -33,6 +33,8 @@ display_help() {
         echo "  net           : configure network environment "
         echo "                : - script prompts for \"bridged\" primary interface."
         echo "                :   Enter \"local\" to skip primary interace reconfiguration."
+        echo "  artifacts     : install prebuilt EDK2 artifacts"
+        echo "                :   Download artifacts.zip in \"artifacts\" directory first. "
         echo "  mock  < $ALL_VERSIONS > "
         echo "                : mock build of all rpms "
         echo "  iso   < $ISO_VERSIONS > "
@@ -453,6 +455,48 @@ install_edk2_zip() {
     popd
 }
 
+install_artifacts_zip() {
+    pushd $DIR
+
+	if [ ! -d ISO ]; then
+        mkdir -p ISO
+    fi
+
+    if [ ! -f artifacts/artifact.zip ]; then
+        echo "file artifact.zip not found!"
+		exit 1
+    fi
+
+    pushd artifacts
+	unzip artifact.zip
+
+    if [ ! -f timberland-ovmf.zip ]; then
+        echo "file timberland-ovmf.zip not found!"
+		exit 1
+	fi
+
+	unzip timberland-ovmf.zip
+
+    if [ ! -f OVMF_CODE.fd ]; then
+        echo "file OVMF_CODE.fd not found!"
+        exit 1
+    fi
+
+	popd
+
+    rm -f  host-vm/OVMF_CODE.fd
+    rm -f  host-vm/vm_vars.fd
+    rm -f  host-vm/eficonfig/NvmeOfCli.efi
+    rm -f  host-vm/eficonfig/VConfig.efi
+    cp -fv artifacts/OVMF_CODE.fd host-vm/OVMF_CODE.fd
+    cp -fv artifacts/OVMF_VARS.fd host-vm/vm_vars.fd
+    cp -fv artifacts/OVMF_VARS.fd ISO/OVMF_VARS.fd
+    cp -fv artifacts/NvmeOfCli.efi host-vm/eficonfig/NvmeOfCli.efi
+    cp -fv artifacts/VConfig.efi host-vm/eficonfig/VConfig.efi
+
+	popd
+}
+
 install_prebuilt_iso() {
     pushd $DIR
     if [ ! -f .pkgs2 ]; then
@@ -653,6 +697,9 @@ case "${MODE}" in
               check_version_iso
               install_prebuilt_iso
               install_edk2_zip
+           ;;
+           artif*)
+              install_artifacts_zip
            ;;
            centos)
                exit 0

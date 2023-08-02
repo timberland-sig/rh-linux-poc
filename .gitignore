@@ -28,6 +28,13 @@ lorax_results/*
 mock_result/*
 mock_repo/*
 ISO/*
+artifacts/NvmeOfCli.efi
+artifacts/OVMF_CODE.fd
+artifacts/OVMF_VARS.fd
+artifacts/VConfig.efi
+artifacts/checksum.sha256
+artifacts/timberland-ovmf.zip
+artifacts/top-commit.txt
 host-vm/bootlog
 host-vm/efi
 host-vm/OVMF_CODE.fd
