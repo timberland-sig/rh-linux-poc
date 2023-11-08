@@ -70,7 +70,7 @@ case "$1" in
         echo " - Start target-vm nvme/tcp target server with \"start_nvme_target.sh\"."
         echo " - Restart the host-vm with "$0 attempt" to program the NBFT and boot with NVMe/TCP."
         echo ""
-        cp -fv $DIR/../ISO/OVMF_VARS.fd vm_vars.fd
+#        cp -fv $DIR/../ISO/OVMF_VARS.fd vm_vars.fd
         check_qemu_command
         bash .build/start_local.sh &
     ;;

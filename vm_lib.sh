@@ -5,7 +5,7 @@
 # NOTE: caller must include global_vars.sh before including this file.
 
 display_install_help() {
-  echo " Usage: install.sh <iso_file> <bridged|localhost> [\"qemu_args\"] [-n | -f]"
+  echo " Usage: install.sh <iso_file> <bridged|localhost> [\"qemu_args\"] [-n | -f | -r]"
   echo " "
   echo " Creates qcow2 disk files and installs a QEMU VM named $VMNAME"
   echo " in $PWD using the installation ISO provided in <iso_file>."
@@ -28,7 +28,8 @@ display_install_help() {
   echo " Note: this install script will destroy and recreate the existing disk image files."
   echo " Be sure to backup or copy any data on the existing qcow2 disks before running \"./install.sh\"."
   echo ""
-  echo " [ -n ] : Re-install over existing disk files."
+  echo " [ -r ] : Initialize vm_vars.fd."
+  echo " [ -n ] : Re/Create a new target boot disk."
   echo " [ -f ] : Reuse existing disk files and don't run the install script."
   echo ""
   echo "   E.g.:"
@@ -37,6 +38,7 @@ display_install_help() {
   echo "          $0 fedora-37 bridged \"-vnc :0\""
   echo "          $0 fedora-37 localhost \"-vnc :1\""
   echo "          $0 fedora-37 localhost \"\" -n"
+  echo "          $0  \"\" localhost \"\" -r"
   echo " "
 }
 
@@ -69,26 +71,32 @@ create_mac_addresses() {
         esac
 }
 
-create_target_disk() {
+create_boot_disk() {
         if [ ! -d disks ]; then
                 mkdir disks
         fi
 
-        echo "creating target-vm disk 1"
+		echo "creating local disk 1 (boot)"
         rm -f disks/boot.qcow2
         qemu-img create -f qcow2 disks/boot.qcow2 70G
+}
 
-		echo "creating target-vm disk 2"
+create_local_disk() {
+        if [ ! -d disks ]; then
+                mkdir disks
+        fi
+
+		echo "creating local disk 2 (nvme1)"
         rm -f disks/nvme1.qcow2
         qemu-img create -f qcow2 disks/nvme1.qcow2 50G
 }
 
-create_host_disk() {
+create_nbft_disk() {
         if [ ! -d disks ]; then
                 mkdir disks
         fi
 
-        echo " creating host-vm disk"
+        echo " creating host-vm nbft disk"
         rm -f disks/nvme2.qcow2
         qemu-img create -f qcow2 disks/nvme2.qcow2 70G
 }
