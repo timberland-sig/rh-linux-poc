@@ -240,7 +240,7 @@ install_edk2() {
     if [ ! -d edk2 ]; then
         mkdir -p edk2
         pushd edk2
-        git clone -b timberland_1.0_final git@github.com:timberland-sig/edk2.git
+        git clone -b timberland_upstream-dev-full git@github.com:timberland-sig/edk2.git
         pushd edk2
         git config url."ssh://git@github.com/timberland-sig".insteadOf https://github.com/timberland-sig
         git submodule update --init --recursive
