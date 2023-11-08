@@ -78,10 +78,17 @@ rm -rf .build
 
 check_install_args $# "$1" "$2" "$3"
 
-if [ $# -gt 3 ] && [ "$4" == "-n" ] || [ "$4" == "-f" ]; then
-    echo "Reusing current disk"
+if [ $# -gt 3 ] && [ "$4" == "-f" ]; then
+    echo "Reusing current local boot disks"
 else
-    create_target_disk
+    create_boot_disk
+    create_local_disk
+fi
+
+if [ $# -gt 3 ] && [ "$4" == "-n" ]; then
+    echo "Reusing current nbft boot disk"
+else
+    create_nbft_disk
 fi
 
 BOOT_DISK=$(find . -name boot.qcow2 -print)
@@ -100,6 +107,15 @@ if [ -z "$SPARE_DISK" ]; then
 else
     SPARE_DISK=$(realpath $SPARE_DISK)
     echo "using $SPARE_DISK"
+fi
+
+NBFT_DISK=$(find . -name nvme2.qcow2 -print)
+if [ -z "$NBFT_DISK" ]; then
+    echo " $NBFT_DISK not found!"
+    exit 1
+else
+    NBFT_DISK=$(realpath $NBFT_DISK)
+    echo "using $NBFT_DISK"
 fi
 
 create_install_startup

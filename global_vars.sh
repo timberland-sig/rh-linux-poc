@@ -33,6 +33,7 @@ SN0=7E1250DCD4B0A268
 SN1=3A44B3E2177CA6D9
 SN2=97A28D5D3ECDE7F2
 SN3=2AF557665E8B11C0
+SN4=5B36AC547362E851
 
 # Note that TARGET_MAC1 and HOST_MAC1 are used with DHCP and must be unique to
 # your testbed.  Use the ./gen_macaddr.py script and replace these values
