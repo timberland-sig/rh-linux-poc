@@ -120,13 +120,13 @@ else
     create_boot_disk
 fi
 
-if [ $# -gt 3 ] && [ "$4" == "-n" ]; then
-    echo "Reusing current nbft boot disk"
-else
-    pushd ../target-vm
-    create_nbft_disk
-    popd
-fi
+#if [ $# -gt 3 ] && [ "$4" == "-n" ]; then
+#    echo "Reusing current nbft boot disk"
+#else
+#    pushd ../target-vm
+#    create_nbft_disk
+#    popd
+#fi
 
 BOOT_DISK=$(find . -name boot.qcow2 -print)
 if [ -z "$BOOT_DISK" ]; then
@@ -178,4 +178,4 @@ echo ""
 echo " Next step will be to run the \"./netsetup.sh\" script."
 echo ""
 
-bash .build/install_new.sh &
+bash .build/install.sh &
