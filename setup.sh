@@ -224,8 +224,8 @@ create_copr_project() {
     FOO="$(copr-cli list | grep "Name..$COPR_PROJECT")"
     if [ -z "$FOO" ]; then
         echo "Create copr $COPR_PROJECT project."
-        copr-cli create --chroot fedora-38-x86_64 --chroot fedora-37-x86_64 --chroot fedora-36-x86_64 \
-        --description "Timberland-sig NVMe/TCP Boot support" \
+        copr-cli create --chroot rhel-9-x86_64 --chroot fedora-37-x86_64 \
+        --description " Red Hat NVMe/TCP Boot support" \
         --instructions "File bugs and propose patches at https://github.com/timberland-sig" $COPR_PROJECT
     fi
 }
@@ -383,6 +383,9 @@ build_copr_iso() {
             ;;
         fedora-38)
         LORAX_BUILD="lorax -p Fedora -v 38 -r 38 --nomacboot --volid Fedora-S-dvd-x86_64-f38 -s https://dl.fedoraproject.org/pub/fedora/linux/releases/38/Everything/x86_64/os/ -s $REPO lorax_results"
+            ;;
+		rhel-9)
+        LORAX_BUILD="lorax -p RHEL -v 9 -r 4 --nomacboot --volid RHEL-9.4.0-NBFT_x86_64-dvd1 -s /os/ -s $REPO lorax_results"
             ;;
             *)
               echo "$1 is not supported"

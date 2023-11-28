@@ -4,7 +4,7 @@
 #
 # Global variables
 #
-COPR_PROJECT=timberland-v15.2
+COPR_PROJECT=NBFT
 COPR_USER=johnmeneghini
 
 # These are the system-uuid, Hostnqn and Hostid for the target-vm
@@ -39,8 +39,8 @@ SN4=5B36AC547362E851
 # your testbed.  Use the ./gen_macaddr.py script and replace these values
 # for your testbed.
 
-TARGET_MAC1="CA:4B:D6:8D:94:01"
-HOST_MAC1="CA:4B:D6:8E:94:01"
+TARGET_MAC1=00:16:3E:08:17:25
+HOST_MAC1=00:16:3E:07:60:A3
 
 # The Following MAC and IP addresses are static and only used on the private
 # virbr1 and virbr2 networks.  These can all be safely left and unchanged.
