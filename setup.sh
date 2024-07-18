@@ -45,16 +45,15 @@ display_help() {
         echo "                : - results appear in 'lorax/results' directory"
         echo ""
         echo "  prebuilt < $ISO_VERSIONS > "
-        echo "                : Download Fedora release ISO and install prebuilt Timberland SIG packages"
+        echo "                : Download a release ISO and a prebuilt Timberland SIG EDK2"
         echo "                : - ISOs appear in 'ISO' directory"
-        echo "                : - Prebuilt RPMs come from 'https://copr.fedorainfracloud.org/coprs/johnmeneghini/$COPR_PROJECT/'"
         echo ""
         echo " Examples: "
         echo "  Install qemu and configure hypervisor networks"
         echo "       ./${0##*/} virt "
         echo "       ./${0##*/} net "
         echo "  Configure hypervisor and install prebuilt bits"
-        echo "       ./${0##*/} prebuilt fedora-36 "
+        echo "       ./${0##*/} prebuilt fedora-39 "
         echo "  Configure user/dev environment, clone all repositories and build all bits"
         echo "       ./${0##*/} -m build fedora-37"
         echo "  Build an ISO with copr rpms and local edk2 artifacts"
@@ -122,7 +121,7 @@ install_user() {
         touch .macaddr
     fi
 
-    git submodule update --init --recursive
+#    git submodule update --init --recursive
 
 }
 
@@ -506,6 +505,10 @@ install_prebuilt_iso() {
     if [ ! -d ISO ]; then
         mkdir -p ISO
     fi
+
+	touch .durl
+	touch .diso
+
     case "${VERSION}" in
         fedora-36)
             VER=36
@@ -518,6 +521,57 @@ install_prebuilt_iso() {
         fedora-42)
             VER=42
             ISOVERSION="$ISOVERSION_F42"
+        centos-10)
+            DOWNLOAD_URL="https://mirror.stream.centos.org/10-stream/BaseOS/x86_64/iso/"
+            echo ""
+            echo " Download Centos-stream10 ISO from: "
+            echo ""
+            echo " $DOWNLOAD_URL"
+            echo ""
+            read -r -p "Enter the name of the ISO : " ISOVERSION
+			if [ -z ISOVERSION ]; then
+				echo " no input"
+				exit 1
+			fi
+        ;;
+        centos-9)
+            DOWNLOAD_URL="https://mirror.stream.centos.org/9-stream/BaseOS/x86_64/iso/"
+            echo ""
+            echo " Download Centos-stream9 ISO from: "
+            echo ""
+            echo " $DOWNLOAD_URL"
+            echo ""
+            read -r -p "Enter the name of the ISO : " ISOVERSION
+            if [ -z ISOVERSION ]; then
+				echo " no input"
+				exit 1
+			fi
+        ;;
+        download)
+			# E.g.: http://download.eng.rdu.redhat.com/rhel-9/composes/RHEL-9/RHEL-9.5.0-20240714.2/compose/BaseOS/x86_64/iso/
+            DOWNLOAD_URL="$(cat .durl)"
+            read -r -p "Enter URL of the ISO directory ($DOWNLOAD_URL) :" INPUT
+			if [ -z "$INPUT" ]; then
+				echo "No input 1"
+				INPUT="$DOWNLOAD_URL"
+			fi
+            DOWNLOAD_URL="$INPUT"
+			if [ -z "$DOWNLOAD_UR"L ]; then
+				echo "No input 2"
+				exit 1
+			fi
+            ISOVERSION="$(cat .diso)"
+			# E.g.: RHEL-9.5.0-20240714.2-x86_64-dvd1.iso
+            read -r -p "Enter the name of the ISO ($ISOVERSION) :" INPUT
+			if [ -z "$INPUT" ]; then
+				echo "No input 3"
+				INPUT="$ISOVERSION"
+			fi
+            ISOVERSION="$INPUT"
+			if [ -z "$ISOVERSION" ]; then
+				echo "No input 4"
+				exit 1
+			fi
         ;;
         *)
             echo "  Invalid argument: $VERSION" >&2
@@ -528,10 +582,20 @@ install_prebuilt_iso() {
 
     if [ ! -f ISO/$ISOVERSION ]; then
         pushd ISO
-        wget https://download.fedoraproject.org/pub/fedora/linux/releases/$VER/Everything/x86_64/iso/$ISOVERSION
+        echo "wget ${DOWNLOAD_URL}${ISOVERSION}"
+        wget ${DOWNLOAD_URL}${ISOVERSION}
+		if [ $? -eq 0 ]; then
+			echo "${DOWNLOAD_URL}" > $DIR/.durl
+			echo "${ISOVERSION}" > $DIR/.diso
+		fi
         popd
-    fi
-    popd
+    else
+		echo "ISO $ISOVERSION already exists"
+		echo "${DOWNLOAD_URL}" > $DIR/.durl
+		echo "${ISOVERSION}" > $DIR/.diso
+	fi
+
+	exit 0
 }
 
 check_version_rpm() {
@@ -569,6 +633,7 @@ check_version_rh() {
     if [ -z "${VERSION}" ]; then
         echo "  Invalid argument: ${NEWARGS}" >&2
         echo "  use: \"$0 $MODE <$RH_VERSIONS>\"" >&2
+		echo " Bar"
         echo "  Try: \"$0 -h\"" >&2
         exit 1
     fi
@@ -650,6 +715,7 @@ VERSION=$(echo "${NEWARGS}" | tr -t '/' ' ' | awk '{print $2}')
 
 #echo "MODE is == $MODE"
 #echo "MOCKBUILD is == $MOCKBUILD"
+#echo "VERSION is == $VERSION"
 
 case "${MODE}" in
            user)
@@ -694,7 +760,6 @@ case "${MODE}" in
               install_edk2
            ;;
            prebuilt)
-              check_version_iso
               install_prebuilt_iso
               install_edk2_zip
            ;;

@@ -39,8 +39,8 @@ SN4=5B36AC547362E851
 # your testbed.  Use the ./gen_macaddr.py script and replace these values
 # for your testbed.
 
-TARGET_MAC1="CA:4B:D6:8D:94:01"
-HOST_MAC1="CA:4B:D6:8E:94:01"
+TARGET_MAC1=00:16:3E:36:38:90
+HOST_MAC1=00:16:3E:3E:3A:3E
 
 # The Following MAC and IP addresses are static and only used on the private
 # virbr1 and virbr2 networks.  These can all be safely left and unchanged.
@@ -65,10 +65,11 @@ HOSTGW_IP3="192.168.110.1"
 HOSTGW_CIDR2="$HOSTGW_IP2/24"
 HOSTGW_CIDR3="$HOSTGW_IP3/24"
 
-ISO_VERSIONS="fedora-36|fedora-37|fedora-42"
+ISO_VERSIONS="fedora-38|fedora-39|fedora-42|centos-9|centos-10|download"
 ISOVERSION_F36="Fedora-Everything-netinst-x86_64-36-1.5.iso"
 ISOVERSION_F37="Fedora-Everything-netinst-x86_64-37-1.7.iso"
 ISOVERSION_F42="Fedora-Everything-netinst-x86_64-42-1.1.iso"
 
-OVMF_ZIP="timberland-ovmf-release-0f54758.zip"
-OVMF_URL="https://github.com/timberland-sig/edk2/releases/download/release-0f54758/"
+OVMF_ZIP="timberland-ovmf-release-72976af.zip"
+OVMF_URL="https://github.com/timberland-sig/edk2/releases/download/release-72976af/"
+

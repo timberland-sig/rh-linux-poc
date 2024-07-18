@@ -20,6 +20,8 @@ cscope.*
 .edk2pkgs
 .pkgs
 .pkgs2
+.durl
+.diso
 .usr
 .macaddr
 edk2/*
