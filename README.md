@@ -350,7 +350,7 @@ dnf update -y dracut
 dnf install -y dracut-network
 
 # Build a new initramfs
-dracut -f -v --add nvmf
+dracut -f -v --add nvmf --add-drivers nvme-tcp
 
 # Copy the updated /etc/boot/efi configuration
 cd /boot

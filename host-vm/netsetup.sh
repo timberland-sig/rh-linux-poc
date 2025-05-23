@@ -31,7 +31,7 @@ EOF
 create_update_initramfs() {
     cat << EOF >> .build/update_initramfs.sh
 #!/bin/bash
-dracut -f -v --add nvmf
+dracut -f -v --add nvmf --add-drivers nvme-tcp
 rm -f efi.tgz
 pushd /boot
 tar cvzf ~/efi.tgz efi
