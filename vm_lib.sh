@@ -215,12 +215,12 @@ check_install_args() {
     case "$3" in
         localhost)
             NET0_NET="-netdev user,id=net0,net=$NET_CIDR,hostfwd=tcp::$NET_PORT-:22"
-            NET0_DEV="-device e1000,netdev=net0"
+            NET0_DEV="-device e1000,netdev=net0,addr=4"
             echo "$NET_PORT" > .netport
         ;;
         bridged)
             NET0_NET="-netdev bridge,br=br0,id=net0,helper=$BRIDGE_HELPER"
-            NET0_DEV="-device virtio-net-pci,netdev=net0,mac=$MAC1"
+            NET0_DEV="-device virtio-net-pci,netdev=net0,mac=$MAC1,addr=4"
         ;;
         *)
 	    echo " Error: invalid argument $3"

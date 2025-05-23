@@ -18,6 +18,10 @@ create_install_startup() {
     mkdir .build
 
     echo "creating .build/install.sh"
+    NET1_NET="-netdev bridge,br=virbr1,id=net1,helper=$BRIDGE_HELPER"
+    NET1_DEV="-device virtio-net-pci,netdev=net1,mac=$MAC2,addr=5"
+    NET2_NET="-netdev bridge,br=virbr2,id=net2,helper=$BRIDGE_HELPER"
+    NET2_DEV="-device virtio-net-pci,netdev=net2,mac=$MAC3,addr=6"
     cat << EOF >> .build/install.sh
 #!/bin/bash
 $QEMU -name $VMNAME -M q35 -accel kvm -cpu host -m 4G -smp 4 $QARGS \
@@ -30,10 +34,10 @@ $QEMU -name $VMNAME -M q35 -accel kvm -cpu host -m 4G -smp 4 $QARGS \
 -drive if=pflash,format=raw,file=vm_vars.fd \
 $NET0_NET \
 $NET0_DEV \
--netdev bridge,br=virbr1,id=net1,helper=$BRIDGE_HELPER \
--device virtio-net-pci,netdev=net1,mac=$MAC2 \
--netdev bridge,br=virbr2,id=net2,helper=$BRIDGE_HELPER \
--device virtio-net-pci,netdev=net2,mac=$MAC3
+$NET1_NET \
+$NET1_DEV \
+$NET2_NET \
+$NET2_DEV
 EOF
 	echo "creating .build/start_attempt.sh"
 	cat << EOF >> .build/start_attempt.sh
@@ -47,10 +51,10 @@ $QEMU -name $VMNAME -M q35 -accel kvm -cpu host -m 4G -smp 4 $QARGS \
 -drive file=efidisk,format=raw,if=none,id=NVME1 -device nvme,drive=NVME1,serial=$SN3 \
 $NET0_NET \
 $NET0_DEV \
--netdev bridge,br=virbr1,id=net1,helper=$BRIDGE_HELPER \
--device virtio-net-pci,netdev=net1,mac=$MAC2 \
--netdev bridge,br=virbr2,id=net2,helper=$BRIDGE_HELPER \
--device virtio-net-pci,netdev=net2,mac=$MAC3
+$NET1_NET \
+$NET1_DEV \
+$NET2_NET \
+$NET2_DEV
 EOF
 
 	echo "creating .build/start_remote.sh"
@@ -64,10 +68,10 @@ $QEMU -name $VMNAME -M q35 -accel kvm -cpu host -m 4G -smp 4 $QARGS \
 -drive if=pflash,format=raw,file=vm_vars.fd \
 $NET0_NET \
 $NET0_DEV \
--netdev bridge,br=virbr1,id=net1,helper=$BRIDGE_HELPER \
--device virtio-net-pci,netdev=net1,mac=$MAC2 \
--netdev bridge,br=virbr2,id=net2,helper=$BRIDGE_HELPER \
--device virtio-net-pci,netdev=net2,mac=$MAC3
+$NET1_NET \
+$NET1_DEV \
+$NET2_NET \
+$NET2_DEV
 EOF
 	echo "creating .build/start_local.sh"
 	cat << EOF >> .build/start_local.sh
