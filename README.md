@@ -64,7 +64,7 @@ Now run the following commands to build and install your NVMe/TCP Boot test envi
 
 The next step is to go to [Setup your Virtual Machines](#setup-your-virtual-machines) and install the *host-vm*.
 
-# How it workis:
+# How it works:
 
 We create two Virtual Machines connected with two virtual networks.  The first
 is a nvme/tcp soft target (*target-vm*), the second is a nvme/tcp host
@@ -95,7 +95,7 @@ firmware via the NBFT table.
 
 Directories and files are explained here:
 
-| Directory | File  | Decription |
+| Directory | File  | Description |
 | :-----   | :----  | :----      |
 | `nvme_rpm` |  -  | Contains the git submodule for https://github.com/timberland-sig/nvme-cli. The rpm is generated using this source code with the `nvme-cli.spec` file located in this directory. The code used to generate the rpm can be developed and changed by working in the provided *nvme_rpm/nvme-cli* git repository.  Normal git workflows apply. |
 | nvme_rpm | nvme-cli.spec | A modified version of the Fedora nvme-cli.spec file from: https://src.fedoraproject.org/rpms/nvme-cli/blob/rawhide/f/nvme-cli.spec. This spec file has been modified to work with the timberland-sig nvme-cli source code in this submodule.
@@ -183,7 +183,7 @@ created in the follow directories:
 ## Installing Fedora
 
 Each QEMU VM (*host-vm* and *target-vm*) will need to be installed as a part of
-the test bed setup.  During the installation processyou can use all of the
+the test bed setup.  During the installation process you can use all of the
 defaults for installation.  The only change in defaults needs be: *be sure to
 create a root account with ssh access*.
 

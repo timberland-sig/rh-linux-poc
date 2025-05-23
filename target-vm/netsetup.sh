@@ -75,7 +75,7 @@ case "$3" in
         ;;
         *)
         echo ""
-        echo " scp .build/{netsetup.sh,update_initramfs.sh,update_efi.sh,hosts.txt} root@$3:"
+        echo " scp .build/{netsetup.sh,hosts.txt,start-nvme-target.sh,tcp.json} root@$3:"
         echo ""
         ssh-keygen -R $3
         scp -o StrictHostKeyChecking=no .build/{netsetup.sh,hosts.txt,start-nvme-target.sh,tcp.json} root@$3:
