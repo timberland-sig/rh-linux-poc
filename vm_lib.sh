@@ -170,8 +170,8 @@ check_install_args() {
         fedora-37)
             ISOVERSION="$ISOVERSION_F37"
         ;;
-        fedora-38)
-            ISOVERSION="$ISOVERSION_F38"
+        fedora-42)
+            ISOVERSION="$ISOVERSION_F42"
         ;;
         *)
 	    echo " Error: $2 not found"

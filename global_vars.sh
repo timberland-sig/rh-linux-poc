@@ -64,10 +64,10 @@ HOSTGW_IP3="192.168.110.1"
 HOSTGW_CIDR2="$HOSTGW_IP2/24"
 HOSTGW_CIDR3="$HOSTGW_IP3/24"
 
-ISO_VERSIONS="fedora-36|fedora-37|fedora-38"
+ISO_VERSIONS="fedora-36|fedora-37|fedora-42"
 ISOVERSION_F36="Fedora-Everything-netinst-x86_64-36-1.5.iso"
 ISOVERSION_F37="Fedora-Everything-netinst-x86_64-37-1.7.iso"
-ISOVERSION_F38="Fedora-Everything-netinst-x86_64-38_Beta-1.3.iso"
+ISOVERSION_F42="Fedora-Everything-netinst-x86_64-42-1.1.iso"
 
 OVMF_ZIP="timberland-ovmf-release-0f54758.zip"
 OVMF_URL="https://github.com/timberland-sig/edk2/releases/download/release-0f54758/"

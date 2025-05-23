@@ -11,9 +11,9 @@ NOOP=0
 MODES="build|user|pkgs|net|virt|mock|copr|edk2|iso|prebuilt"
 MODE="user"
 MOCKBUILD=0
-ALL_VERSIONS="fedora-36|fedora-37|fedora-38|centos-stream-9|opensuse-tumbleweed"
-RPM_VERSIONS="fedora-36|fedora-37|fedora-38|centos-stream-9|opensuse-tumbleweed"
-RH_VERSIONS="fedora-36|fedora-37|fedora-38|centos-stream-9"
+ALL_VERSIONS="fedora-36|fedora-37|fedora-42|centos-stream-9|opensuse-tumbleweed"
+RPM_VERSIONS="fedora-36|fedora-37|fedora-42|centos-stream-9|opensuse-tumbleweed"
+RH_VERSIONS="fedora-36|fedora-37|fedora-42|centos-stream-9"
 MOCK_VERSION=fedora-36-x86_64
 
 display_help() {
@@ -224,7 +224,7 @@ create_copr_project() {
     FOO="$(copr-cli list | grep "Name..$COPR_PROJECT")"
     if [ -z "$FOO" ]; then
         echo "Create copr $COPR_PROJECT project."
-        copr-cli create --chroot fedora-38-x86_64 --chroot fedora-37-x86_64 --chroot fedora-36-x86_64 \
+        copr-cli create --chroot fedora-42-x86_64 --chroot fedora-37-x86_64 --chroot fedora-36-x86_64 \
         --description "Timberland-sig NVMe/TCP Boot support" \
         --instructions "File bugs and propose patches at https://github.com/timberland-sig" $COPR_PROJECT
     fi
@@ -381,8 +381,8 @@ build_copr_iso() {
         fedora-37)
         LORAX_BUILD="lorax -p Fedora -v 37 -r 37 --nomacboot --volid Fedora-S-dvd-x86_64-f37 -s https://dl.fedoraproject.org/pub/fedora/linux/releases/37/Everything/x86_64/os/ -s $REPO lorax_results"
             ;;
-        fedora-38)
-        LORAX_BUILD="lorax -p Fedora -v 38 -r 38 --nomacboot --volid Fedora-S-dvd-x86_64-f38 -s https://dl.fedoraproject.org/pub/fedora/linux/releases/38/Everything/x86_64/os/ -s $REPO lorax_results"
+        fedora-42)
+        LORAX_BUILD="lorax -p Fedora -v 42 -r 42 --nomacboot --volid Fedora-S-dvd-x86_64-f42 -s https://dl.fedoraproject.org/pub/fedora/linux/releases/42/Everything/x86_64/os/ -s $REPO lorax_results"
             ;;
             *)
               echo "$1 is not supported"
@@ -515,9 +515,9 @@ install_prebuilt_iso() {
             VER=37
             ISOVERSION="$ISOVERSION_F37"
         ;;
-        fedora-38)
-            VER="test\/38_Beta"
-            ISOVERSION="$ISOVERSION_F38"
+        fedora-42)
+            VER=42
+            ISOVERSION="$ISOVERSION_F42"
         ;;
         *)
             echo "  Invalid argument: $VERSION" >&2
@@ -548,8 +548,8 @@ check_version_rpm() {
         fedora-37)
             MOCK_VERSION=fedora-37-x86_64
         ;;
-        fedora-38)
-            MOCK_VERSION=fedora-38-x86_64
+        fedora-42)
+            MOCK_VERSION=fedora-42-x86_64
         ;;
         centos-stream-9)
             MOCK_VERSION="centos-stream+epel-9-x86_64"
@@ -579,8 +579,8 @@ check_version_rh() {
         fedora-37)
             MOCK_VERSION=fedora-37-x86_64
         ;;
-        fedora-38)
-            MOCK_VERSION=fedora-38-x86_64
+        fedora-42)
+            MOCK_VERSION=fedora-42-x86_64
         ;;
         centos-stream-9)
             MOCK_VERSION="centos-stream+epel-9-x86_64"
@@ -607,8 +607,8 @@ check_version_iso() {
         fedora-37)
             MOCK_VERSION=fedora-37-x86_64
         ;;
-        fedora-38)
-            MOCK_VERSION=fedora-38-x86_64
+        fedora-42)
+            MOCK_VERSION=fedora-42-x86_64
         ;;
         *)
             echo "  Invalid argument: $VERSION" >&2
