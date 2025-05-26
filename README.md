@@ -35,7 +35,7 @@ some configuration settings in `/etc` and `/usr/libexec`.*
 Run the following commands to download and install the *prebuilt* Timberland SIG NVMe/TCP Boot test environment:
 
 ```
-  sudo dnf install -y git
+  sudo dnf install -y git unzip mkfs.vfat
   git clone https://github.com/timberland-sig/rh-linux-poc.git
   cd rh-linux-poc
   ./setup.sh net                 # this will modify your hypervisor network - run this only once
