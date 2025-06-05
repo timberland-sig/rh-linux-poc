@@ -20,17 +20,17 @@ create_install_startup() {
     echo "creating .build/install_new.sh"
     cat << EOF >> .build/install_new.sh
 #!/bin/bash
-$QEMU -name $VMNAME -M q35 -accel kvm -cpu host -m 4G -smp 4 $QARGS \
--uuid $HOST_SYS_UUID \
--cdrom $ISO_FILE \
--device virtio-rng -boot menu=on,splash-time=2000 \
--drive if=pflash,format=raw,readonly=on,file=OVMF_CODE.fd \
--drive if=pflash,format=raw,file=vm_vars.fd \
-$NET0_NET \
-$NET0_DEV \
--netdev bridge,br=virbr1,id=net1,helper=$BRIDGE_HELPER \
--device virtio-net-pci,netdev=net1,mac=$MAC2 \
--netdev bridge,br=virbr2,id=net2,helper=$BRIDGE_HELPER \
+$QEMU -name $VMNAME -M q35 -accel kvm -cpu host -m 4G -smp 4 $QARGS \\
+-uuid $HOST_SYS_UUID \\
+-cdrom $ISO_FILE \\
+-device virtio-rng -boot menu=on,splash-time=2000 \\
+-drive if=pflash,format=raw,readonly=on,file=OVMF_CODE.fd \\
+-drive if=pflash,format=raw,file=vm_vars.fd \\
+$NET0_NET \\
+$NET0_DEV \\
+-netdev bridge,br=virbr1,id=net1,helper=$BRIDGE_HELPER \\
+-device virtio-net-pci,netdev=net1,mac=$MAC2 \\
+-netdev bridge,br=virbr2,id=net2,helper=$BRIDGE_HELPER \\
 -device virtio-net-pci,netdev=net2,mac=$MAC3
 EOF
     echo "creating .build/install.sh"
@@ -40,69 +40,69 @@ EOF
     NET2_DEV="-device virtio-net-pci,netdev=net2,mac=$MAC3,addr=6"
     cat << EOF >> .build/install.sh
 #!/bin/bash
-$QEMU -name $VMNAME -M q35 -accel kvm -cpu host -m 4G -smp 4 $QARGS \
--uuid $HOST_SYS_UUID \
--cdrom $ISO_FILE \
--device nvme,drive=NVME1,max_ioqpairs=4,physical_block_size=4096,logical_block_size=4096,use-intel-id=on,serial=$SN4 \
--drive file=$BOOT_DISK,if=none,id=NVME1 \
--device virtio-rng -boot menu=on,splash-time=2000 \
--drive if=pflash,format=raw,readonly=on,file=OVMF_CODE.fd \
--drive if=pflash,format=raw,file=vm_vars.fd \
-$NET0_NET \
-$NET0_DEV \
-$NET1_NET \
-$NET1_DEV \
-$NET2_NET \
+$QEMU -name $VMNAME -M q35 -accel kvm -cpu host -m 4G -smp 4 $QARGS \\
+-uuid $HOST_SYS_UUID \\
+-cdrom $ISO_FILE \\
+-device nvme,drive=NVME1,max_ioqpairs=4,physical_block_size=4096,logical_block_size=4096,use-intel-id=on,serial=$SN4 \\
+-drive file=$BOOT_DISK,if=none,id=NVME1 \\
+-device virtio-rng -boot menu=on,splash-time=2000 \\
+-drive if=pflash,format=raw,readonly=on,file=OVMF_CODE.fd \\
+-drive if=pflash,format=raw,file=vm_vars.fd \\
+$NET0_NET \\
+$NET0_DEV \\
+$NET1_NET \\
+$NET1_DEV \\
+$NET2_NET \\
 $NET2_DEV
 EOF
 	echo "creating .build/start_attempt.sh"
 	cat << EOF >> .build/start_attempt.sh
 #!/bin/bash
-$QEMU -name $VMNAME -M q35 -accel kvm -cpu host -m 4G -smp 4 $QARGS \
--uuid $HOST_SYS_UUID \
--debugcon file:bootlog -global isa-debugcon.iobase=0x402 \
--device virtio-rng -boot menu=on,splash-time=2000 \
--drive if=pflash,format=raw,readonly=on,file=OVMF_CODE.fd \
--drive if=pflash,format=raw,file=vm_vars.fd \
--drive file=efidisk,format=raw,if=none,id=NVME1 -device nvme,drive=NVME1,serial=$SN3 \
-$NET0_NET \
-$NET0_DEV \
-$NET1_NET \
-$NET1_DEV \
-$NET2_NET \
+$QEMU -name $VMNAME -M q35 -accel kvm -cpu host -m 4G -smp 4 $QARGS \\
+-uuid $HOST_SYS_UUID \\
+-debugcon file:bootlog -global isa-debugcon.iobase=0x402 \\
+-device virtio-rng -boot menu=on,splash-time=2000 \\
+-drive if=pflash,format=raw,readonly=on,file=OVMF_CODE.fd \\
+-drive if=pflash,format=raw,file=vm_vars.fd \\
+-drive file=efidisk,format=raw,if=none,id=NVME1 -device nvme,drive=NVME1,serial=$SN3 \\
+$NET0_NET \\
+$NET0_DEV \\
+$NET1_NET \\
+$NET1_DEV \\
+$NET2_NET \\
 $NET2_DEV
 EOF
 
 	echo "creating .build/start_remote.sh"
 	cat << EOF >> .build/start_remote.sh
 #!/bin/bash
-$QEMU -name $VMNAME -M q35 -accel kvm -cpu host -m 4G -smp 4 $QARGS \
--uuid $HOST_SYS_UUID \
--debugcon file:bootlog -global isa-debugcon.iobase=0x402 \
--device virtio-rng -boot menu=on,splash-time=2000 \
--drive if=pflash,format=raw,readonly=on,file=OVMF_CODE.fd \
--drive if=pflash,format=raw,file=vm_vars.fd \
-$NET0_NET \
-$NET0_DEV \
-$NET1_NET \
-$NET1_DEV \
-$NET2_NET \
+$QEMU -name $VMNAME -M q35 -accel kvm -cpu host -m 4G -smp 4 $QARGS \\
+-uuid $HOST_SYS_UUID \\
+-debugcon file:bootlog -global isa-debugcon.iobase=0x402 \\
+-device virtio-rng -boot menu=on,splash-time=2000 \\
+-drive if=pflash,format=raw,readonly=on,file=OVMF_CODE.fd \\
+-drive if=pflash,format=raw,file=vm_vars.fd \\
+$NET0_NET \\
+$NET0_DEV \\
+$NET1_NET \\
+$NET1_DEV \\
+$NET2_NET \\
 $NET2_DEV
 EOF
 	echo "creating .build/start_local.sh"
 	cat << EOF >> .build/start_local.sh
 #!/bin/bash
-$QEMU -name $VMNAME -M q35 -accel kvm -cpu host -m 4G -smp 4 $QARGS \
--uuid $HOST_SYS_UUID \
--device nvme,drive=NVME1,max_ioqpairs=4,physical_block_size=4096,logical_block_size=4096,use-intel-id=on,serial=$SN4 \
--drive file=$BOOT_DISK,if=none,id=NVME1 \
--device virtio-rng -boot menu=on,splash-time=2000 \
--drive if=pflash,format=raw,readonly=on,file=OVMF_CODE.fd \
-$NET0_NET \
-$NET0_DEV \
--netdev bridge,br=virbr1,id=net1,helper=$BRIDGE_HELPER \
--device virtio-net-pci,netdev=net1,mac=$MAC2 \
--netdev bridge,br=virbr2,id=net2,helper=$BRIDGE_HELPER \
+$QEMU -name $VMNAME -M q35 -accel kvm -cpu host -m 4G -smp 4 $QARGS \\
+-uuid $HOST_SYS_UUID \\
+-device nvme,drive=NVME1,max_ioqpairs=4,physical_block_size=4096,logical_block_size=4096,use-intel-id=on,serial=$SN4 \\
+-drive file=$BOOT_DISK,if=none,id=NVME1 \\
+-device virtio-rng -boot menu=on,splash-time=2000 \\
+-drive if=pflash,format=raw,readonly=on,file=OVMF_CODE.fd \\
+$NET0_NET \\
+$NET0_DEV \\
+-netdev bridge,br=virbr1,id=net1,helper=$BRIDGE_HELPER \\
+-device virtio-net-pci,netdev=net1,mac=$MAC2 \\
+-netdev bridge,br=virbr2,id=net2,helper=$BRIDGE_HELPER \\
 -device virtio-net-pci,netdev=net2,mac=$MAC3
 EOF
 }
