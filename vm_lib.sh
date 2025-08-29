@@ -186,9 +186,12 @@ check_install_args() {
         ;;
         fedora-37)
             ISOVERSION="$ISOVERSION_F37"
+            echo "iso is $ISOVERSION"
         ;;
         fedora-42)
             ISOVERSION="$ISOVERSION_F42"
+            echo "iso is $ISOVERSION"
+		;;
         prebuilt)
             ISOVERSION="$(cat ${DIR}/../.diso)"
             echo "prebuilt iso is $ISOVERSION"

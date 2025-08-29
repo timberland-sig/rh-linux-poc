@@ -521,6 +521,7 @@ install_prebuilt_iso() {
         fedora-42)
             VER=42
             ISOVERSION="$ISOVERSION_F42"
+	;;
         centos-10)
             DOWNLOAD_URL="https://mirror.stream.centos.org/10-stream/BaseOS/x86_64/iso/"
             echo ""
@@ -548,9 +549,9 @@ install_prebuilt_iso() {
 			fi
         ;;
         download)
-			# E.g.: http://download.eng.rdu.redhat.com/rhel-9/composes/RHEL-9/RHEL-9.5.0-20240714.2/compose/BaseOS/x86_64/iso/
+	    # E.g.: http://download.eng.rdu.redhat.com/rhel-9/composes/RHEL-9/RHEL-9.5.0-20240714.2/compose/BaseOS/x86_64/iso/
             DOWNLOAD_URL="$(cat .durl)"
-            read -r -p "Enter URL of the ISO directory ($DOWNLOAD_URL) :" INPUT
+            read -r -p "Enter URL of the ISO or DVD ($DOWNLOAD_URL) :" INPUT
 			if [ -z "$INPUT" ]; then
 				echo "No input 1"
 				INPUT="$DOWNLOAD_URL"
