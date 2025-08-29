@@ -427,6 +427,10 @@ install_centos_iso() {
 install_edk2_zip() {
     pushd $DIR
 
+	if [ ! -f .pkgs ]; then
+		sudo dnf install -y wget zip unzip
+	fi
+
     if [ ! -d ISO ]; then
         mkdir -p ISO
     fi
@@ -595,8 +599,6 @@ install_prebuilt_iso() {
 		echo "${DOWNLOAD_URL}" > $DIR/.durl
 		echo "${ISOVERSION}" > $DIR/.diso
 	fi
-
-	exit 0
 }
 
 check_version_rpm() {
