@@ -14,9 +14,6 @@ HOSTEFIDIR="$PWD"
 create_update_efi() {
     cat << EOF >> .build/update_efi.sh
 #!/bin/bash
-dnf remove -y nvme-cli libnvme
-dnf copr disable -y $COPR_USER/$COPR_PROJECT
-dnf copr enable -y $COPR_USER/$COPR_PROJECT
 dnf install -y nvme-cli libnvme
 dnf update -y dracut
 dnf update -y dracut-network
@@ -48,10 +45,9 @@ EOF
 
 add_host_netsetup() {
     cat << EOF >> .build/netsetup.sh
-dnf copr enable -y $COPR_USER/$COPR_PROJECT
 dnf install -y git tar vim nvme-cli libnvme systemd-networkd jq dbus-daemon memstrack
 dnf update -y dracut
-dnf install -y dracut-network
+dnf update -y dracut-network
 echo "$HOSTID" > /etc/nvme/hostid
 
 ./update_initramfs.sh

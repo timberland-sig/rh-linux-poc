@@ -14,6 +14,16 @@ if [ ! -f efi.tgz ]; then
 	exit 1
 fi
 
+if [ ! -f eficonfig/startup.nsh ]; then
+	echo " error startup.nsh file missing"
+	exit 1
+fi
+
+if [ ! -f eficonfig/VConfig.efi ]; then
+	echo " error VConfig.efi file missing"
+	exit 1
+fi
+
 if [ ! -f eficonfig/NvmeOfCli.efi ]; then
 	echo " error eficonfig/NvmeOfCli.efi file missing"
 	exit 1
@@ -45,7 +55,7 @@ echo ""
 echo " Create a config attempt with \"./create_attempt.sh\"."
 echo ""
 
-$DIR/create_attempt.sh 2
+$DIR/create_attempt.sh 3
 
 echo ""
 echo " Next step is to install and configure the target-vm with \"cd ../target-vm; ./install.sh\""
