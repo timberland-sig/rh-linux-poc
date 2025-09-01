@@ -756,7 +756,7 @@ case "${MODE}" in
               build_nvme_rpms rpm
            ;;
            edk2)
-              install_edk2
+              install_edk2_zip
            ;;
            prebuilt)
               install_prebuilt_iso
