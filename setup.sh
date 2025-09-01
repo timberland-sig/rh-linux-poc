@@ -8,7 +8,7 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 # Configuraiton
 NOOP=0
-MODES="build|user|pkgs|net|virt|mock|copr|edk2|iso|prebuilt"
+MODES="build|user|dev|pkgs|net|virt|mock|copr|edk2|iso|prebuilt"
 MODE="user"
 MOCKBUILD=0
 ALL_VERSIONS="fedora-36|fedora-37|fedora-42|centos-stream-9|opensuse-tumbleweed"
@@ -63,10 +63,21 @@ display_help() {
 }
 
 install_user() {
-
     echo " : Installing user environment"
 
     if [ ! -f .usr ]; then
+        sudo dnf install -y --skip-broken vim git wget ethtool net-tools zip unzip
+        touch .usr
+    else
+        echo " : Nothing to do!"
+    fi
+}
+
+install_devel() {
+
+    echo " : Installing developer environment"
+
+    if [ ! -f .devel ]; then
 
         sudo dnf install -y --skip-broken vim git tar gpg wget ethtool pciutils net-tools copr-cli nvme-cli
 
@@ -99,7 +110,7 @@ install_user() {
             sed -i "s/^COPR_USER.*/COPR_USER\=$FOO/" global_vars.sh
         fi
 
-        touch .usr
+        touch .devel
     fi
 
     if [ ! -f .macaddr ]; then
@@ -720,6 +731,9 @@ case "${MODE}" in
            user)
               install_user
            ;;
+           devel)
+              install_devel
+           ;;
            pkgs)
               install_pkgs
            ;;
@@ -771,13 +785,13 @@ case "${MODE}" in
            ;;
            iso)
               check_version_iso
-              install_user
+              install_devel
               install_pkgs
               build_copr_iso $VERSION
            ;;
            build)
               check_version_iso
-              install_user
+              install_devel
               install_pkgs
               install_edk2
               build_libnvme_rpms copr $COPR_PROJECT
