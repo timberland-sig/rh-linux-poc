@@ -268,7 +268,7 @@ install_edk2() {
 install_pkgs() {
     pushd $DIR
     if [ ! -f .pkgs ]; then
-        sudo dnf groupinstall -y "Development tools"
+        sudo dnf group install -y development-tools
         sudo dnf install -y asciidoc audit-libs-devel binutils-devel elfutils-devel java-devel kabi-dw libcap-devel \
             libcap-ng-devel libmnl-devel llvm ncurses-devel newt-devel nss-tools numactl-devel pciutils-devel perl perl-generators \
             pesign python3-devel python3-docutils xmlto rpm-build yum-utils sg3_utils dwarves libbabeltrace-devel libbpf-devel openssl-devel \
@@ -584,7 +584,7 @@ install_prebuilt_iso() {
     if [ ! -f ISO/$ISOVERSION ]; then
         pushd ISO
         echo "wget ${DOWNLOAD_URL}"
-        wget ${DOWNLOAD_URL}
+        wget --no-check-certificate ${DOWNLOAD_URL}
 		if [ $? -eq 0 ]; then
 			echo "${DOWNLOAD_URL}" > $DIR/.durl
 			echo "${ISOVERSION}" > $DIR/.diso
