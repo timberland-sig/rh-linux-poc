@@ -190,4 +190,4 @@ echo ""
 echo "running bash .build/install.sh&"
 echo ""
 
-bash .build/install.sh &
+# bash .build/install.sh &
