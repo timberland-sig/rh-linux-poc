@@ -69,6 +69,7 @@ $QEMU -name $VMNAME -M q35 -accel kvm -cpu host -m 4G -smp 4 $QARGS \\
 -device virtio-rng -boot menu=on,splash-time=2000 \\
 -drive if=pflash,format=raw,readonly=on,file=OVMF_CODE.fd \\
 -drive if=pflash,format=raw,file=vm_vars.fd \\
+-drive file=efidisk,format=raw,if=none,id=NVME1 -device nvme,drive=NVME1,serial=$SN3 \\
 $NET0_NET \\
 $NET0_DEV \\
 $NET1_NET \\
