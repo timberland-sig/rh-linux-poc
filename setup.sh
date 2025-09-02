@@ -553,28 +553,24 @@ install_prebuilt_iso() {
 			fi
         ;;
         download)
-	    # E.g.: http://download.eng.rdu.redhat.com/rhel-9/composes/RHEL-9/RHEL-9.5.0-20240714.2/compose/BaseOS/x86_64/iso/
+            # https://mirror.stream.centos.org/10-stream/BaseOS/x86_64/iso/
+            # https://mirror.stream.centos.org/9-stream/BaseOS/x86_64/iso/
+            # https://download.eng.rdu.redhat.com/rhel-9/composes/RHEL-9/
+            # https://download.eng.rdu.redhat.com/rhel-10/composes/RHEL-10/
+            # https://dl.fedoraproject.org/pub/fedora/linux/releases/42/Everything/x86_64/os/
             DOWNLOAD_URL="$(cat .durl)"
             read -r -p "Enter URL of the ISO or DVD ($DOWNLOAD_URL) :" INPUT
 			if [ -z "$INPUT" ]; then
-				echo "No input 1"
 				INPUT="$DOWNLOAD_URL"
 			fi
             DOWNLOAD_URL="$INPUT"
-			if [ -z "$DOWNLOAD_UR"L ]; then
-				echo "No input 2"
+			if [ -z "$DOWNLOAD_URL" ]; then
+				echo "No URL provided"
 				exit 1
 			fi
-            ISOVERSION="$(cat .diso)"
-			# E.g.: RHEL-9.5.0-20240714.2-x86_64-dvd1.iso
-            read -r -p "Enter the name of the ISO ($ISOVERSION) :" INPUT
-			if [ -z "$INPUT" ]; then
-				echo "No input 3"
-				INPUT="$ISOVERSION"
-			fi
-            ISOVERSION="$INPUT"
+            ISOVERSION=$(echo $DOWNLOAD_URL | awk -F/ '{print $NF}')
 			if [ -z "$ISOVERSION" ]; then
-				echo "No input 4"
+				echo "No .iso found"
 				exit 1
 			fi
         ;;
@@ -587,8 +583,8 @@ install_prebuilt_iso() {
 
     if [ ! -f ISO/$ISOVERSION ]; then
         pushd ISO
-        echo "wget ${DOWNLOAD_URL}${ISOVERSION}"
-        wget ${DOWNLOAD_URL}${ISOVERSION}
+        echo "wget ${DOWNLOAD_URL}"
+        wget ${DOWNLOAD_URL}
 		if [ $? -eq 0 ]; then
 			echo "${DOWNLOAD_URL}" > $DIR/.durl
 			echo "${ISOVERSION}" > $DIR/.diso
