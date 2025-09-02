@@ -95,7 +95,7 @@ create_local_disk() {
 
 		echo "creating local disk 2 (nvme1)"
         rm -f disks/nvme1.qcow2
-        qemu-img create -f qcow2 disks/nvme1.qcow2 50G
+        qemu-img create -f qcow2 disks/nvme1.qcow2 70G
 }
 
 create_nbft_disk() {
@@ -105,7 +105,7 @@ create_nbft_disk() {
 
         echo " creating host-vm nbft disk"
         rm -f disks/nvme2.qcow2
-        qemu-img create -f qcow2 disks/nvme2.qcow2 70G
+        qemu-img create -f qcow2 disks/nvme2.qcow2 80G
 }
 
 check_qargs() {
