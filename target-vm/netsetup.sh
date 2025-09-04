@@ -12,7 +12,6 @@ VMNAME=`basename $PWD`
 create_nvme_target_config() {
     rm -f .build/tcp.json
     rm -f .build/start-nvme-target.sh
-    rm -f .build/start-nbft-target.sh
 
     cp tcp.json.in .build/tcp.json
 
@@ -36,8 +35,6 @@ EOF
 
 add_target_netsetup() {
     cat << EOF >> .build/netsetup.sh
-
-#dnf copr enable -y $COPR_USER/$COPR_PROJECT
 dnf install -y nvme-cli nvmetcli
 
 echo "$TARGETID" > /etc/nvme/hostid

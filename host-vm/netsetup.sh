@@ -11,20 +11,6 @@ VMNAME=`basename $PWD`
 TESTUSR="$USER"
 HOSTEFIDIR="$PWD"
 
-create_update_efi() {
-    cat << EOF >> .build/update_efi.sh
-#!/bin/bash
-dnf install -y nvme-cli libnvme
-dnf update -y dracut
-dnf update -y dracut-network
-
-echo "$HOSTID" > /etc/nvme/hostid
-
-modprobe nvme_fabrics
-modprobe nvme_tcp
-EOF
-}
-
 create_update_initramfs() {
     cat << EOF >> .build/update_initramfs.sh
 #!/bin/bash
@@ -45,55 +31,15 @@ EOF
 
 add_host_netsetup() {
     cat << EOF >> .build/netsetup.sh
-dnf install -y git tar vim nvme-cli libnvme systemd-networkd jq dbus-daemon memstrack
-dnf update -y dracut
-dnf update -y dracut-network
+dnf install -y nvme-cli libnvme
 echo "$HOSTID" > /etc/nvme/hostid
 
 ./update_initramfs.sh
 
 echo ""
-echo " Run the \"target-vm/install.sh\" script to create the target-vm."
+echo " The setup is finished now. Enjoy using your test environment!"
 echo ""
 EOF
-}
-
-create_bridge_copy_efi() {
-    cat << EOF >> copy_efi.sh
-#!/bin/bash
-rm -f efi.tgz
-echo ""
-echo "scp the efi.tgz from the host-vm at $1"
-scp -o StrictHostKeyChecking=no root@$1:efi.tgz .
-echo ""
-echo "Shutdown the host-vm and run the \"./create_efidisk.sh\" script."
-echo ""
-EOF
-}
-
-create_local_copy_efi() {
-    cat << EOF >> copy_efi.sh
-#!/bin/bash
-rm -f efi.tgz
-echo ""
-echo "scp the efi.tgz from the host-vm at $1"
-scp -o StrictHostKeyChecking=no -P 5555 root@localhost:efi.tgz .
-echo ""
-echo "Shutdown the host-vm and run the \"./create_efidisk.sh\" script."
-echo ""
-EOF
-}
-
-create_copy_efi() {
-    rm -f copy_efi.sh
-    case "$1" in
-        localhost)
-        create_local_copy_efi $1
-        ;;
-        *)
-        create_bridge_copy_efi $1
-        ;;
-    esac
 }
 
 create_discover_target() {
@@ -109,29 +55,20 @@ EOF
 
 check_netsetup_args $#
 
-rm -f copy_efi.sh
 rm -f discover_target.sh
 rm -f .build/netsetup.sh
-rm -f .build/update_efi.sh
 rm -f .build/update_initramfs.sh
 rm -f .build/hosts.txt
 
 create_netsetup "$1" "$2" "$3"
 add_host_netsetup
-create_update_efi
-create_update_initramfs
 create_hosts_file "$3"
-create_copy_efi "$3"
 create_discover_target
 
-chmod 755 copy_efi.sh
 chmod 755 discover_target.sh
 chmod 755 .build/netsetup.sh
-chmod 755 .build/update_efi.sh
 chmod 755 .build/update_initramfs.sh
 chmod 755 .build/hosts.txt
-
-rm -rf efi efi.tgz
 
 check_netport
 
@@ -155,4 +92,3 @@ case "$3" in
 echo ""
 echo " Login to $VMNAME/root and run \"./netsetup.sh\" to complete the VM configuration"
 echo ""
-
