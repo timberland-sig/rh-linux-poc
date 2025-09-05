@@ -45,16 +45,15 @@ display_help() {
         echo "                : - results appear in 'lorax/results' directory"
         echo ""
         echo "  prebuilt < $ISO_VERSIONS > "
-        echo "                : Download Fedora release ISO and install prebuilt Timberland SIG packages"
+        echo "                : Download a release ISO and a prebuilt Timberland SIG EDK2"
         echo "                : - ISOs appear in 'ISO' directory"
-        echo "                : - Prebuilt RPMs come from 'https://copr.fedorainfracloud.org/coprs/johnmeneghini/$COPR_PROJECT/'"
         echo ""
         echo " Examples: "
         echo "  Install qemu and configure hypervisor networks"
         echo "       ./${0##*/} virt "
         echo "       ./${0##*/} net "
         echo "  Configure hypervisor and install prebuilt bits"
-        echo "       ./${0##*/} prebuilt fedora-36 "
+        echo "       ./${0##*/} prebuilt fedora-39 "
         echo "  Configure user/dev environment, clone all repositories and build all bits"
         echo "       ./${0##*/} -m build fedora-37"
         echo "  Build an ISO with copr rpms and local edk2 artifacts"
@@ -122,7 +121,7 @@ install_user() {
         touch .macaddr
     fi
 
-    git submodule update --init --recursive
+#    git submodule update --init --recursive
 
 }
 
@@ -240,7 +239,7 @@ install_edk2() {
     if [ ! -d edk2 ]; then
         mkdir -p edk2
         pushd edk2
-        git clone -b timberland_1.0_final git@github.com:timberland-sig/edk2.git
+        git clone -b timberland_upstream-dev-full git@github.com:timberland-sig/edk2.git
         pushd edk2
         git config url."ssh://git@github.com/timberland-sig".insteadOf https://github.com/timberland-sig
         git submodule update --init --recursive
@@ -269,7 +268,7 @@ install_edk2() {
 install_pkgs() {
     pushd $DIR
     if [ ! -f .pkgs ]; then
-        sudo dnf groupinstall -y "Development tools"
+        sudo dnf group install -y development-tools
         sudo dnf install -y asciidoc audit-libs-devel binutils-devel elfutils-devel java-devel kabi-dw libcap-devel \
             libcap-ng-devel libmnl-devel llvm ncurses-devel newt-devel nss-tools numactl-devel pciutils-devel perl perl-generators \
             pesign python3-devel python3-docutils xmlto rpm-build yum-utils sg3_utils dwarves libbabeltrace-devel libbpf-devel openssl-devel \
@@ -428,6 +427,10 @@ install_centos_iso() {
 install_edk2_zip() {
     pushd $DIR
 
+	if [ ! -f .pkgs ]; then
+		sudo dnf install -y wget zip unzip
+	fi
+
     if [ ! -d ISO ]; then
         mkdir -p ISO
     fi
@@ -506,6 +509,10 @@ install_prebuilt_iso() {
     if [ ! -d ISO ]; then
         mkdir -p ISO
     fi
+
+	touch .durl
+	touch .diso
+
     case "${VERSION}" in
         fedora-36)
             VER=36
@@ -518,6 +525,54 @@ install_prebuilt_iso() {
         fedora-42)
             VER=42
             ISOVERSION="$ISOVERSION_F42"
+	;;
+        centos-10)
+            DOWNLOAD_URL="https://mirror.stream.centos.org/10-stream/BaseOS/x86_64/iso/"
+            echo ""
+            echo " Download Centos-stream10 ISO from: "
+            echo ""
+            echo " $DOWNLOAD_URL"
+            echo ""
+            read -r -p "Enter the name of the ISO : " ISOVERSION
+			if [ -z ISOVERSION ]; then
+				echo " no input"
+				exit 1
+			fi
+        ;;
+        centos-9)
+            DOWNLOAD_URL="https://mirror.stream.centos.org/9-stream/BaseOS/x86_64/iso/"
+            echo ""
+            echo " Download Centos-stream9 ISO from: "
+            echo ""
+            echo " $DOWNLOAD_URL"
+            echo ""
+            read -r -p "Enter the name of the ISO : " ISOVERSION
+            if [ -z ISOVERSION ]; then
+				echo " no input"
+				exit 1
+			fi
+        ;;
+        download)
+            # https://mirror.stream.centos.org/10-stream/BaseOS/x86_64/iso/
+            # https://mirror.stream.centos.org/9-stream/BaseOS/x86_64/iso/
+            # https://download.eng.rdu.redhat.com/rhel-9/composes/RHEL-9/
+            # https://download.eng.rdu.redhat.com/rhel-10/composes/RHEL-10/
+            # https://dl.fedoraproject.org/pub/fedora/linux/releases/42/Everything/x86_64/os/
+            DOWNLOAD_URL="$(cat .durl)"
+            read -r -p "Enter URL of the ISO or DVD ($DOWNLOAD_URL) :" INPUT
+			if [ -z "$INPUT" ]; then
+				INPUT="$DOWNLOAD_URL"
+			fi
+            DOWNLOAD_URL="$INPUT"
+			if [ -z "$DOWNLOAD_URL" ]; then
+				echo "No URL provided"
+				exit 1
+			fi
+            ISOVERSION=$(echo $DOWNLOAD_URL | awk -F/ '{print $NF}')
+			if [ -z "$ISOVERSION" ]; then
+				echo "No .iso found"
+				exit 1
+			fi
         ;;
         *)
             echo "  Invalid argument: $VERSION" >&2
@@ -528,10 +583,18 @@ install_prebuilt_iso() {
 
     if [ ! -f ISO/$ISOVERSION ]; then
         pushd ISO
-        wget https://download.fedoraproject.org/pub/fedora/linux/releases/$VER/Everything/x86_64/iso/$ISOVERSION
+        echo "wget ${DOWNLOAD_URL}"
+        wget --no-check-certificate ${DOWNLOAD_URL}
+		if [ $? -eq 0 ]; then
+			echo "${DOWNLOAD_URL}" > $DIR/.durl
+			echo "${ISOVERSION}" > $DIR/.diso
+		fi
         popd
-    fi
-    popd
+    else
+		echo "ISO $ISOVERSION already exists"
+		echo "${DOWNLOAD_URL}" > $DIR/.durl
+		echo "${ISOVERSION}" > $DIR/.diso
+	fi
 }
 
 check_version_rpm() {
@@ -569,6 +632,7 @@ check_version_rh() {
     if [ -z "${VERSION}" ]; then
         echo "  Invalid argument: ${NEWARGS}" >&2
         echo "  use: \"$0 $MODE <$RH_VERSIONS>\"" >&2
+		echo " Bar"
         echo "  Try: \"$0 -h\"" >&2
         exit 1
     fi
@@ -650,6 +714,7 @@ VERSION=$(echo "${NEWARGS}" | tr -t '/' ' ' | awk '{print $2}')
 
 #echo "MODE is == $MODE"
 #echo "MOCKBUILD is == $MOCKBUILD"
+#echo "VERSION is == $VERSION"
 
 case "${MODE}" in
            user)
@@ -694,7 +759,6 @@ case "${MODE}" in
               install_edk2
            ;;
            prebuilt)
-              check_version_iso
               install_prebuilt_iso
               install_edk2_zip
            ;;

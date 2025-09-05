@@ -4,16 +4,22 @@
 
 # NOTE: caller must include global_vars.sh before including this file.
 
+echo "DIR = $DIR"
+
 display_install_help() {
-  echo " Usage: install.sh <iso_file> <bridged|localhost> [\"qemu_args\"] [-n | -f]"
+  echo " Usage: install.sh <boot|prebuilt|\"iso_file\"> <bridged|localhost> [\"qemu_args\"] [-n | -f | -r]"
   echo " "
   echo " Creates qcow2 disk files and installs a QEMU VM named $VMNAME"
   echo " in $PWD using the installation ISO provided in <iso_file>."
   echo ""
   echo " Required arguments:"
   echo ""
-  echo " The <iso_file> must be downloaded by runnning \"setup.sh prebuilt\" before calling this script."
-  echo " Pass \"\" in <iso_file> if you are not using the prebuilt option (requires lorax_build)"
+  echo " The <boot|prebuilt> argument selects the boot iso from the ISO directory"
+  echo "   Pass \"boot\" if you are using a private boot.iso (requires lorax_build)"
+  echo "     The boot.iso file must be created by runnning \"setup.sh iso\" first."
+  echo "   Pass \"prebuilt\" to use the last downloaded ISO"
+  echo "   Pass \"the name of the iso file\" to use a specific downloaded ISO"
+  echo "     ISOs must be downloaded by runnning \"setup.sh prebuilt\" first."
   echo ""
   echo " The <bridged|localhost> argument sets the QMEU network configuration:"
   echo ""
@@ -28,15 +34,18 @@ display_install_help() {
   echo " Note: this install script will destroy and recreate the existing disk image files."
   echo " Be sure to backup or copy any data on the existing qcow2 disks before running \"./install.sh\"."
   echo ""
-  echo " [ -n ] : Re-install over existing disk files."
+  echo " [ -r ] : Initialize vm_vars.fd."
+  echo " [ -n ] : Re/Create a new target boot disk."
   echo " [ -f ] : Reuse existing disk files and don't run the install script."
   echo ""
   echo "   E.g.:"
-  echo "          $0 \"\" localhost"
-  echo "          $0 fedora-37 localhost"
-  echo "          $0 fedora-37 bridged \"-vnc :0\""
-  echo "          $0 fedora-37 localhost \"-vnc :1\""
-  echo "          $0 fedora-37 localhost \"\" -n"
+  echo "          $0 boot localhost"
+  echo "          $0 prebuilt localhost"
+  echo "          $0 prebuilt bridged \"-vnc :0\""
+  echo "          $0 RHEL-9.5.0-20240717.2-x86_64-dvd1.iso localhost \"-vnc :0\""
+  echo "          $0 prebuilt localhost \"-vnc :0 -smp cpus=8 -numa node,cpus=0-3,nodeid=0 -numa node,cpus=4-7,nodeid=1\""
+  echo "          $0 prebuilt localhost \"\" -n"
+  echo "          $0 boot localhost \"\" -r"
   echo " "
 }
 
@@ -69,28 +78,34 @@ create_mac_addresses() {
         esac
 }
 
-create_target_disk() {
+create_boot_disk() {
         if [ ! -d disks ]; then
                 mkdir disks
         fi
 
-        echo "creating target-vm disk 1"
+		echo "creating local disk 1 (boot)"
         rm -f disks/boot.qcow2
         qemu-img create -f qcow2 disks/boot.qcow2 70G
-
-		echo "creating target-vm disk 2"
-        rm -f disks/nvme1.qcow2
-        qemu-img create -f qcow2 disks/nvme1.qcow2 50G
 }
 
-create_host_disk() {
+create_local_disk() {
         if [ ! -d disks ]; then
                 mkdir disks
         fi
 
-        echo " creating host-vm disk"
+		echo "creating local disk 2 (nvme1)"
+        rm -f disks/nvme1.qcow2
+        qemu-img create -f qcow2 disks/nvme1.qcow2 70G
+}
+
+create_nbft_disk() {
+        if [ ! -d disks ]; then
+                mkdir disks
+        fi
+
+        echo " creating host-vm nbft disk"
         rm -f disks/nvme2.qcow2
-        qemu-img create -f qcow2 disks/nvme2.qcow2 70G
+        qemu-img create -f qcow2 disks/nvme2.qcow2 80G
 }
 
 check_qargs() {
@@ -161,21 +176,29 @@ check_install_args() {
 #    echo "args 1 = $1, 2 = $2, 3 = $3, 4 = $4"
 
     if [ -z "$2" ]; then
-        ISOVERSION="boot.iso"
+		eco "No input for iso"
+		exit 1
     else
         case "$2" in
-        fedora-36)
-            ISOVERSION="$ISOVERSION_F36"
+		boot)
+            ISOVERSION="boot.iso"
+            echo "prebuilt iso is $ISOVERSION"
         ;;
         fedora-37)
             ISOVERSION="$ISOVERSION_F37"
+            echo "iso is $ISOVERSION"
         ;;
         fedora-42)
             ISOVERSION="$ISOVERSION_F42"
+            echo "iso is $ISOVERSION"
+		;;
+        prebuilt)
+            ISOVERSION="$(cat ${DIR}/../.diso)"
+            echo "prebuilt iso is $ISOVERSION"
         ;;
         *)
-	    echo " Error: $2 not found"
-            exit 1
+            ISOVERSION="$2"
+            echo "prebuilt iso is $ISOVERSION"
         ;;
         esac
     fi
@@ -203,10 +226,10 @@ check_install_args() {
     create_mac_addresses
 
     if [[ "$VMNAME" == *"host"* ]]; then
-	NET_PORT="5555"
+        NET_PORT="5555"
         NET_CIDR="10.1.2.15/24"
     else
-	NET_PORT="5556"
+        NET_PORT="5556"
         NET_CIDR="10.0.2.15/24"
     fi
 

@@ -16,7 +16,7 @@ display_start_help() {
   echo " Starts the QEMU VM named $VMNAME"
   echo ""
   echo "    local   - boot $VMNAME without the host-vm disk"
-  echo "    nbft    - boot $VMNAME with host-vm disk - the host-vm must be shutdown"
+  echo "    nbft    - boot $VMNAME with host-vm disk"
   echo ""
   echo "   E.g.:"
   echo "          $0 local"
@@ -59,10 +59,16 @@ case "$1" in
 		fi
         check_netport
         bash .build/start_nbft.sh &
+        echo ""
+        echo " target-vm is running with nbft disk"
+        echo " Log into the root account and run \"./start-nvme-target.sh\" to start the NVMe/TCP soft target."
     ;;
     local)
         check_netport
         bash .build/start_local.sh &
+        echo ""
+        echo " target-vm is running with out nbft disk"
+        echo " NVMe/TCP soft target is inoperable."
     ;;
     *)
     echo " Error: $1 not valid"
@@ -70,7 +76,3 @@ case "$1" in
     exit 1
     ;;
 esac
-
-echo ""
-echo " Log into the root account and run \"./start-nvme-target.sh\" to start the NVMe/TCP soft target."
-

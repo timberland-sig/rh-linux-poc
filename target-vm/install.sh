@@ -23,51 +23,51 @@ create_install_startup() {
 	NET2_DEV="-device virtio-net-pci,netdev=net2,mac=$MAC3,addr=6"
 	cat << EOF >> .build/install.sh
 #!/bin/bash
-$QEMU -name $VMNAME -M q35 -accel kvm -bios OVMF-pure-efi.fd -cpu host -m 4G -smp 4 $QARGS \
--uuid $TARGET_SYS_UUID \
--cdrom $ISO_FILE \
--device nvme,drive=NVME1,max_ioqpairs=4,physical_block_size=4096,logical_block_size=4096,use-intel-id=on,serial=$SN0 \
--drive file=$BOOT_DISK,if=none,id=NVME1 \
-$NET0_NET \
-$NET0_DEV \
-$NET1_NET \
-$NET1_DEV \
-$NET2_NET \
+$QEMU -name $VMNAME -M q35 -accel kvm -bios OVMF-pure-efi.fd -cpu host -m 4G -smp 4 $QARGS \\
+-uuid $TARGET_SYS_UUID \\
+-cdrom $ISO_FILE \\
+-device nvme,drive=NVME1,max_ioqpairs=4,physical_block_size=4096,logical_block_size=4096,use-intel-id=on,serial=$SN0 \\
+-drive file=$BOOT_DISK,if=none,id=NVME1 \\
+$NET0_NET \\
+$NET0_DEV \\
+$NET1_NET \\
+$NET1_DEV \\
+$NET2_NET \\
 $NET2_DEV
 EOF
 	echo "creating .build/start_local.sh"
 	cat << EOF >> .build/start_local.sh
 #!/bin/bash
-$QEMU -name $VMNAME -M q35 -accel kvm -bios OVMF-pure-efi.fd -cpu host -m 4G -smp 4 -boot menu=on $QARGS \
--uuid $TARGET_SYS_UUID \
--device nvme,drive=NVME1,max_ioqpairs=4,physical_block_size=4096,logical_block_size=4096,use-intel-id=on,serial=$SN0,bootindex=1 \
--drive file=$BOOT_DISK,if=none,id=NVME1 \
--device nvme,drive=NVME2,max_ioqpairs=4,physical_block_size=4096,logical_block_size=4096,use-intel-id=on,serial=$SN1 \
--drive file=$SPARE_DISK,if=none,id=NVME2 \
-$NET0_NET \
-$NET0_DEV \
-$NET1_NET \
-$NET1_DEV \
-$NET2_NET \
+$QEMU -name $VMNAME -M q35 -accel kvm -bios OVMF-pure-efi.fd -cpu host -m 4G -smp 4 -boot menu=on $QARGS \\
+-uuid $TARGET_SYS_UUID \\
+-device nvme,drive=NVME1,max_ioqpairs=4,physical_block_size=4096,logical_block_size=4096,use-intel-id=on,serial=$SN0,bootindex=1 \\
+-drive file=$BOOT_DISK,if=none,id=NVME1 \\
+-device nvme,drive=NVME2,max_ioqpairs=4,physical_block_size=4096,logical_block_size=4096,use-intel-id=on,serial=$SN1 \\
+-drive file=$SPARE_DISK,if=none,id=NVME2 \\
+$NET0_NET \\
+$NET0_DEV \\
+$NET1_NET \\
+$NET1_DEV \\
+$NET2_NET \\
 $NET2_DEV
 exit
 EOF
 	echo "creating .build/start_nbft.sh"
 	cat << EOF >> .build/start_nbft.sh
 #!/bin/bash
-$QEMU -name $VMNAME -M q35 -accel kvm -bios OVMF-pure-efi.fd -cpu host -m 4G -smp 4 -boot menu=on $QARGS \
--uuid $TARGET_SYS_UUID \
--device nvme,drive=NVME1,max_ioqpairs=4,physical_block_size=4096,logical_block_size=4096,use-intel-id=on,serial=$SN0,bootindex=1 \
--drive file=$BOOT_DISK,if=none,id=NVME1 \
--device nvme,drive=NVME2,max_ioqpairs=4,physical_block_size=4096,logical_block_size=4096,use-intel-id=on,serial=$SN2 \
--drive file=disks/nvme2.qcow2,if=none,id=NVME2 \
--device nvme,drive=NVME3,max_ioqpairs=4,physical_block_size=4096,logical_block_size=4096,use-intel-id=on,serial=$SN1,addr=7 \
--drive file=$SPARE_DISK,if=none,id=NVME3 \
-$NET0_NET \
-$NET0_DEV \
-$NET1_NET \
-$NET1_DEV \
-$NET2_NET \
+$QEMU -name $VMNAME -M q35 -accel kvm -bios OVMF-pure-efi.fd -cpu host -m 4G -smp 4 -boot menu=on $QARGS \\
+-uuid $TARGET_SYS_UUID \\
+-device nvme,drive=NVME1,max_ioqpairs=4,physical_block_size=4096,logical_block_size=4096,use-intel-id=on,serial=$SN0,bootindex=1 \\
+-drive file=$BOOT_DISK,if=none,id=NVME1 \\
+-device nvme,drive=NVME2,max_ioqpairs=4,physical_block_size=4096,logical_block_size=4096,use-intel-id=on,serial=$SN2 \\
+-drive file=disks/nvme2.qcow2,if=none,id=NVME2 \\
+-device nvme,drive=NVME3,max_ioqpairs=4,physical_block_size=4096,logical_block_size=4096,use-intel-id=on,serial=$SN1,addr=7 \\
+-drive file=$SPARE_DISK,if=none,id=NVME3 \\
+$NET0_NET \\
+$NET0_DEV \\
+$NET1_NET \\
+$NET1_DEV \\
+$NET2_NET \\
 $NET2_DEV
 exit
 EOF
@@ -78,10 +78,17 @@ rm -rf .build
 
 check_install_args $# "$1" "$2" "$3"
 
-if [ $# -gt 3 ] && [ "$4" == "-n" ] || [ "$4" == "-f" ]; then
-    echo "Reusing current disk"
+if [ $# -gt 3 ] && [ "$4" == "-f" ]; then
+    echo "Reusing current local boot disks"
 else
-    create_target_disk
+    create_boot_disk
+    create_local_disk
+fi
+
+if [ $# -gt 3 ] && [ "$4" == "-n" ]; then
+    echo "Reusing current nbft boot disk"
+else
+    create_nbft_disk
 fi
 
 BOOT_DISK=$(find . -name boot.qcow2 -print)
@@ -100,6 +107,15 @@ if [ -z "$SPARE_DISK" ]; then
 else
     SPARE_DISK=$(realpath $SPARE_DISK)
     echo "using $SPARE_DISK"
+fi
+
+NBFT_DISK=$(find . -name nvme2.qcow2 -print)
+if [ -z "$NBFT_DISK" ]; then
+    echo " $NBFT_DISK not found!"
+    exit 1
+else
+    NBFT_DISK=$(realpath $NBFT_DISK)
+    echo "using $NBFT_DISK"
 fi
 
 create_install_startup
