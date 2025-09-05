@@ -41,7 +41,7 @@ install_user() {
     echo " : Installing user environment"
 
     if [ ! -f .usr ]; then
-        sudo dnf install -y --skip-broken vim git wget ethtool net-tools zip unzip
+        sudo dnf install -y --skip-broken vim git wget ethtool net-tools zip unzip nmcli
         touch .usr
     else
         echo " : Nothing to do!"
