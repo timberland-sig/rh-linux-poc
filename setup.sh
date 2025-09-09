@@ -41,7 +41,7 @@ install_user() {
     echo " : Installing user environment"
 
     if [ ! -f .usr ]; then
-        sudo dnf install -y --skip-broken vim git wget ethtool net-tools zip unzip nmcli
+        sudo dnf install -y vim git wget ethtool net-tools zip unzip nmcli
         touch .usr
     else
         echo " : Nothing to do!"
@@ -54,7 +54,7 @@ install_devel() {
 
     if [ ! -f .devel ]; then
         sudo dnf group install -y development-tools
-        sudo dnf install -y --skip-broken asciidoc audit-libs-devel binutils-devel elfutils-devel java-devel kabi-dw libcap-devel \
+        sudo dnf install -y asciidoc audit-libs-devel binutils-devel elfutils-devel java-devel kabi-dw libcap-devel \
             libcap-ng-devel libmnl-devel llvm ncurses-devel newt-devel nss-tools numactl-devel pciutils-devel perl perl-generators \
             pesign python3-devel python3-docutils xmlto rpm-build yum-utils sg3_utils dwarves libbabeltrace-devel libbpf-devel openssl-devel \
             wget bison acpica-tools binutils gcc gcc-c++ meson cmake dbus-devel libuuid libuuid-devel \
@@ -238,7 +238,7 @@ install_edk2_zip() {
 
     if [ ! -f ISO/$OVMF_ZIP ]; then
         pushd ISO
-        wget $OVMF_URL/$OVMF_ZIP
+        wget --no-check-certificate  $OVMF_URL/$OVMF_ZIP
         unzip $OVMF_ZIP
         popd
     fi
@@ -262,7 +262,7 @@ install_edk2_zip() {
 install_prebuilt_iso() {
     pushd $DIR
     if [ ! -f .pkgs2 ]; then
-        sudo dnf -y --skip-broken install vim tar wget net-tools zip unzip
+        sudo dnf -y install vim tar wget net-tools zip unzip
         touch .pkgs2
     fi
     if [ ! -d ISO ]; then
