@@ -45,6 +45,9 @@ HOST_MAC1=00:16:3E:3E:3A:3E
 # The Following MAC and IP addresses are static and only used on the private
 # virbr1 and virbr2 networks.  These can all be safely left and unchanged.
 
+HOST_PORT="5555"
+TARGET_PORT="5556"
+
 TARGET_MAC2="EA:EB:D3:56:89:56"
 TARGET_MAC3="EA:EB:D3:57:89:57"
 HOST_MAC2="EA:EB:D3:58:89:58"

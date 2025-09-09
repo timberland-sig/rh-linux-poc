@@ -167,6 +167,19 @@ check_host_depends() {
     fi
 }
 
+find_iso() {
+    ISOVERSION="$(cat ../.diso)"
+    ISO_FILE=$(find ../ -name $ISOVERSION -print)
+    if [ -z "$ISO_FILE" ]; then
+	echo " Error: $ISOVERSION not found"
+	echo " run \"setup.sh -m iso\" or \"setup.sh prebuilt\""
+	exit 1
+    else
+        ISO_FILE=$(realpath $ISO_FILE)
+        echo "using $ISO_FILE"
+    fi
+}
+
 check_install_args() {
     if [ $1 -lt 2 ] ; then
         display_install_help
