@@ -11,31 +11,10 @@ VMNAME=`basename $PWD`
 TESTUSR="$USER"
 HOSTEFIDIR="$PWD"
 
-create_update_initramfs() {
-    cat << EOF >> .build/update_initramfs.sh
-#!/bin/bash
-dracut -f -v --add nvmf --add-drivers nvme-tcp
-rm -f efi.tgz
-pushd /boot
-tar cvzf ~/efi.tgz efi
-popd
-
-echo ""
-echo " Use \"./copy_efi.sh\" to retrieve efi.tgz, then"
-echo " run the \"./create_efidisk.sh\" script on the hypervisor."
-echo ""
-echo " Shutdown the host-vm and start the target-vm."
-echo ""
-EOF
-}
-
 add_host_netsetup() {
     cat << EOF >> .build/netsetup.sh
 dnf install -y nvme-cli libnvme
 echo "$HOSTID" > /etc/nvme/hostid
-
-./update_initramfs.sh
-
 echo ""
 echo " The setup is finished now. Enjoy using your test environment!"
 echo ""
@@ -57,7 +36,6 @@ check_netsetup_args $#
 
 rm -f discover_target.sh
 rm -f .build/netsetup.sh
-rm -f .build/update_initramfs.sh
 rm -f .build/hosts.txt
 
 create_netsetup "$1" "$2" "$3"
@@ -67,7 +45,6 @@ create_discover_target
 
 chmod 755 discover_target.sh
 chmod 755 .build/netsetup.sh
-chmod 755 .build/update_initramfs.sh
 chmod 755 .build/hosts.txt
 
 check_netport
@@ -75,20 +52,22 @@ check_netport
 case "$3" in
     localhost)
         echo ""
-        echo " scp -P 5555 .build/{netsetup.sh,update_initramfs.sh,update_efi.sh,hosts.txt} root@localhost:"
+        echo " scp -P 5555 .build/{netsetup.sh,hosts.txt} root@localhost:"
         echo ""
         ssh-keygen -R [localhost]:5555
-        scp -o StrictHostKeyChecking=no -P 5555 .build/{netsetup.sh,update_initramfs.sh,update_efi.sh,hosts.txt} root@localhost:
+        scp -o StrictHostKeyChecking=no -P 5555 .build/{netsetup.sh,hosts.txt} root@localhost:
         ;;
         *)
         echo ""
-        echo " scp .build/{netsetup.sh,update_initramfs.sh,update_efi.sh,hosts.txt} root@$3:"
+        echo " scp .build/{netsetup.sh,hosts.txt} root@$3:"
         echo ""
         ssh-keygen -R $3
-        scp -o StrictHostKeyChecking=no .build/{netsetup.sh,update_initramfs.sh,update_efi.sh,hosts.txt} root@$3:
+        scp -o StrictHostKeyChecking=no .build/{netsetup.sh,hosts.txt} root@$3:
         ;;
    esac
 
 echo ""
-echo " Login to $VMNAME/root and run \"./netsetup.sh\" to complete the VM configuration"
+echo " Login to $VMNAME/root and run \"./netsetup.sh\" to complete the VM configuration."
+echo " Then shutdown the host-vm and run the \"./create_efidisk.sh\" command."
+echo " You must run \"./start.sh attempt\" to program the efi boot attempts before you can boot remotely."
 echo ""
