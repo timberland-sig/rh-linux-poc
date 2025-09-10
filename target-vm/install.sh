@@ -136,9 +136,8 @@ echo ""
 echo " Be sure to create the root account with ssh access."
 echo " Reboot to complete the install and login to the root account."
 echo ""
-echo " Record the host interface name and ip address with \"ip -br address show\" command."
-echo ""
-echo " Next step will be to run the \"./netsetup.sh\" script."
+echo " Next step will be to run \"make setup\"."
+#echo " Next step will be to run the \"./netsetup.sh\" script."
 echo ""
 
 bash .build/install.sh &

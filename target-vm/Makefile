@@ -1,10 +1,10 @@
 #!/bin/make
 
-.PHONY: install clean wipe-disk
+.PHONY: rh-install rh-clean install setup clean wipe-disk
 
 # This does not need a lock file because the virt-install command will refuse
 # to run if the guest name 'target-vm' is already in use.
-install: disks/boot.qcow2 .build/install.sh anaconda-ks.cfg
+rh-install: disks/boot.qcow2 anaconda-ks.cfg
 	@bash ./new-install.sh
 
 disks/boot.qcow2:
@@ -13,7 +13,16 @@ disks/boot.qcow2:
 # dependant on SELinux
 	chcon -t virt_image_t disks/boot.qcow2
 
-clean:
+rh-clean:
 	-virsh destroy target-vm
 	-virsh undefine target-vm
+
+install:
+	@bash ./install.sh prebuilt localhost
+
+setup: .build/install.sh
+	@bash ./netsetup.sh enp0s5 enp0s6 localhost
+
+clean:
 	-rm -f disks/boot.qcow2
+	-rm -rf .build

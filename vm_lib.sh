@@ -418,16 +418,21 @@ cat hosts.txt >> /etc/hosts
 if [[ \$(grep EDITOR ~/.bashrc) =~ vim ]] ; then
    echo "\$EDITOR"
 else
-	echo "EDITOR=vim; export EDITOR;" >> ~/.bashrc
-	echo "alias ipshow='ip -h -c -o -br address show'" >> ~/.bashrc
-	echo "alias ipmac=\"ip -o link show | cut -d ' ' -f 2,20\"" >> ~/.bashrc
-	sed -i "s/# %wheel/%wheel/g" /etc/sudoers
-    USR=""
-    echo ""
-    read -r -p "enter user account name [none] : " USR
-	if ! [ -z \$USR ]; then
-		usermod -aG wheel \$USR
-    fi
+   echo "EDITOR=vim; export EDITOR;" >> ~/.bashrc
+   echo "alias ipshow='ip -h -c -o -br address show'" >> ~/.bashrc
+   echo "alias ipmac=\"ip -o link show | cut -d ' ' -f 2,20\"" >> ~/.bashrc
+   sed -i "s/# %wheel/%wheel/g" /etc/sudoers
+
+   if [[ "\$1" == *"none"* ]]; then
+       echo "don't set user account"
+   else
+       USR=""
+       echo ""
+       read -r -p "enter user account name [none] : " USR
+       if ! [ -z \$USR ]; then
+            usermod -aG wheel $USR
+       fi
+   fi
 fi
 
 EOF
