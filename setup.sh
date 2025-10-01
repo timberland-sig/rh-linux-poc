@@ -189,9 +189,18 @@ install_virt() {
     if [ $? -ne 0 ]; then
         sudo dnf install -y qemu-kvm qemu-img
     fi
+
     echo "allow all" > /tmp/bridge.conf
-    sudo cp /tmp/bridge.conf /etc/qemu/bridge.conf
-    sudo chmod 4755 /usr/libexec/qemu-bridge-helper
+    if [ -f /usr/local/libexec/qemu-bridge-helper ]; then
+        sudo chmod 4755 /usr/local/libexec/qemu-bridge-helper
+        sudo mkdir -p /usr/local/etc/qemu
+        sudo cp /tmp/bridge.conf /usr/local/etc/qemu/bridge.conf
+    elif [ -f /usr/libexec/qemu-bridge-helper ]; then
+        sudo chmod 4755 /usr/libexec/qemu-bridge-helper
+        sudo cp /tmp/bridge.conf /etc/qemu/bridge.conf
+    else
+        echo "No qemu-bridge-helper found!"
+    fi
 }
 
 install_edk2() {
@@ -228,9 +237,9 @@ install_edk2() {
 install_edk2_zip() {
     pushd $DIR
 
-	if [ ! -f .pkgs ]; then
-		sudo dnf install -y wget zip unzip
-	fi
+    if [ ! -f .pkgs ]; then
+        sudo dnf install -y wget zip unzip
+    fi
 
     if [ ! -d ISO ]; then
         mkdir -p ISO
