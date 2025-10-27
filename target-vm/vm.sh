@@ -90,15 +90,6 @@ else
     echo "using $BOOT_DISK"
 fi
 
-NBFT_DISK=$(find . -name nvme1.qcow2 -print)
-if [ -z "$NBFT_DISK" ]; then
-    echo "nvme1.qcow2 not found!"
-    exit 1
-else
-    NBFT_DISK=$(realpath $NBFT_DISK)
-    echo "using $NBFT_DISK"
-fi
-
 case "$NET_CONN" in
     localhost)
         # NET0_NET="-netdev user,id=net0,net=$NET_CIDR,hostfwd=tcp::$NET_PORT-:22"
@@ -129,6 +120,15 @@ if [ "$MODE" == "install" ]; then
 fi
 
 if [ "$MODE" == "start" ]; then
+    NBFT_DISK=$(find . -name nvme1.qcow2 -print)
+    if [ -z "$NBFT_DISK" ]; then
+        echo "nvme1.qcow2 not found!"
+        exit 1
+    else
+        NBFT_DISK=$(realpath $NBFT_DISK)
+        echo "using $NBFT_DISK"
+    fi
+
     NBFT_DRIVE_OPTIONS=$(cat << EOF
 -device nvme,drive=NVME2,addr=0x08,max_ioqpairs=4,physical_block_size=4096,logical_block_size=4096,use-intel-id=on,serial=$SN1
 -drive file=$NBFT_DISK,if=none,id=NVME2
