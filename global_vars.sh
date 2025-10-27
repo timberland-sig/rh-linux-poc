@@ -74,6 +74,5 @@ ISOVERSION_F36="Fedora-Everything-netinst-x86_64-36-1.5.iso"
 ISOVERSION_F37="Fedora-Everything-netinst-x86_64-37-1.7.iso"
 ISOVERSION_F42="Fedora-Everything-netinst-x86_64-42-1.1.iso"
 
-OVMF_ZIP="timberland-ovmf-release-72976af.zip"
-OVMF_URL="https://github.com/timberland-sig/edk2/releases/download/release-72976af/"
-
+OVMF_ZIP="timberland-ovmf-release-edk2-stable201903-4950-g72976af.zip"
+OVMF_URL="https://github.com/timberland-sig/edk2/releases/download/release-edk2-stable201903-4950-g72976af/"
