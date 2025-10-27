@@ -16,6 +16,8 @@ kernel
 vim
 ethtool
 net-tools
+dracut-config-generic
+nvme-cli
 %end
 
 # Run the Setup Agent on first boot
@@ -40,13 +42,14 @@ timezone Europe/Prague --utc
 # Root password
 rootpw --iscrypted --allow-ssh <ROOT_PASSWD>
 
-%post
+%post --nochroot
 # Loop through all detected network devices and ensure they are set to auto-connect
 for dev in $(nmcli device status | grep 'ethernet' | awk '{print $1}'); do
   nmcli connection modify "$dev" connection.autoconnect yes
 done
 # Add the missing nvme driver
-dracut -f --add-drivers "nvme"
+dracut -f --add-drivers "nvme nvme-core"
+dracut --regenerate-all --force && grub2-mkconfig -o /boot/grub2/grub.cfg
 %end
 
 # Shutdown the system at the end

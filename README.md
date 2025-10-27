@@ -16,8 +16,6 @@ modified version of Fedora 42 with an [upstream QEMU
 library](https://www.qemu.org/download/) installed. It's
 best to use a current version of Fedora for a hypervisor, if possible.
 
-*NOTE: Only download DVD ISOs. Netinstall ISOs are **not supported**!*
-
 *NOTE: The scripts used in this repository are all designed to be run from
 a user account with sudo root access. It is not advised to run these scripts on
 a production machine unless you know what you are doing. Some scripts will
