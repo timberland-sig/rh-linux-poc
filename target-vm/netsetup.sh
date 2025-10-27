@@ -48,6 +48,8 @@ EOF
 
 check_netsetup_args $#
 
+mkdir -p .build
+
 create_netsetup "$1" "$2" "$3"
 
 add_target_netsetup
