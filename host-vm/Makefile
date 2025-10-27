@@ -1,4 +1,6 @@
 #!/bin/make
+# SPDX-License-Identifier: GPL-3.0+
+# Copyright (C) 2025 Michal Rábek <mrabek@redhat.com> All rights reserved.
 
 VMNAME := $(shell basename $$PWD)
 DRIVE_CAP ?= 70G

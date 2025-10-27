@@ -1,4 +1,7 @@
 #!/bin/bash
+# SPDX-License-Identifier: GPL-3.0+
+# Copyright (C) 2025 Michal Rábek <mrabek@redhat.com> All rights reserved.
+
 /usr/bin/qemu-system-x86_64 -name target-vm -M q35 -accel kvm -bios OVMF-pure-efi.fd -cpu host,migratable=on \
 	-m 16G -smp cpus=16 \
 	-object memory-backend-ram,size=4G,id=m0 \

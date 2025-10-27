@@ -1,7 +1,6 @@
 #!/bin/bash -e
 # SPDX-License-Identifier: GPL-3.0+
 # Copyright (C) 2023 John Meneghini <jmeneghi@redhat.com> All rights reserved.
-#
 
 DIR="$(dirname -- "$(realpath -- "$0")")"
 . $DIR/../global_vars.sh
