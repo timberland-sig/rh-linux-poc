@@ -10,16 +10,13 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 MODES="user|devel|virt|net|edk2|iso"
 MODE="user"
 
-ALL_VERSIONS="fedora-36|fedora-37|fedora-42|centos-stream-9|opensuse-tumbleweed"
-
 set -e
 
 display_help() {
         echo
-        echo " Usage: ${0##*/} [-h] [-m ] <$MODES> [$ALL_VERSIONS]"
+        echo " Usage: ${0##*/} [-h] <$MODES>"
         echo
         echo "  -h            : display this help"
-        echo "  -m            : use mock to build things"
         echo ""
         echo "  quickstart    : runs user, virt, net, edk2 and also iso if there is no ISO downloaded"
         echo "  user          : setup basic user environment (default)"
@@ -309,7 +306,7 @@ install_prebuilt_iso() {
 	fi
 }
 
-while getopts "mh" opt; do
+while getopts "h" opt; do
         case "${opt}" in
                 h)
                         display_help >&2
@@ -334,10 +331,6 @@ if [ -z "${MODE}" ]; then
 fi
 
 VERSION=$(echo "${NEWARGS}" | tr -t '/' ' ' | awk '{print $2}')
-
-#echo "MODE is == $MODE"
-#echo "MOCKBUILD is == $MOCKBUILD"
-#echo "VERSION is == $VERSION"
 
 case "${MODE}" in
            quick*)
