@@ -109,7 +109,20 @@ fi
 
 check_qemu_command
 
-check_host_depends
+if [ ! -f eficonfig/NvmeOfCli.efi ]; then
+    echo "Error: $PWD/eficonfig/NvmeOfCli.efi not found!"
+    exit 1
+fi
+
+if [ ! -f vm_vars.fd ]; then
+    echo "Error: $PWD/vm_vars.fd not found!"
+    exit 1
+fi
+
+if [ ! -f OVMF_CODE.fd ]; then
+    echo "Error: $PWD/OVMF_CODE.fd not found!"
+    exit 1
+fi
 
 # Only look for the boot drive in 'local' mode
 if [ "$OS_LOCATION" = "local" ] ; then
