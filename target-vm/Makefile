@@ -47,11 +47,6 @@ rh-start: disks/nvme1.qcow2 $(SETUP_SCRIPT)
 	[ -f disks/rh-boot.qcow2 ] || make disks/rh-boot.qcow2
 	@bash ./$(SETUP_SCRIPT) start disks/rh-boot.qcow2 $(NET_TYPE) $(EXTRA_DRIVES) $(QEMU_ARGS)
 
-	@echo "Record the host interface name and ip address with \"ip -br address show\" command."
-	@echo ""
-	@echo "If your $(VMNAME) is freshly installed, the next step will be to run the \"./netsetup.sh\" script."
-	@echo ""
-
 start: disks/boot.qcow2 disks/nvme1.qcow2 $(SETUP_SCRIPT)
 	@bash ./$(SETUP_SCRIPT) start $< $(NET_TYPE) $(EXTRA_DRIVES) $(QEMU_ARGS)
 
@@ -70,17 +65,39 @@ install: disks/boot.qcow2
 		--resultdir ./.lorax --arch x86_64 \
 		--vnc "sdl"
 
-.build/tcp.json:
+.build/tcp.json: tcp.json.in Makefile ../global_vars.sh
 	source ../global_vars.sh
-	cp tcp.json.in .build/tcp.json
+	cp $< $@
 
-	sed -i "s/HOSTNQN/$$HOSTNQN/" .build/tcp.json
-	sed -i "s/SUBNQN/$$SUBNQN/" .build/tcp.json
-	sed -i "s/TARGET_IP2/$$TARGET_IP2/" .build/tcp.json
-	sed -i "s/TARGET_IP3/$$TARGET_IP3/" .build/tcp.json
-	sed -i "s/NSNGUID/$$NSNGUID/" .build/tcp.json
-	sed -i "s/NSUUID/$$NSUUID/" .build/tcp.json
-	sed -i "s/CTRLSN/$$SN2/" .build/tcp.json
+	sed -i "s/HOSTNQN/$$HOSTNQN/" $@
+	sed -i "s/SUBNQN/$$SUBNQN/" $@
+	sed -i "s/TARGET_IP2/$$TARGET_IP2/" $@
+	sed -i "s/TARGET_IP3/$$TARGET_IP3/" $@
+	sed -i "s/NSNGUID/$$NSNGUID/" $@
+	sed -i "s/NSUUID/$$NSUUID/" $@
+	sed -i "s/CTRLSN/$$SN2/" $@
+
+.build/hosts.txt: Makefile ../global_vars.sh
+		@source ../global_vars.sh
+		@cat << EOF > $@
+	$$HOSTGW_IP2    host-gw-br2
+	$$HOSTGW_IP3    host-gw-br3
+	$$TARGET_IP2    target-vm-br2
+	$$TARGET_IP3    target-vm-br3
+	$$HOST_IP2      host-vm-br2
+	$$HOST_IP3      host-vm-br3
+	EOF
+
+		if [ $(NET_TYPE) = "bridged" ] ; then
+			HOST_GW_ADDR="$$(ip -br address show br0 | sed 's/\s\+/:/g' | cut -d ':' -f 3 | cut -d '/' -f 1)"
+			cat << EOF >> $@
+	$$HOST_GW_ADDR   host-gw
+	EOF
+		fi
+
+.build/id_ecdsa .build/id_ecdsa.pub:
+	ssh-keygen -t ecdsa -C "$$USER@$$HOSTNAME" -f $$PWD/.build/id_ecdsa -P ""
+	chmod 600 .build/id_ecdsa
 
 disks/rh-boot.qcow2: .lorax/rh-boot.qcow2
 	cp .lorax/rh-boot.qcow2 $@
@@ -107,5 +124,7 @@ clean:
 	-rm -rf .build
 	-rm -rf .lorax
 	-rm -f anaconda-ks.cfg
+	-rm -f .net
 
 .PHONY: help install start rh-start stop clean
+.ONESHELL: .build/tcp.json .build/hosts.txt

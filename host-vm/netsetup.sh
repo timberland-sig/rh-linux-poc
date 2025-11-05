@@ -51,8 +51,6 @@ chmod 755 .build/hosts.txt
 mkdir -p $HOME/.ssh
 touch $HOME/.ssh/known_hosts
 
-check_netport
-
 case "$3" in
     localhost)
         echo ""

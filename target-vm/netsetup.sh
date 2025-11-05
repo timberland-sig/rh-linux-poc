@@ -1,6 +1,8 @@
-#!/bin/bash -e
+#!/bin/bash
 # SPDX-License-Identifier: GPL-3.0+
 # Copyright (C) 2023 John Meneghini <jmeneghi@redhat.com> All rights reserved.
+
+set -e
 
 DIR="$(dirname -- "$(realpath -- "$0")")"
 . $DIR/../global_vars.sh
@@ -8,83 +10,47 @@ DIR="$(dirname -- "$(realpath -- "$0")")"
 
 VMNAME=`basename $PWD`
 
-create_nvme_target_config() {
-    rm -f .build/tcp.json
-    rm -f .build/start-nvme-target.sh
-
-    cp tcp.json.in .build/tcp.json
-
-    sed -i "s/HOSTNQN/$HOSTNQN/" .build/tcp.json
-    sed -i "s/SUBNQN/$SUBNQN/" .build/tcp.json
-    sed -i "s/TARGET_IP2/$TARGET_IP2/" .build/tcp.json
-    sed -i "s/TARGET_IP3/$TARGET_IP3/" .build/tcp.json
-    sed -i "s/NSNGUID/$NSNGUID/" .build/tcp.json
-    sed -i "s/NSUUID/$NSUUID/" .build/tcp.json
-    sed -i "s/CTRLSN/$SN2/" .build/tcp.json
-
-    cat << EOF >> .build/start-nvme-target.sh
-#!/bin/bash
-modprobe nvme_fabrics
-modprobe nvmet_tcp
-nvmetcli restore tcp.json
-dmesg | grep nvmet
-service firewalld stop
-EOF
-}
-
-add_target_netsetup() {
-    cat << EOF >> .build/netsetup.sh
-dnf install -y nvme-cli nvmetcli
-
-echo "$TARGETID" > /etc/nvme/hostid
-
-echo ""
-echo " Run \"./start-nvme-target.sh\" to start the NVMe/TCP soft target."
-echo " Then run \"host-vm/start.sh\" on the hypervisor to boot the host-vm with NVMe/TCP "
-echo ""
-
-EOF
-}
-
-check_netsetup_args $#
+if [ $0 -lt 1 ] ; then
+    display_netsetup_help2
+    exit 1
+fi
 
 mkdir -p .build
 
-create_netsetup "$1" "$2" "$3"
-
-add_target_netsetup
-
-create_hosts_file "$3"
-
-create_nvme_target_config
-
-chmod 755 .build/netsetup.sh
-chmod 755 .build/start-nvme-target.sh
-chmod 755 .build/tcp.json
-chmod 755 .build/hosts.txt
+make .build/tcp.json
 
 mkdir -p $HOME/.ssh
 touch $HOME/.ssh/known_hosts
+make .build/id_ecdsa        # Make SSH key for password-less login
 
-case "$3" in
+SSH_TARGET="root@$1"
+SSH_KNOWN_HOST_ID="$1"
+case "$1" in
     localhost)
-        echo ""
-        echo " scp -o StrictHostKeyChecking=no -P 5556 .build/{netsetup.sh,start-nvme-target.sh,hosts.txt,tcp.json} root@localhost:"
-        echo ""
-        ssh-keygen -R [localhost]:5556
-        scp -o StrictHostKeyChecking=no -P 5556 .build/{netsetup.sh,hosts.txt,start-nvme-target.sh,tcp.json} root@localhost:
-        ;;
-        *)
-        echo ""
-        echo " scp .build/{netsetup.sh,hosts.txt,start-nvme-target.sh,tcp.json} root@$3:"
-        echo ""
-        ssh-keygen -R $3
-        scp -o StrictHostKeyChecking=no .build/{netsetup.sh,hosts.txt,start-nvme-target.sh,tcp.json} root@$3:
-        ;;
-   esac
+        make NAT_TYPE=localhost .build/hosts.txt
+        SSH_TARGET="${SSH_TARGET}:5556"
+        SSH_KNOWN_HOST_ID="[localhost]:5556"
+    ;;
+    *)
+        make NAT_TYPE=bridged .build/hosts.txt
+    ;;
+esac
+chmod 644 .build/hosts.txt
+
+if ! [ -f .net ] ; then
+    ssh-keygen -R "${SSH_KNOWN_HOST_ID}"
+
+    until ssh-copy-id -i .build/id_ecdsa.pub ssh://${SSH_TARGET} 2>/dev/null ; do
+        echo "Waiting for SSH connection..."
+        sleep 5
+    done
+
+    scp -i .build/id_ecdsa -o StrictHostKeyChecking=no .build/{hosts.txt,tcp.json} start-nvme-target.sh remote-netsetup.sh scp://${SSH_TARGET}
+    ssh -t -i .build/id_ecdsa ssh://${SSH_TARGET} "\
+        . remote-netsetup.sh $TARGET_MAC2 $TARGET_MAC3 \"$TARGET_CIDR2\" \"$TARGET_CIDR3\" && . start-nvme-target.sh"
+    touch .net
+fi
 
 echo ""
-echo " Login to $VMNAME/root and run \"./netsetup.sh\" to complete the VM configuration"
+echo "Use \"ssh -i .build/id_ecdsa ssh://${SSH_TARGET}\" to login to the $VMNAME"
 echo ""
-
-check_netport
