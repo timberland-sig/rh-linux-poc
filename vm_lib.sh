@@ -15,26 +15,6 @@ check_qargs() {
     fi
 }
 
-check_netport() {
-    if ! [ -f .netaddr ]; then
-        echo "Error: file .netaddr not found!"
-        exit 1
-    else
-        NETADDR="$(cat .netaddr)"
-    fi
-
-    if [ -f .netport ]; then
-        NETPORT="$(cat .netport)"
-        echo ""
-        echo "Use \"ssh -p $NETPORT root@localhost\" to login to the $VMNAME"
-        echo ""
-    else
-        echo ""
-        echo "Use \"ssh root@$NETADDR\" to login to the $VMNAME"
-        echo ""
-    fi
-}
-
 check_qemu_command() {
     echo -n "using "
     command -v qemu-system-x86_64
@@ -110,8 +90,6 @@ $HOST_IP3      host-vm-br3
 EOF
 
     TARGET_ADDR="$1"
-    echo "$TARGET_ADDR" > .netaddr
-
     if ! [ "$TARGET_ADDR" == "localhost" ]; then
         HOST_GW_ADDR="$(ip -br address show br0 | sed 's/\s\+/:/g' | cut -d ':' -f 3 | cut -d '/' -f 1)"
             echo " "
