@@ -93,8 +93,38 @@ check_netsetup_args() {
 	fi
 }
 
-create_ip_addresses() {
-        case "$VMNAME" in
+create_hosts_file() {
+
+    rm -f .build/hosts.txt
+    rm -f .netaddr
+
+    echo " "
+    echo " creating .build/hosts.txt"
+    cat << EOF >> .build/hosts.txt
+$HOSTGW_IP2    host-gw-br2
+$HOSTGW_IP3    host-gw-br3
+$TARGET_IP2    target-vm-br2
+$TARGET_IP3    target-vm-br3
+$HOST_IP2      host-vm-br2
+$HOST_IP3      host-vm-br3
+EOF
+
+    TARGET_ADDR="$1"
+    echo "$TARGET_ADDR" > .netaddr
+
+    if ! [ "$TARGET_ADDR" == "localhost" ]; then
+        HOST_GW_ADDR="$(ip -br address show br0 | sed 's/\s\+/:/g' | cut -d ':' -f 3 | cut -d '/' -f 1)"
+            echo " "
+            echo " adding host-gw to .build/hosts.txt"
+            cat << EOF >> .build/hosts.txt
+$TARGET_ADDR    $VMNAME
+$HOST_GW_ADDR   host-gw
+EOF
+    fi
+}
+
+create_netsetup() {
+	case "$VMNAME" in
                 target-vm)
 		IP2="$TARGET_CIDR2"
 		IP3="$TARGET_CIDR3"
@@ -108,50 +138,7 @@ create_ip_addresses() {
                 display_netsetup_help >&2
                 exit 1
                 ;;
-        esac
-}
-
-make_hosts_file() {
-    echo " "
-    echo " creating .build/hosts.txt"
-    cat << EOF >> .build/hosts.txt
-$HOSTGW_IP2    host-gw-br2
-$HOSTGW_IP3    host-gw-br3
-$TARGET_IP2  target-vm-br2
-$TARGET_IP3  target-vm-br3
-$HOST_IP2   host-vm-br2
-$HOST_IP3   host-vm-br3
-EOF
-}
-
-add_hosts_file_gw_addr() {
-    echo " "
-    echo " adding host-gw to .build/hosts.txt"
-    cat << EOF >> .build/hosts.txt
-$TARGET_ADDR    $VMNAME
-$HOST_GW_ADDR   host-gw
-EOF
-}
-
-create_hosts_file() {
-
-    rm -f .build/hosts.txt
-    rm -f .netaddr
-
-    make_hosts_file
-
-    TARGET_ADDR="$1"
-    echo "$TARGET_ADDR" > .netaddr
-
-    if ! [ "$TARGET_ADDR" == "localhost" ]; then
-        HOST_GW_ADDR="$(ip -br address show br0 | sed 's/\s\+/:/g' | cut -d ':' -f 3 | cut -d '/' -f 1)"
-        add_hosts_file_gw_addr
-    fi
-}
-
-create_netsetup() {
-
-	create_ip_addresses
+    esac
 
 	rm -f .build/netsetup.sh
 
@@ -218,6 +205,7 @@ else
     fi
 fi
 
+dnf install -y nvme-cli nvmetcli && echo "$TARGETID" > /etc/nvme/hostid
 EOF
 }
 
