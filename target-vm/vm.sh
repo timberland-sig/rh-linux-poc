@@ -166,11 +166,16 @@ if [[ "$MODE" == "install" ]]; then
     echo " Be sure to create the root account with ssh access."
     echo " Reboot to complete the install and login to the root account."
     echo ""
-    echo " Record the host interface name and ip address with \"ip -br address show\" command."
-    echo ""
     echo " Next step will be to run the \"./netsetup.sh\" script."
     echo ""
 elif [[ "$MODE" == "start" ]]; then
     echo -e "\e[32mThe $VMNAME is running in the background.\e[0m"
     echo ""
+    TARGET_IP1='localhost'
+    if [ $NET_CONN = 'bridged' ] ; then
+        echo " Record the host interface name and ip address with \"ip -br address show\" command."
+        echo ""
+        read -p "Enter host interface IP address: " TARGET_IP1
+    fi
+    . netsetup.sh "$TARGET_IP1"
 fi
