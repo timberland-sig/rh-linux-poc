@@ -84,7 +84,6 @@ case "$NET_CONN" in
         # NET0_NET="-netdev user,id=net0,net=$NET_CIDR,hostfwd=tcp::$NET_PORT-:22"
         NET0_NET="-netdev user,id=net0,hostfwd=tcp::$HOST_PORT-:22"
         NET0_DEV="-device e1000,netdev=net0,addr=4"
-        echo "$TARGET_PORT" > .netport
         shift 1
     ;;
     bridged)

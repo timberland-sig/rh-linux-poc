@@ -92,8 +92,6 @@ clean:
 	-rm -f boot.iso
 	-rm -f *.log
 	-rm -rf .build
-	-rm -f .netport
-	-rm -f .netaddr
 	-rm -f anaconda-ks.cfg
 
 .PHONY: help install start rh-start stop clean
