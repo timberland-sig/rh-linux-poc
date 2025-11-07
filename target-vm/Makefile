@@ -58,8 +58,8 @@ start: disks/boot.qcow2 disks/nvme1.qcow2 $(SETUP_SCRIPT)
 install: disks/boot.qcow2
 	@bash ./$(SETUP_SCRIPT) install $< $(NET_TYPE) $(EXTRA_DRIVES) $(QEMU_ARGS)
 
-.build/rh-boot.qcow2: anaconda-ks.cfg
-	-@sudo rmdir .build 2>/dev/null
+.lorax/rh-boot.qcow2: anaconda-ks.cfg
+	-@rmdir .lorax 2>/dev/null
 # Look up the prebuilt ISO
 	@echo -e "\e[31mThe VM is installing in the background. Do not interrupt!\e[0m"
 	source ../vm_lib.sh && find_iso && sudo livemedia-creator \
@@ -67,13 +67,23 @@ install: disks/boot.qcow2
 		--make-disk --qcow2 \
 		--iso=$$ISO_FILE --ks=$< \
 		--image-name=$$(basename $@) \
-		--resultdir ./.build --arch x86_64 \
+		--resultdir ./.lorax --arch x86_64 \
 		--vnc "sdl"
-	sudo chown $$USER:$$USER .build
 
-disks/rh-boot.qcow2: .build/rh-boot.qcow2
-	sudo mv .build/rh-boot.qcow2 $@
-	sudo chown $$USER:$$USER $@
+.build/tcp.json:
+	source ../global_vars.sh
+	cp tcp.json.in .build/tcp.json
+
+	sed -i "s/HOSTNQN/$$HOSTNQN/" .build/tcp.json
+	sed -i "s/SUBNQN/$$SUBNQN/" .build/tcp.json
+	sed -i "s/TARGET_IP2/$$TARGET_IP2/" .build/tcp.json
+	sed -i "s/TARGET_IP3/$$TARGET_IP3/" .build/tcp.json
+	sed -i "s/NSNGUID/$$NSNGUID/" .build/tcp.json
+	sed -i "s/NSUUID/$$NSUUID/" .build/tcp.json
+	sed -i "s/CTRLSN/$$SN2/" .build/tcp.json
+
+disks/rh-boot.qcow2: .lorax/rh-boot.qcow2
+	cp .lorax/rh-boot.qcow2 $@
 
 disks/%.qcow2:
 	mkdir -p disks
@@ -87,11 +97,15 @@ boot.iso: anaconda-ks.cfg ../vm_lib.sh
 anaconda-ks.cfg: anaconda-ks.cfg.template
 	@read -p "Enter a root password for the target-vm: " -s PASSWORD; echo; sed -e "s|<ROOT_PASSWD>|$$(openssl passwd -1 -stdin <<< $$PASSWORD)|" $< > $@
 
+wipe:
+	-rm -f disks/*.qcow2
+
 clean:
 	-rm -f disks/*.qcow2
 	-rm -f boot.iso
 	-rm -f *.log
 	-rm -rf .build
+	-rm -rf .lorax
 	-rm -f anaconda-ks.cfg
 
 .PHONY: help install start rh-start stop clean

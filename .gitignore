@@ -12,6 +12,7 @@ cscope.*
 */rpmbuild/*
 */mock_build/*
 */.build/*
+*/.lorax/*
 */disks/*
 */.qargs
 */.netaddr
