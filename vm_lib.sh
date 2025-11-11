@@ -17,8 +17,10 @@ check_qargs() {
 
 check_qemu_command() {
     echo -n "using "
-    command -v qemu-system-x86_64
-    if [ $? -ne 0 ]; then echo " qemu-system-x86_64 is not installed"; exit 1; fi
+    if ! command -v qemu-system-x86_64 ; then
+        echo " qemu-system-x86_64 is not installed"
+        exit 1
+    fi
 
     QEMU="$(command -v qemu-system-x86_64)"
     if [[ $QEMU =~ "/usr/local" ]]; then

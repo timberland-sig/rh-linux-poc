@@ -126,8 +126,7 @@ install_network() {
 
     echo " : setup bridged network environment"
 
-    nmcli dev show br0 &>/dev/null
-    if [ $? -ne 0 ]; then
+    if ! nmcli dev show br0 &>/dev/null ; then
         netdev=""
         nmcli dev status
         echo ""
@@ -140,8 +139,7 @@ install_network() {
         if [[ "$netdev" == *"local"* ]]; then
             echo " : local - skipping default bridged network setup"
         else
-            nmcli dev show $netdev &>/dev/null
-            if [ $? -ne 0 ]; then
+            if ! nmcli dev show $netdev &>/dev/null ; then
                 echo "Interface $netdev does not exist!"
                 exit 1
             fi
@@ -170,14 +168,12 @@ install_network() {
         fi
     fi
 
-    nmcli dev show virbr1 &>/dev/null
-    if [ $? -ne 0 ]; then
+    if ! nmcli dev show virbr1 &>/dev/null ; then
         sudo nmcli conn add type bridge ifname virbr1 con-name virbr1 stp yes ipv4.addresses $HOSTGW_CIDR2 ipv4.method manual ipv6.method shared
         ip -h -c -o -br address show virbr1
     fi
 
-    nmcli dev show virbr2 &>/dev/null
-    if [ $? -ne 0 ]; then
+    if ! nmcli dev show virbr2 &>/dev/null ; then
         sudo nmcli conn add ifname virbr2 type bridge con-name virbr2 stp yes ipv4.addresses $HOSTGW_CIDR3 ipv4.method manual ipv6.method shared
         ip -h -c -o -br address show virbr2
     fi
@@ -186,8 +182,7 @@ install_network() {
 }
 
 install_virt() {
-    command -v qemu-system-x86_64
-    if [ $? -ne 0 ]; then
+    if ! command -v qemu-system-x86_64 ; then
         sudo dnf install -y qemu-kvm qemu-img
     fi
     echo "allow all" > /tmp/bridge.conf
