@@ -214,4 +214,14 @@ elif [[ "$MODE" == "start" ]] ; then
         echo " - UEFI will automatically boot with NVMe/TCP."
         echo ""
     fi
+
+    HOST_IP1='localhost'
+    if [ $NET_CONN = 'bridged' ] ; then
+        echo " Record the host interface name and ip address with \"ip -br address show\" command."
+        echo ""
+        read -p "Enter host interface IP address: " HOST_IP1
+    fi
+    . netsetup.sh "$HOST_IP1"
+    echo ""
+    echo " The setup is finished now. Enjoy using your test environment!"
 fi
