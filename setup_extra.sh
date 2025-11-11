@@ -257,8 +257,7 @@ mock_iso() {
 
 build_copr_iso() {
 
-    copr-cli list | grep "$COPR_PROJECT\/$1"
-    if [ $? -ne 0 ]; then
+    if ! copr-cli list | grep "$COPR_PROJECT\/$1" ; then
         echo "No repository for $1 found"
         copr-cli list
         exit 1
