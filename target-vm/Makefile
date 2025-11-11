@@ -112,7 +112,16 @@ boot.iso: anaconda-ks.cfg ../vm_lib.sh
 	source ../vm_lib.sh && find_iso && sudo mkksiso --ks $< $$ISO_FILE $@
 
 anaconda-ks.cfg: anaconda-ks.cfg.template
-	@read -p "Enter a root password for the target-vm: " -s PASSWORD; echo; sed -e "s|<ROOT_PASSWD>|$$(openssl passwd -1 -stdin <<< $$PASSWORD)|" $< > $@
+	@while true; do \
+		read -p "Enter a root password for the target-vm: " -s PASSWORD; echo; \
+		read -p "Confirm the root password: " -s PASSWORD_CONFIRM; echo; \
+		if [ "$$PASSWORD" = "$$PASSWORD_CONFIRM" ]; then \
+			sed -e "s|<ROOT_PASSWD>|$$(openssl passwd -1 -stdin <<< $$PASSWORD)|" $< > $@; \
+			break; \
+		else \
+			echo "Passwords do not match. Please try again."; \
+		fi; \
+	done
 
 wipe:
 	-rm -f disks/*.qcow2
