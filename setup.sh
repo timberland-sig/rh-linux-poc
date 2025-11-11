@@ -42,7 +42,7 @@ install_user() {
 
     if [ ! -f .usr ]; then
         sudo dnf install -y vim git wget ethtool net-tools zip unzip NetworkManager \
-            lorax-lmc-novirt pykickstart openssl
+            lorax-lmc-novirt pykickstart openssl make
         touch .usr
     else
         echo " : Nothing to do!"
