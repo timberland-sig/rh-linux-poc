@@ -324,41 +324,49 @@ fi
 VERSION=$(echo "${NEWARGS}" | tr -t '/' ' ' | awk '{print $2}')
 
 case "${MODE}" in
-           quick*)
-              install_user
-              install_virt
-              install_edk2_zip
-              install_network
-              if [ ! -f .diso ] ; then
-                  install_prebuilt_iso
-              fi
-           ;;
-           user)
-              install_user
-           ;;
-           devel)
-              install_devel
-           ;;
-           virt)
-              install_virt
-           ;;
-           net)
-              install_network
-           ;;
-           edk2)
-              # Check for -s or --source flag
-              if [[ "$2" == "-s" || "$2" == "--source" ]]; then
-                  install_edk2
-              else
-                  install_edk2_zip
-              fi
-           ;;
-           iso)
-              install_prebuilt_iso
-           ;;
-           *)
-           echo "  Invalid argument: $MODE" >&2
-           echo "  Try: \"$0 -h\"" >&2
-           exit 1
-           ;;
+    quick*)
+        install_user
+        install_virt
+        install_edk2_zip
+        install_network
+        if [ ! -f .diso ] ; then
+            install_prebuilt_iso
+        fi
+    ;;
+    test)
+        pushd target-vm
+        make rh-start QEMU_ARGS="-vnc :0"
+        popd
+        pushd host-vm
+        make setup QEMU_ARGS="-vnc :1"
+        popd
+    ;;
+    user)
+        install_user
+    ;;
+    devel)
+        install_devel
+    ;;
+    virt)
+        install_virt
+    ;;
+    net)
+        install_network
+    ;;
+    edk2)
+        # Check for -s or --source flag
+        if [[ "$2" == "-s" || "$2" == "--source" ]]; then
+            install_edk2
+        else
+            install_edk2_zip
+        fi
+    ;;
+    iso)
+        install_prebuilt_iso
+    ;;
+    *)
+    echo "  Invalid argument: $MODE" >&2
+    echo "  Try: \"$0 -h\"" >&2
+    exit 1
+    ;;
 esac
