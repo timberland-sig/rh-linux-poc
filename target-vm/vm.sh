@@ -4,7 +4,7 @@
 
 DIR="$(dirname -- "$(realpath -- "$0")")"
 . $DIR/../global_vars.sh
-. $DIR/../vm_lib.sh
+. $DIR/../vm-lib/common.sh
 
 if [[ "$1" == "-h" || "$1" == "--help" ]]; then
     VM_NAME=$(basename $PWD)
@@ -177,5 +177,5 @@ elif [[ "$MODE" == "start" ]]; then
         echo ""
         read -p "Enter host interface IP address: " TARGET_IP1
     fi
-    . netsetup.sh "$TARGET_IP1"
+    $DIR/../vm-lib/netsetup.sh "$TARGET_IP1"
 fi

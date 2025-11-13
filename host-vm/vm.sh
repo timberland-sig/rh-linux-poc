@@ -6,7 +6,7 @@ set -e
 
 DIR="$(dirname -- "$(realpath -- "$0")")"
 . $DIR/../global_vars.sh
-. $DIR/../vm_lib.sh
+. $DIR/../vm-lib/common.sh
 
 VMNAME=`basename $PWD`
 
@@ -221,7 +221,7 @@ elif [[ "$MODE" == "start" ]] ; then
         echo ""
         read -p "Enter host interface IP address: " HOST_IP1
     fi
-    . netsetup.sh "$HOST_IP1"
+    $DIR/../vm-lib/netsetup.sh "$HOST_IP1"
     echo ""
     echo " The setup is finished now. Enjoy using your test environment!"
 fi

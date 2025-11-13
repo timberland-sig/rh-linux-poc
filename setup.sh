@@ -179,6 +179,9 @@ install_network() {
     fi
 
     echo "Network interfaces configured!"
+
+    # Make SSH key for password-less login
+    make --makefile="$DIR/vm-lib/Makefile" .ssh/id_ecdsa
 }
 
 install_virt() {

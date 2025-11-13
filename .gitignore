@@ -26,6 +26,7 @@ cscope.*
 .devel
 .usr
 .macaddr
+.ssh
 edk2/*
 lorax/*
 lorax_results/*
