@@ -43,25 +43,6 @@ find_iso() {
     fi
 }
 
-display_netsetup_help2() {
-  echo " "
-  echo " Usage: netsetup.sh <ipaddr | localhost>"
-  echo " "
-  echo " Configures the network of $VMNAME"
-  echo " "
-  echo "  ipaddr - dhcp assigned ipv4 address of $VMNAME"
-  echo "           - corresponds to br0 on the hypervisor host"
-  echo ""
-  echo "   Passing \"localhost\" in the ipaddr field is used with there is no br0 interface"
-  echo "   configured on the hypervisor. See \"./install.sh\" help for more information."
-  echo ""
-  echo "   E.g.:"
-  echo "          $0 192.168.0.63"
-  echo "          $0 10.16.188.66"
-  echo "          $0 localhost"
-  echo " "
-}
-
 generate_serial_number() {
     hexdump -vn8 -e'4/4 "%08X" 1 "\n"' /dev/urandom
 }

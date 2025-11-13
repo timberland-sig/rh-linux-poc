@@ -57,7 +57,7 @@ install: disks/boot.qcow2
 	-@rmdir .lorax 2>/dev/null
 # Look up the prebuilt ISO
 	@echo -e "\e[31mThe VM is installing in the background. Do not interrupt!\e[0m"
-	source ../vm_lib.sh && find_iso && sudo livemedia-creator \
+	source ../vm-lib/common.sh && find_iso && sudo livemedia-creator \
 		--virt-uefi \
 		--make-disk --qcow2 \
 		--iso=$$ISO_FILE --ks=$< \
@@ -77,28 +77,6 @@ install: disks/boot.qcow2
 	sed -i "s/NSUUID/$$NSUUID/" $@
 	sed -i "s/CTRLSN/$$SN2/" $@
 
-.build/hosts.txt: Makefile ../global_vars.sh
-		@source ../global_vars.sh
-		@cat << EOF > $@
-	$$HOSTGW_IP2    host-gw-br2
-	$$HOSTGW_IP3    host-gw-br3
-	$$TARGET_IP2    target-vm-br2
-	$$TARGET_IP3    target-vm-br3
-	$$HOST_IP2      host-vm-br2
-	$$HOST_IP3      host-vm-br3
-	EOF
-
-		if [ $(NET_TYPE) = "bridged" ] ; then
-			HOST_GW_ADDR="$$(ip -br address show br0 | sed 's/\s\+/:/g' | cut -d ':' -f 3 | cut -d '/' -f 1)"
-			cat << EOF >> $@
-	$$HOST_GW_ADDR   host-gw
-	EOF
-		fi
-
-.build/id_ecdsa .build/id_ecdsa.pub:
-	ssh-keygen -t ecdsa -C "$$USER@$$HOSTNAME" -f $$PWD/.build/id_ecdsa -P ""
-	chmod 600 .build/id_ecdsa
-
 disks/rh-boot.qcow2: .lorax/rh-boot.qcow2
 	cp .lorax/rh-boot.qcow2 $@
 
@@ -107,9 +85,9 @@ disks/%.qcow2:
 	qemu-img create -f qcow2 $@ $(DRIVE_CAP)
 
 # Simply embed the anaconda kickstart file into the ISO
-boot.iso: anaconda-ks.cfg ../vm_lib.sh
+boot.iso: anaconda-ks.cfg ../vm-lib/common.sh
 # Look up the prebuilt ISO
-	source ../vm_lib.sh && find_iso && sudo mkksiso --ks $< $$ISO_FILE $@
+	source ../vm-lib/common.sh && find_iso && sudo mkksiso --ks $< $$ISO_FILE $@
 
 anaconda-ks.cfg: anaconda-ks.cfg.template
 	@while true; do \
@@ -136,4 +114,4 @@ clean:
 	-rm -f .net
 
 .PHONY: help install start rh-start stop clean
-.ONESHELL: .build/tcp.json .build/hosts.txt
+.ONESHELL: .build/tcp.json

@@ -145,32 +145,10 @@ efidisk: efidisk.in eficonfig/startup.nsh eficonfig/VConfig.efi eficonfig/NvmeOf
 	sudo umount $$PWD/efi
 	rmdir efi
 
-.build/hosts.txt: Makefile ../global_vars.sh
-		@source ../global_vars.sh
-		@cat << EOF > $@
-	$$HOSTGW_IP2    host-gw-br2
-	$$HOSTGW_IP3    host-gw-br3
-	$$TARGET_IP2    target-vm-br2
-	$$TARGET_IP3    target-vm-br3
-	$$HOST_IP2      host-vm-br2
-	$$HOST_IP3      host-vm-br3
-	EOF
-
-		if [ $(NET_TYPE) = "bridged" ] ; then
-			HOST_GW_ADDR="$$(ip -br address show br0 | sed 's/\s\+/:/g' | cut -d ':' -f 3 | cut -d '/' -f 1)"
-			cat << EOF >> $@
-	$$HOST_GW_ADDR   host-gw
-	EOF
-		fi
-
-.build/id_ecdsa .build/id_ecdsa.pub:
-	ssh-keygen -t ecdsa -C "$$USER@$$HOSTNAME" -f $$PWD/.build/id_ecdsa -P ""
-	chmod 600 .build/id_ecdsa
-
 # Simply embed the anaconda kickstart file into the ISO
-boot.iso: anaconda-ks.cfg ../vm_lib.sh
+boot.iso: anaconda-ks.cfg ../vm-lib/common.sh
 # Look up the prebuilt ISO
-	source ../vm_lib.sh && find_iso && sudo mkksiso --ks $< $$ISO_FILE $@
+	source ../vm-lib/common.sh && find_iso && sudo mkksiso --ks $< $$ISO_FILE $@
 
 anaconda-ks.cfg: anaconda-ks.cfg.template
 	@read -p "Enter a root password for the target-vm: " -s PASSWORD; echo; sed -e "s|<ROOT_PASSWD>|$$(openssl passwd -1 -stdin <<< $$PASSWORD)|" $< > $@

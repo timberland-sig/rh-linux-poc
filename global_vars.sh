@@ -28,7 +28,7 @@ NSUUID="bee9c2b7-1761-44b5-a4e6-0f690498a94b"
 
 # Serial numbers for nvme disks, used by target-vm/install.sh
 # Generated with SN=$(hexdump -vn8 -e'4/4 "%08X" 1 "\n"' /dev/urandom)
-# The generate_serial_number() function from vm_lib.sh does just this
+# The generate_serial_number() function from vm-lib/common.sh does just this
 
 SN0=7E1250DCD4B0A268
 SN1=3A44B3E2177CA6D9
