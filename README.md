@@ -27,7 +27,7 @@ some configuration settings in `/etc` and `/usr/libexec`.*
 
 1. **Install prerequisites**
   ```
-  sudo dnf install -y git unzip mkfs.vfat
+  sudo dnf install -y git unzip make
   ```
 
 2. **Clone the repository:**
@@ -51,6 +51,13 @@ It will essentially run the following commands to download and install the *preb
 ./setup.sh iso    # this will ask for a URL to an ISO file with an OS installer
                   # ↳ may be ran again if you want to try a different distro
                   # ↳ the quickstart only runs this if no ISO was downloaded in this clone of the repository
+```
+
+After running the quickstart, you can optionally use:
+```
+./setup.sh test   # this will automatically set up both VMs (target-vm and host-vm)
+                  # ↳ starts target-vm with VNC on :0 and host-vm setup with VNC on :1
+                  # ↳ useful for quick testing and automated setups
 ```
 
 In case of problems consult the [Set up your Hypervisor](#set-up-your-hypervisor) section below.
@@ -96,8 +103,11 @@ Directories and files are explained here:
 | `dracut_rpm` | - | Contains the git submodule for https://github.com/timberland-sig/dracut. The rpm is generated using this source code with the `dracut.spec` file located in this directory. The code used to generate the rpm can be developed and changed by working in the provided *dracut_rpm/dracut* git repository.  Normal git workflows apply. |
 | `dracut_rpm` | dracut.spec | A modified version of the Fedora dracut.spec file from:  https://src.fedoraproject.org/rpms/dracut/blob/rawhide/f/dracut.spec. This spec file has been modified to work with the timberland-sig dracut source code in this submodule. |
 |  - | `global_vars.sh` | Contains global variables which control the test bed configuration. If you need to change sometihing, look here first. |
-|  - | `rmp_lib.sh` | Contains global functions used by the scripts in the *libnvme_rpm*, *nvme_rpm*, and *dracut_rpm*  subdirectories. |
-|  - | `vm_lib.sh` | Contains global functions used by the scripts in the *target-vm* and *host-vm* subdirectories. |
+|  - | `rmp_lib.sh` | Contains global functions used by the scripts in the `libnvme_rpm`, `nvme_rpm`, and `dracut_rpm`  subdirectories. |
+| `vm-lib` | - | Contains shared scripts and functions used by both *target-vm* and *host-vm* subdirectories. Includes common network setup scripts and Makefile targets. |
+| `vm-lib` | `common.sh` | Contains global functions used by the scripts in the `target-vm` and `host-vm` subdirectories. |
+| `vm-lib` | `netsetup.sh` | Unified network setup launcher script used by both VMs. |
+| `vm-lib` | `remote-netsetup.sh` | Script that runs on the VMs to configure their network interfaces. |
 | `host-vm` | - |Contains the scripts and files needed to create and run your QEMU host virtual machine. |
 | `target-vm` | - | Contains the scripts and files needed to create and run your QEMU target virtual machine. |
 
@@ -119,7 +129,7 @@ create three bridged networks. Run this script with caution because it will
 change your network config.  You should not run this script from a remote shell
 because the 'br0' network will be disconnected and reconfigured by this script.
 It is best to run this script from the console login. When in doubt, configure
-the bridged networks yourself, manually.`
+the bridged networks yourself, manually.
 
 | Network  | Decription |
 | :-----   | :----      |
@@ -181,28 +191,28 @@ and correctly working.
 
 ## The ./netsetup.sh script
 
-During the installation of both VMs the `./netsetup.sh` script will be
-run.  This script will create a VM specific `netsetup.sh` configuration script and
-`scp` it to the newly installed VM.  It is important to specify the `ifname` and
-`ipaddr` parameters correctly.
+During the installation of both VMs the `./vm-lib/netsetup.sh` script will be
+run.  This script will create a VM specific network configuration for that VM.
+It is important to specify the `ipaddr` parameter correctly.
+
+This script is ran automatically after the installation of a VM. It can be ran
+manually as well, but **make sure you run it from the correct working directory** (`target-vm/` or `host-vm/`)
 
 ```
- Usage: netsetup.sh <ifname2> <ifname3> <ipaddr>
+ Usage: netsetup.sh <ipaddr | localhost>
 
- Creates creates a network configuration script called .build/netsetup.sh for host-vm
+ Configures the network of rh-linux-poc
 
-  ifname2  - second vm network interface device name (e.g. ens6)
-           - corresponds to virbr1 on the hypervisor host
-  ifname3  - third vm network interface device name (e.g. ens7)
-           - corresponds to virbr2 on the hypervisor host
-  ipaddr - dhcp assigned ipv4 address of host-vm
+  ipaddr - dhcp assigned ipv4 address of rh-linux-poc
            - corresponds to br0 on the hypervisor host
 
- These valuse are obtains from "ip -br address show" after booting host-vm the first time
+   Passing "localhost" in the ipaddr field is used with there is no br0 interface
+   configured on the hypervisor. See "./install.sh" help for more information.
 
    E.g.:
-          ./netsetup.sh enp0s5 enp0s6 192.168.0.63
-          ./netsetup.sh enp0s5 enp0s6 10.16.188.66
+          ./vm-lib/netsetup.sh 192.168.0.63
+          ./vm-lib/netsetup.sh 10.16.188.66
+          ./vm-lib/netsetup.sh localhost
 ```
 
 ## Create the `target-vm`
@@ -257,66 +267,13 @@ enp0s6           UP             fe80::6e22:d7dd:43f0:5e21/64
 ### Step 3 Run `./netsetup.sh` on the hypervisor
 
 The `./netsetup.sh` utility is ran on the hypervisor in the `target-vm`
-directory.  Using the infromation from the `ip -br addr show` command on the
-`target-vm`, run the `./netsetup.sh` utility.
-
-For example:
-
-```
-> ./netsetup.sh enp0s5 enp0s6 192.168.0.63
-
- creating .build/netsetup.sh
-
- creating .build/hosts.txt
-
- scp  .build/{netsetup.sh,start-tcp-target.sh,hosts.txt,tcp.json} root@192.168.0.63:
-
-root@192.168.0.63's password:
-netsetup.sh         100% 1738     4.7MB/s   00:00
-hosts.txt           100%  229   959.2KB/s   00:00
-start-tcp-target.sh 100%  121   646.0KB/s   00:00
-tcp.json            100% 2031    10.3MB/s   00:00
-
- Login to target-vm/root and run "./netsetup.sh" to complete the VM configuration
-```
-
-### Step 4 Run `./netsetup.sh` on the `target-vm`
-
-For example:
-
-```
-[root@fedora ~]# ./netsetup.sh
-Connection 'enp0s5' (76926070-72ca-467d-a3e2-53999c142020) successfully added.
-Connection successfully activated (D-Bus active path: /org/freedesktop/NetworkManager/ActiveConnection/11)
-Connection 'enp0s6' (b1b8419f-ace8-48fc-9297-88de304dc53a) successfully added.
-Connection successfully activated (D-Bus active path: /org/freedesktop/NetworkManager/ActiveConnection/13)
-lo               UNKNOWN        127.0.0.1/8 ::1/128
-enp0s4           UP             192.168.0.63/24 2601:195:4000:62f:f67c:bf12:3bd0:f4bb/64 fe80::e1e:bd3c:3c79:cfbe/64
-enp0s5           UP             192.168.101.20/24 fe80::22d1:a1a1:af9c:4447/64
-enp0s6           UP             192.168.110.20/24 fe80::9d3e:e204:f858:a37/64
-Enabling a Copr repository. Please note that this repository is not part
-of the main distribution, and quality may vary.
-.
-.
-.
- Run "./start-tcp-target.sh" to start the NVMe/TCP soft target.
- Then run "host-vm/start.sh" on the hypervisor to boot the host-vm with NVMe/TCP
-```
-
-### Step 5 Run `start-tcp-target.sh` on the `target-vm`
-
-The following step configures and runs the NVMe/TCP softarget on the
-`target-vm`.  Following this step the `target-vm` is now serving the
-`host-vm's` boot disk through nvme-tcp.
-
+directory. It is ran automatically by default, but only once. You can run it yourself too
+using the infromation from the `ip -br addr show` command on the `target-vm`. The script leverages
+password-less login using SSH keys. You will only be prompted for the `root` password once.
 Example:
 
 ```
-[root@fedora ~]# ./start-tcp-target.sh
-[  570.563169] nvmet: adding nsid 1 to subsystem nqn.2014-08.org.nvmexpress:uuid:0c468c4d-a385-47e0-8299-6e95051277db
-[  570.564014] nvmet_tcp: enabling port 1 (192.168.101.20:4420)
-[  570.564289] nvmet_tcp: enabling port 2 (192.168.110.20:4420)
-Redirecting to /bin/systemctl stop firewalld.service
+../vm-lib/netsetup.sh 192.168.0.63
 ```
 
 ## Create the `host-vm`
@@ -436,46 +393,12 @@ enp0s6           UP
 
 ### Step 2 Run `./netsetup.sh` on the hypervisor
 
-The `./netsetup.sh` utility is run on the hypervisor in the `host-vm`
-directory **while the `host-vm` is running**. Using the infromation from the
-`ip -br addr show` command on the `host-vm`, run the `./netsetup.sh` utility.
-
-For example:
-
-```
- $ ./netsetup.sh enp0s5 enp0s6 localhost
-
-DIR = /home/mrabek/rh-linux-poc/host-vm
-
- creating .build/netsetup.sh
-
- creating .build/hosts.txt
-
-Use "ssh -p 5556 root@localhost" to login to the host-vm
-
-
- scp -P 5555 .build/{netsetup.sh,hosts.txt} root@localhost:
-
-# Host [localhost]:5555 found: line 8
-/home/mrabek/.ssh/known_hosts updated.
-Original contents retained as /home/mrabek/.ssh/known_hosts.old
-Warning: Permanently added '[localhost]:5555' (ED25519) to the list of known hosts.
-root@localhost's password:
-netsetup.sh                                                                                                                                                           100% 1953     1.5MB/s   00:00
-hosts.txt                                                                                                                                                             100%  176   592.4KB/s   00:00
-
- Login to host-vm/root and run "./netsetup.sh" to complete the VM configuration.
- Then shutdown the host-vm and run the "./create_efidisk.sh" command.
- You must run "./start.sh attempt" to program the efi boot attempts before you can boot remotely.
-```
-
-### Step 3 Run `./netsetup.sh` on the `host-vm`
-
-The newly created `netsetup.sh` script has been trasfered to the `host-vm`. Now
-login to the root account on the host-vm and run `./netsetup.sh`.
+The `./netsetup.sh` utility is ran on the hypervisor in the `host-vm`
+directory. It is ran automatically by default, but only once. You can run it yourself too
+using the infromation from the `ip -br addr show` command on the `host-vm`. The script leverages
+password-less login using SSH keys. You will only be prompted for the `root` password once.
 
 ```
-[root@fedora ~]# ./netsetup.sh
 ...
 Connection 'enp0s5' (57afa4d4-be6e-3731-a793-b257afc325cb) successfully deleted.
 Connection 'enp0s5' (dfcb0891-1d25-429c-9fc8-7dd3973abc36) successfully added.
