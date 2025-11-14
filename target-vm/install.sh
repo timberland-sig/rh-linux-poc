@@ -40,10 +40,11 @@ EOF
 #!/bin/bash
 $QEMU -name $VMNAME -M q35 -accel kvm -bios OVMF-pure-efi.fd -cpu host -m 4G -smp 4 -boot menu=on $QARGS \\
 -uuid $TARGET_SYS_UUID \\
--device nvme,drive=NVME1,max_ioqpairs=4,physical_block_size=4096,logical_block_size=4096,opc=on,serial=$SN0,bootindex=1 \\
+-device nvme,drive=NVME1,max_ioqpairs=4,physical_block_size=4096,logical_block_size=4096,use-intel-id=on,serial=$SN0,bootindex=1 \\
 -drive file=$BOOT_DISK,if=none,id=NVME1 \\
--device nvme,drive=NVME2,max_ioqpairs=4,physical_block_size=4096,logical_block_size=4096,use-intel-id=on,serial=$SN1 \\
+-device nvme,id=nvme-ctrl-1,max_ioqpairs=4,ocp=on,serial=$SN1,addr=7 \\
 -drive file=$SPARE_DISK,if=none,id=NVME2 \\
+-device nvme-ns,drive=NVME2,physical_block_size=4096,logical_block_size=4096,eui64-default=on,nguid=00000000000000008ce38ee206908002,uuid=auto \\
 $NET0_NET \\
 $NET0_DEV \\
 $NET1_NET \\
@@ -59,10 +60,12 @@ $QEMU -name $VMNAME -M q35 -accel kvm -bios OVMF-pure-efi.fd -cpu host -m 4G -sm
 -uuid $TARGET_SYS_UUID \\
 -device nvme,drive=NVME1,max_ioqpairs=4,physical_block_size=4096,logical_block_size=4096,use-intel-id=on,serial=$SN0,bootindex=1 \\
 -drive file=$BOOT_DISK,if=none,id=NVME1 \\
--device nvme,drive=NVME2,max_ioqpairs=4,physical_block_size=4096,logical_block_size=4096,use-intel-id=on,serial=$SN2 \\
--drive file=disks/nvme2.qcow2,if=none,id=NVME2 \\
--device nvme,drive=NVME3,max_ioqpairs=4,physical_block_size=4096,logical_block_size=4096,use-intel-id=on,serial=$SN1,addr=7 \\
+-device nvme,id=nvme-ctrl-1,max_ioqpairs=4,ocp=on,serial=$SN2 \\
+-drive file=$NBFT_DISK,if=none,id=NVME2 \\
+-device nvme-ns,drive=NVME2,physical_block_size=4096,logical_block_size=4096,eui64-default=on,nguid=00000000000000008ce38ee206908003,uuid=auto \\
+-device nvme,id=nvme-ctrl-2,max_ioqpairs=4,ocp=on,serial=$SN1,addr=7 \\
 -drive file=$SPARE_DISK,if=none,id=NVME3 \\
+-device nvme-ns,drive=NVME3,physical_block_size=4096,logical_block_size=4096,eui64-default=on,nguid=00000000000000008ce38ee206908002,uuid=auto \\
 $NET0_NET \\
 $NET0_DEV \\
 $NET1_NET \\
