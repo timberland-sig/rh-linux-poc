@@ -20,7 +20,7 @@ help:
 	@echo "Configuration variables:"
 	@echo "  NET_TYPE      Install/Setup: Network type: localhost/bridged (default: $(NET_TYPE))"
 	@echo "  ISO           Install: Name of ISO file (default: $(IMAGE_NAME))"
-	@echo "  START_ARG     Start argument: local/nbft (default: $(START_ARG))"
+	@echo "  START_ARG     Start argument: local/nbft/multip (default: $(START_ARG))"
 	@echo "  QEMU_ARGS     Install: Additional QEMU arguments"
 	@echo "  FLAGS         Install: Additional flags"
 	@echo ""
@@ -33,6 +33,7 @@ help:
 	@echo "  make NET_TYPE=bridged QEMU_ARGS=\"-vnc :0\" install"
 	@echo "  make NET_TYPE=bridged setup"
 	@echo "  make START_ARG=local start"
+	@echo "  make START_ARG=multip start"
 	@echo ""
 
 install:

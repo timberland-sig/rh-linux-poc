@@ -43,8 +43,30 @@ $QEMU -name $VMNAME -M q35 -accel kvm -bios OVMF-pure-efi.fd -cpu host -m 4G -sm
 -device nvme,drive=NVME1,max_ioqpairs=4,physical_block_size=4096,logical_block_size=4096,use-intel-id=on,serial=$SN0,bootindex=1 \\
 -drive file=$BOOT_DISK,if=none,id=NVME1 \\
 -device nvme,id=nvme-ctrl-1,max_ioqpairs=4,ocp=on,serial=$SN1,addr=7 \\
--drive file=$SPARE_DISK,if=none,id=NVME2 \\
--device nvme-ns,drive=NVME2,physical_block_size=4096,logical_block_size=4096,eui64-default=on,nguid=00000000000000008ce38ee206908002,uuid=auto \\
+-drive file=$SPARE_DISK,if=none,id=NVME3 \\
+-device nvme-ns,drive=NVME3,physical_block_size=4096,logical_block_size=4096,eui64-default=on,nguid=00000000000000008ce38ee206908002,uuid=auto \\
+$NET0_NET \\
+$NET0_DEV \\
+$NET1_NET \\
+$NET1_DEV \\
+$NET2_NET \\
+$NET2_DEV
+exit
+EOF
+	echo "creating .build/start_multip.sh"
+	cat << EOF >> .build/start_multip.sh
+#!/bin/bash
+$QEMU -name $VMNAME -M q35 -accel kvm -bios OVMF-pure-efi.fd -cpu host -m 4G -smp 4 -boot menu=on $QARGS \\
+-uuid $TARGET_SYS_UUID \\
+-device nvme,drive=NVME1,max_ioqpairs=4,physical_block_size=4096,logical_block_size=4096,use-intel-id=on,serial=$SN0,bootindex=1 \\
+-drive file=$BOOT_DISK,if=none,id=NVME1 \\
+-device nvme-subsys,id=nvme-subsys-1,nqn=subsys1 \\
+-device nvme,serial=$SN3,subsys=nvme-subsys-1,addr=7 \\
+-drive file=$SPARE_DISK,if=none,id=NVME3 \\
+-device nvme-ns,drive=NVME3,nsid=1,physical_block_size=4096,logical_block_size=4096,eui64-default=on,nguid=00000000000000008ce38ee206908002,uuid=auto \\
+-device nvme,serial=$SN3,subsys=nvme-subsys-1,addr=8 \\
+-drive file=$NBFT_DISK,if=none,id=NVME2 \\
+-device nvme-ns,drive=NVME2,physical_block_size=4096,logical_block_size=4096,eui64-default=on,nguid=00000000000000008ce38ee206908003,uuid=auto \\
 $NET0_NET \\
 $NET0_DEV \\
 $NET1_NET \\
@@ -126,6 +148,7 @@ create_install_startup
 chmod 755 .build/install.sh
 chmod 755 .build/start_local.sh
 chmod 755 .build/start_nbft.sh
+chmod 755 .build/start_multip.sh
 
 check_qargs
 

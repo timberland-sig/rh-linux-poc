@@ -17,10 +17,12 @@ display_start_help() {
   echo ""
   echo "    local   - boot $VMNAME without the host-vm disk"
   echo "    nbft    - boot $VMNAME with host-vm disk"
+  echo "    multip  - boot $VMNAME and create a multipath disk"
   echo ""
   echo "   E.g.:"
   echo "          $0 local"
   echo "          $0 nbft"
+  echo "          $0 multip"
   echo " "
 }
 
@@ -66,6 +68,13 @@ case "$1" in
     local)
         check_netport
         bash .build/start_local.sh &
+        echo ""
+        echo " target-vm is running with out nbft disk"
+        echo " NVMe/TCP soft target is inoperable."
+    ;;
+    multip)
+        check_netport
+        bash .build/start_multip.sh &
         echo ""
         echo " target-vm is running with out nbft disk"
         echo " NVMe/TCP soft target is inoperable."
