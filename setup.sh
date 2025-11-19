@@ -7,7 +7,7 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 . $DIR/global_vars.sh
 
 # Configuraiton
-MODES="user|devel|virt|net|edk2|iso"
+MODES="user|devel|qemu|net|edk2|iso"
 MODE="user"
 
 ALL_VERSIONS="fedora-36|fedora-37|fedora-42|centos-stream-9|opensuse-tumbleweed"
@@ -22,7 +22,7 @@ display_help() {
         echo ""
         echo "  user          : setup basic user environment (default)"
         echo "  devel         : setup development environment"
-        echo "  virt          : install qemu-kvm environment "
+        echo "  qemu          : clone upstream qemu and install"
         echo "  edk2          : create and build the timberland-sig edk2 repository in the edk2 directory "
         echo "                : - install build artifacts in OVMF directory  "
         echo "  net           : configure network environment "
@@ -32,8 +32,12 @@ display_help() {
         echo ""
         echo " Examples: "
         echo "  Install qemu and configure hypervisor networks"
-        echo "       ./${0##*/} virt "
+        echo "       ./${0##*/} user "
+        echo "       ./${0##*/} qemu "
         echo "       ./${0##*/} net "
+        echo "  Download ISO and install TimberlandSIG EDK2"
+        echo "       ./${0##*/} iso "
+	echo ""
         exit 1
 }
 
@@ -41,7 +45,7 @@ install_user() {
     echo " : Installing user environment"
 
     if [ ! -f .usr ]; then
-        sudo dnf install -y vim git wget ethtool net-tools zip unzip nmcli
+        sudo dnf install -y vim git wget ethtool net-tools zip unzip nmcli sshpass
         touch .usr
     else
         echo " : Nothing to do!"
@@ -184,23 +188,72 @@ install_network() {
     fi
 }
 
-install_virt() {
-    command -v qemu-system-x86_64
-    if [ $? -ne 0 ]; then
-        sudo dnf install -y qemu-kvm qemu-img
-    fi
-
+install_bridge() {
     echo "allow all" > /tmp/bridge.conf
     if [ -f /usr/local/libexec/qemu-bridge-helper ]; then
+	echo "installing /usr/local/libexec/qemu-bridge-helper"
         sudo chmod 4755 /usr/local/libexec/qemu-bridge-helper
         sudo mkdir -p /usr/local/etc/qemu
         sudo cp /tmp/bridge.conf /usr/local/etc/qemu/bridge.conf
     elif [ -f /usr/libexec/qemu-bridge-helper ]; then
+	echo "installing /usr/libexec/qemu-bridge-helper"
         sudo chmod 4755 /usr/libexec/qemu-bridge-helper
         sudo cp /tmp/bridge.conf /etc/qemu/bridge.conf
     else
         echo "No qemu-bridge-helper found!"
     fi
+}
+
+install_virt() {
+    command -v qemu-system-x86_64
+    if [ $? -ne 0 ]; then
+        sudo dnf install -y qemu-kvm qemu-img
+    fi
+    install_bridge
+}
+
+install_qemu() {
+    sudo yum remove -y qemu-kvm libvirt libvirt-python libguestfs-tools virt-install virt-viewer
+    sudo yum remove -y qemu*
+    sudo yum remove -y "*virt"* "*virsh*"
+    sudo dnf remove -y libvirt-libs
+    sudo dnf install -y --skip-unavailable libaio-devel libcap-ng-devel libiscsi-devel capstone-devel \
+         gtk3-devel libsdl2-devel vte291-devel ncurses-devel \
+         libseccomp-devel nettle-devel libattr-devel libjpeg-devel \
+         brlapi-devel libgcrypt-devel lzo-devel snappy-devel \
+         librdmacm-devel libibverbs-devel cyrus-sasl-devel libpng-devel \
+         libuuid-devel pulseaudio-libs-devel curl-devel libssh-devel \
+         systemtap-sdt-devel libusbx-devel libslirp-devel
+    sudo dnf install -y --skip-unavailable git glib2-devel libfdt-devel pixman-devel \
+        zlib-devel bzip2 ninja-build python3 python3-tomli python3-jsonschema
+
+    pushd $HOME
+    if [ ! -d qemu ]; then
+       git clone https://gitlab.com/qemu-project/qemu.git
+       pushd qemu
+       mkdir build
+       pushd build
+       echo "Configure qemu with: ../configure --target-list=x86_64-softmmu --enable-slirp 2>&1 | tee -a configure_1.log"
+       ../configure --target-list=x86_64-softmmu --enable-slirp 2>&1 | tee -a configure_1.log
+       echo "Make qemu with: make -j4 2>&1 | tee -a make_1.log"
+       make -j4 2>&1 | tee -a make_1.log
+       ./qemu-system-x86_64 --version
+       echo "Installing qemu with:"
+       echo "sudo make install 2>&1 | tee -a install.log"
+       sudo make install 2>&1 | tee -a install.log
+       echo ""
+       echo "Test qemu with:"
+       echo "$PWD/qemu-img create -f qcow2 test.qcow2 16G"
+       echo "$PWD/qemu-system-x86_64 -m 1024 -enable-kvm -drive if=virtio,file=test.qcow2,cache=none -cdrom $DIR/ISO/Fedora-Server-dvd-x86_64-42-1.1.iso"
+       echo ""
+       echo "Deinstall quemu with:"
+       echo "sudo make uninstall 2>&1 | tee -a uninstall.log"
+       popd
+       popd
+       popd
+    fi
+
+    install_bridge
 }
 
 install_edk2() {
@@ -278,14 +331,17 @@ install_prebuilt_iso() {
         mkdir -p ISO
     fi
 
-	touch .durl
-	touch .diso
+    touch .durl
+    touch .diso
 
     # https://mirror.stream.centos.org/10-stream/BaseOS/x86_64/iso/
     # https://mirror.stream.centos.org/9-stream/BaseOS/x86_64/iso/
     # https://download.eng.rdu.redhat.com/rhel-9/composes/RHEL-9/
     # https://download.eng.rdu.redhat.com/rhel-10/composes/RHEL-10/
-    # https://dl.fedoraproject.org/pub/fedora/linux/releases/42/Everything/x86_64/os/
+    # https://dl.fedoraproject.org/pub/archive/fedora/linux/releases/
+    # https://download.fedoraproject.org/pub/fedora/linux/releases/41/Server/x86_64/iso/Fedora-Server-dvd-x86_64-41-1.1.iso
+    # https://download.fedoraproject.org/pub/fedora/linux/releases/42/Server/x86_64/iso/Fedora-Server-dvd-x86_64-42-1.1.iso
+    # https://download.fedoraproject.org/pub/fedora/linux/releases/43/Server/x86_64/iso/Fedora-Server-dvd-x86_64-43-1.6.iso
 
     DOWNLOAD_URL="$(cat .durl)"
     read -r -p "Enter URL of the ISO or DVD ($DOWNLOAD_URL) :" INPUT
@@ -305,16 +361,17 @@ install_prebuilt_iso() {
 
     if [ ! -f ISO/$ISOVERSION ]; then
         pushd ISO
-        echo "wget ${DOWNLOAD_URL}"
+        echo "wget --no-check-certificate ${DOWNLOAD_URL}"
         wget --no-check-certificate ${DOWNLOAD_URL}
 		if [ $? -eq 0 ]; then
 			echo "${ISOVERSION}" > $DIR/.diso
+                        echo "${DOWNLOAD_URL}" > $DIR/.durl
 		fi
         popd
     else
 		echo "ISO $ISOVERSION already exists"
 		echo "${ISOVERSION}" > $DIR/.diso
-	fi
+    fi
 }
 
 while getopts "mh" opt; do
@@ -360,6 +417,9 @@ case "${MODE}" in
            ;;
            virt)
               install_virt
+           ;;
+           qemu)
+              install_qemu
            ;;
            net)
               install_network
