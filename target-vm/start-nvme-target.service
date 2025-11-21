@@ -1,0 +1,11 @@
+[Unit]
+Description=NVMe/TCP soft target startup
+After=network.target
+
+[Service]
+ExecStart=/usr/local/bin/start-nvme-target.sh
+Type=oneshot
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
