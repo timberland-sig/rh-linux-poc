@@ -195,6 +195,20 @@ for ((i=1; i<=N_EXTRA_DRIVES; i++)); do
     EXTRA_NVMES+=("-device nvme,drive=NVME${NVME_ID},bus=pcie.0,addr=0x$(printf '%x' $ADDR),max_ioqpairs=4,physical_block_size=4096,logical_block_size=4096,use-intel-id=on,serial=$(generate_serial_number) -drive file=$(realpath $EXTRA_DISK),if=none,id=NVME${NVME_ID}")
 done
 
+# Check if VNC is enabled in QARGS
+VNC_DISPLAY=""
+QARGS_ARRAY=($QARGS)
+for ((i=0; i<${#QARGS_ARRAY[@]}; i++)); do
+    if [[ "${QARGS_ARRAY[$i]}" == "-vnc" ]]; then
+        VNC_ARG="${QARGS_ARRAY[$((i+1))]}"
+        # Extract display number from formats like ":0", "127.0.0.1:0", etc.
+        if [[ "$VNC_ARG" =~ :([0-9]+)$ ]]; then
+            VNC_DISPLAY="${BASH_REMATCH[1]}"
+        fi
+        break
+    fi
+done
+
 qemu_command() {
     $QEMU -name $VMNAME -M q35 -accel kvm -bios OVMF-pure-efi.fd -cpu host -m 4G -smp 4 $QARGS \
     -uuid $TARGET_SYS_UUID \
@@ -210,6 +224,13 @@ qemu_command() {
     $NET2_NET \
     $NET2_DEV
 }
+
+if [ -n "$VNC_DISPLAY" ]; then
+    VNC_PORT=$((5900 + VNC_DISPLAY))
+    echo ""
+    echo " To connect to the $VMNAME over VNC, run: vncviewer $HOST:$VNC_PORT"
+    echo ""
+fi
 
 if $RUN_FOREGROUND; then
     qemu_command

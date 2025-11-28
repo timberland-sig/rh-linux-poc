@@ -154,6 +154,20 @@ if [ "$OS_LOCATION" = "local" ] ; then
     VM_VARS_FLASH=""
 fi
 
+# Check if VNC is enabled in QARGS
+VNC_DISPLAY=""
+QARGS_ARRAY=($QARGS)
+for ((i=0; i<${#QARGS_ARRAY[@]}; i++)); do
+    if [[ "${QARGS_ARRAY[$i]}" == "-vnc" ]]; then
+        VNC_ARG="${QARGS_ARRAY[$((i+1))]}"
+        # Extract display number from formats like ":0", "127.0.0.1:0", etc.
+        if [[ "$VNC_ARG" =~ :([0-9]+)$ ]]; then
+            VNC_DISPLAY="${BASH_REMATCH[1]}"
+        fi
+        break
+    fi
+done
+
 $QEMU -name $VMNAME -M q35 -accel kvm -cpu host -m 4G -smp 4 $QARGS \
 -uuid $HOST_SYS_UUID \
 $BOOT_OPTIONS \
@@ -171,6 +185,13 @@ $NET2_NET \
 $NET2_DEV &
 
 disown %1
+
+if [ -n "$VNC_DISPLAY" ]; then
+    VNC_PORT=$((5900 + VNC_DISPLAY))
+    echo ""
+    echo " To connect to the $VMNAME over VNC, run: vncviewer $HOST:$VNC_PORT"
+    echo ""
+fi
 
 if [[ $_1OLD == "nbft-setup" ]] ; then
     echo ""
