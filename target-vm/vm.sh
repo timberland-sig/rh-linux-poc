@@ -117,7 +117,8 @@ if [[ "$NET_CONN" != "localhost" && "$NET_CONN" != "bridged" ]]; then
 fi
 
 # Remaining arguments are QARGS
-QARGS=$@
+check_qargs
+QARGS="$QARGS $@"
 
 # Only find ISO for install mode if not already provided
 if [[ "$MODE" == "install" && -z "$ISO_FILE" ]]; then
@@ -157,8 +158,6 @@ case "$NET_CONN" in
         exit 1
     ;;
 esac
-
-check_qargs
 
 NET1_NET="-netdev bridge,br=virbr1,id=net1,helper=$BRIDGE_HELPER"
 NET1_DEV="-device virtio-net-pci,netdev=net1,mac=$TARGET_MAC2,addr=5"

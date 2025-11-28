@@ -98,7 +98,7 @@ case "$NET_CONN" in
 esac
 
 # Collect any extra arguments passed after the network connection parameter
-EXTRA_QEMU_ARGS="$@"
+QARGS="$@"
 
 # Only find ISO for 'install' mode
 if [[ "$MODE" == "install" ]]; then
@@ -168,8 +168,7 @@ $NET0_DEV \
 $NET1_NET \
 $NET1_DEV \
 $NET2_NET \
-$NET2_DEV \
-$EXTRA_QEMU_ARGS &
+$NET2_DEV &
 
 disown %1
 
