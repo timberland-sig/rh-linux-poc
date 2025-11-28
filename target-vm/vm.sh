@@ -6,34 +6,37 @@ DIR="$(dirname -- "$(realpath -- "$0")")"
 . $DIR/../global_vars.sh
 . $DIR/../vm-lib/common.sh
 
-if [[ "$1" == "-h" || "$1" == "--help" ]]; then
+
+show-help() {
     VM_NAME=$(basename $PWD)
-    echo "Usage: $0 MODE BOOT_DISK [NET_CONN] [N_EXTRA_DRIVES] [QARGS]"
-    echo "   or: $0 MODE BOOT_DISK [N_EXTRA_DRIVES] [QARGS]"
-    echo "   or: $0 MODE BOOT_DISK [QARGS]"
+    echo "Usage: $0 [OPTIONS] MODE BOOT_DISK [-- [QARGS]]"
     echo ""
     echo "Install or start a Linux distribution on the $VM_NAME with configurable networking."
     echo ""
     echo "Arguments:"
     echo "  MODE            Operation mode: 'install' or 'start' (required)"
     echo "  BOOT_DISK       Path to the boot disk image (required)"
-    echo "  NET_CONN        Network connection type: 'localhost' or 'bridged' (default: localhost)"
-    echo "  N_EXTRA_DRIVES  Number of additional NVMe drives to create (default: 0)"
-    echo "                  The $VM_NAME always gets 2 base NVMe drives (boot and NBFT)"
     echo "  QARGS           Optional extra commands for QEMU"
     echo ""
-    echo "Examples:"
-    echo "  $0 install disks/boot.qcow2                        # Install $VM_NAME on disks/boot.qcow2 with localhost networking"
-    echo "  $0 start disks/boot.qcow2 1                        # Start $VM_NAME with localhost networking, 1 extra drive"
-    echo "  $0 install disks/boot.qcow2 bridged                # Install $VM_NAME with bridged networking"
-    echo "  $0 start disks/boot.qcow2 localhost 3              # Start $VM_NAME with localhost networking, 3 extra drives"
-    echo "  $0 install disks/boot.qcow2 localhost 0 -vnc :0    # Install $VM_NAME with a VNC connection"
-    echo "  $0 install disks/boot.qcow2 localhost 0 -vnc :0    # Start $VM_NAME with a VNC connection"
-    echo ""
     echo "Options:"
-    echo "  -h, --help      Show this help message and exit"
-    exit 0
-fi
+    echo "  -h, --help              Show this help message and exit"
+    echo "  -i, --iso PATH          Path to ISO file for installation (only used in install mode)"
+    echo "                          If not provided, find_iso function will locate an ISO automatically"
+    echo "  -n, --extra-drives N    Number of additional NVMe drives to create (default: 0)"
+    echo "                          The $VM_NAME always gets 2 base NVMe drives (boot and NBFT)"
+    echo "  -c, --conn-type TYPE    Network connection type: 'localhost' or 'bridged' (default: localhost)"
+    echo "  -F, --foreground        Run QEMU in foreground instead of backgrounding (default: background)"
+    echo ""
+    echo "Examples:"
+    echo "  $0 install disks/boot.qcow2                              # Install with localhost networking"
+    echo "  $0 -i custom.iso install disks/boot.qcow2                # Install using custom.iso"
+    echo "  $0 -n 1 start disks/boot.qcow2                           # Start with 1 extra drive"
+    echo "  $0 -c bridged install disks/boot.qcow2                   # Install with bridged networking"
+    echo "  $0 -F start disks/boot.qcow2                             # Start in foreground"
+    echo "  $0 -n 3 -c localhost start disks/boot.qcow2              # Start with 3 extra drives"
+    echo "  $0 install disks/boot.qcow2 -- -vnc :0                   # Install with a VNC connection"
+    echo "  $0 -n 2 -i custom.iso -c bridged install disks/boot.qcow2 # Multiple options combined"
+}
 
 HOST=`hostname`
 VMNAME=`basename $PWD`
@@ -41,6 +44,53 @@ QEMU=none
 BRIDGE_HELPER=none
 QARGS=""
 ISO_FILE=""
+N_EXTRA_DRIVES=0
+NET_CONN="localhost"
+RUN_FOREGROUND=false
+
+# Parse options using getopt
+PARSED=$(getopt --options hi:n:c:F --longoptions help,iso:,extra-drives:,conn-type:,foreground --name "$0" -- "$@")
+if [ $? -ne 0 ]; then
+    echo "Error: Failed to parse arguments"
+    echo "Use -h or --help for usage information"
+    exit 1
+fi
+
+eval set -- "$PARSED"
+
+# Extract options
+while true; do
+    case "$1" in
+        -h|--help)
+            show-help
+            exit 0
+            ;;
+        -i|--iso)
+            ISO_FILE="$2"
+            shift 2
+            ;;
+        -n|--extra-drives)
+            N_EXTRA_DRIVES="$2"
+            shift 2
+            ;;
+        -c|--conn-type)
+            NET_CONN="$2"
+            shift 2
+            ;;
+        -F|--foreground)
+            RUN_FOREGROUND=true
+            shift 1
+            ;;
+        --)
+            shift
+            break
+            ;;
+        *)
+            echo "Error: Unexpected option: $1"
+            exit 1
+            ;;
+    esac
+done
 
 # Check if MODE and BOOT_DISK arguments are provided
 if [ $# -lt 2 ]; then
@@ -49,7 +99,7 @@ if [ $# -lt 2 ]; then
     exit 1
 fi
 
-# Parse parameters
+# Parse positional parameters
 MODE="$1"
 BOOT_DISK="$2"
 shift 2
@@ -60,25 +110,26 @@ if [[ "$MODE" != "install" && "$MODE" != "start" ]]; then
     exit 1
 fi
 
-if [[ "$1" == "localhost" || "$1" == "bridged" ]]; then
-    NET_CONN="$1"
-    N_EXTRA_DRIVES=${2:-0}
-    shift 2 && QARGS=$@
-elif [[ "$1" =~ ^[0-9]+$ ]]; then
-    NET_CONN="localhost"
-    N_EXTRA_DRIVES="$1"
-    shift 1
-    QARGS=$@
-else
-    NET_CONN="localhost"
-    N_EXTRA_DRIVES=${1:-0}
-    shift 1
-    QARGS=$@
+# Validate NET_CONN
+if [[ "$NET_CONN" != "localhost" && "$NET_CONN" != "bridged" ]]; then
+    echo "Error: --conn-type must be 'localhost' or 'bridged'"
+    exit 1
 fi
 
-# Only find ISO for install mode
-if [[ "$MODE" == "install" ]]; then
+# Remaining arguments are QARGS
+QARGS=$@
+
+# Only find ISO for install mode if not already provided
+if [[ "$MODE" == "install" && -z "$ISO_FILE" ]]; then
     find_iso
+elif [[ "$MODE" == "install" && -n "$ISO_FILE" ]]; then
+    # Validate that the provided ISO file exists
+    if [ ! -f "$ISO_FILE" ]; then
+        echo "Error: ISO file '$ISO_FILE' not found!"
+        exit 1
+    fi
+    ISO_FILE=$(realpath "$ISO_FILE")
+    echo "using ISO: $ISO_FILE"
 fi
 check_qemu_command
 
@@ -145,31 +196,40 @@ for ((i=1; i<=N_EXTRA_DRIVES; i++)); do
     EXTRA_NVMES+=("-device nvme,drive=NVME${NVME_ID},bus=pcie.0,addr=0x$(printf '%x' $ADDR),max_ioqpairs=4,physical_block_size=4096,logical_block_size=4096,use-intel-id=on,serial=$(generate_serial_number) -drive file=$(realpath $EXTRA_DISK),if=none,id=NVME${NVME_ID}")
 done
 
-$QEMU -name $VMNAME -M q35 -accel kvm -bios OVMF-pure-efi.fd -cpu host -m 4G -smp 4 $QARGS \
--uuid $TARGET_SYS_UUID \
-$BOOT_OPTIONS \
--device nvme,drive=NVME1,addr=0x07,max_ioqpairs=4,physical_block_size=4096,use-intel-id=on,serial=$SN0 \
--drive file=$BOOT_DISK,if=none,id=NVME1 \
-$NBFT_DRIVE_OPTIONS \
-${EXTRA_NVMES[@]} \
-$NET0_NET \
-$NET0_DEV \
-$NET1_NET \
-$NET1_DEV \
-$NET2_NET \
-$NET2_DEV &
+qemu_command() {
+    $QEMU -name $VMNAME -M q35 -accel kvm -bios OVMF-pure-efi.fd -cpu host -m 4G -smp 4 $QARGS \
+    -uuid $TARGET_SYS_UUID \
+    $BOOT_OPTIONS \
+    -device nvme,drive=NVME1,addr=0x07,max_ioqpairs=4,physical_block_size=4096,use-intel-id=on,serial=$SN0 \
+    -drive file=$BOOT_DISK,if=none,id=NVME1 \
+    $NBFT_DRIVE_OPTIONS \
+    ${EXTRA_NVMES[@]} \
+    $NET0_NET \
+    $NET0_DEV \
+    $NET1_NET \
+    $NET1_DEV \
+    $NET2_NET \
+    $NET2_DEV
+}
 
-disown %1
+if $RUN_FOREGROUND; then
+    qemu_command
+else
+    qemu_command &
+    disown %1
+fi
 
 if [[ "$MODE" == "install" ]]; then
     echo ""
     echo " Be sure to create the root account with ssh access."
     echo " Reboot to complete the install and login to the root account."
     echo ""
-    echo " Next step will be to run the \"./netsetup.sh\" script."
-    echo ""
 elif [[ "$MODE" == "start" ]]; then
-    echo -e "\e[32mThe $VMNAME is running in the background.\e[0m"
+    if $RUN_FOREGROUND; then
+        echo -e "\e[32mThe $VMNAME is running in the foreground.\e[0m"
+    else
+        echo -e "\e[32mThe $VMNAME is running in the background.\e[0m"
+    fi
     echo ""
     TARGET_IP1='localhost'
     if [ $NET_CONN = 'bridged' ] ; then
