@@ -229,7 +229,7 @@ Run `make help` to see all available options, then run:
 ```
 make rh-start
 ```
-to start the VM with the pre-installed disk
+to start the VM with the pre-installed disk.
 
 **Note**: The automated installation uses the anaconda kickstart configuration produced from in `anaconda-ks.cfg.template`.
 You will be asked to provide a `root` password for the `target-vm` at the beginning of the setup.

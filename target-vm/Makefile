@@ -40,30 +40,22 @@ help:
 	@echo "  make NET_TYPE=bridged start     # Start with bridged networking"
 	@echo ""
 
-rh-start: disks/nvme1.qcow2 $(SETUP_SCRIPT)
+rh-start: disks/nvme1.qcow2 boot.iso $(SETUP_SCRIPT)
 # disks/rh-boot.qcow2 is not an explicit dependency because it consumes
 # .build/rh-boot.qcow2 for its creation. This, however, confuses GNU Make
 # to go rebuild the qcow2 disk unnecessarily.
-	[ -f disks/rh-boot.qcow2 ] || make disks/rh-boot.qcow2
-	@bash ./$(SETUP_SCRIPT) start disks/rh-boot.qcow2 $(NET_TYPE) $(EXTRA_DRIVES) $(QEMU_ARGS)
+	[ -f disks/rh-boot.qcow2 ] || make rh-install
+	@bash ./$(SETUP_SCRIPT) start disks/rh-boot.qcow2 -i boot.iso -c $(NET_TYPE) -n $(EXTRA_DRIVES) -- $(QEMU_ARGS)
+
+rh-install: disks/rh-boot.qcow2 boot.iso $(SETUP_SCRIPT)
+	@echo -e "\e[31mThe VM is installing in the background. Do not interrupt!\e[0m"
+	@bash ./$(SETUP_SCRIPT) install $< -F -c $(NET_TYPE) -i boot.iso -- $(QEMU_ARGS)
 
 start: disks/boot.qcow2 disks/nvme1.qcow2 $(SETUP_SCRIPT)
-	@bash ./$(SETUP_SCRIPT) start $< $(NET_TYPE) $(EXTRA_DRIVES) $(QEMU_ARGS)
+	@bash ./$(SETUP_SCRIPT) start $< -c $(NET_TYPE) -n $(EXTRA_DRIVES) -- $(QEMU_ARGS)
 
 install: disks/boot.qcow2
-	@bash ./$(SETUP_SCRIPT) install $< $(NET_TYPE) $(EXTRA_DRIVES) $(QEMU_ARGS)
-
-.lorax/rh-boot.qcow2: anaconda-ks.cfg
-	-@rmdir .lorax 2>/dev/null
-# Look up the prebuilt ISO
-	@echo -e "\e[31mThe VM is installing in the background. Do not interrupt!\e[0m"
-	source ../vm-lib/common.sh && find_iso && sudo livemedia-creator \
-		--virt-uefi \
-		--make-disk --qcow2 \
-		--iso=$$ISO_FILE --ks=$< \
-		--image-name=$$(basename $@) \
-		--resultdir ./.lorax --arch x86_64 \
-		--vnc "sdl"
+	@bash ./$(SETUP_SCRIPT) install $< -c $(NET_TYPE) -n $(EXTRA_DRIVES) -- $(QEMU_ARGS)
 
 .build/tcp.json: tcp.json.in Makefile ../global_vars.sh
 	source ../global_vars.sh
@@ -76,9 +68,6 @@ install: disks/boot.qcow2
 	sed -i "s/NSNGUID/$$NSNGUID/" $@
 	sed -i "s/NSUUID/$$NSUUID/" $@
 	sed -i "s/CTRLSN/$$SN2/" $@
-
-disks/rh-boot.qcow2: .lorax/rh-boot.qcow2
-	cp .lorax/rh-boot.qcow2 $@
 
 disks/%.qcow2:
 	mkdir -p disks
@@ -109,9 +98,9 @@ clean:
 	-rm -f boot.iso
 	-rm -f *.log
 	-rm -rf .build
-	-rm -rf .lorax
 	-rm -f anaconda-ks.cfg
 	-rm -f .net
+	-rm -f .netport
 
 .PHONY: help install start rh-start stop clean
 .ONESHELL: .build/tcp.json
