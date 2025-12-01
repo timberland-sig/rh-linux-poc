@@ -7,6 +7,7 @@ DRIVE_CAP ?= 70G
 EXTRA_DRIVES ?= 0
 NET_TYPE ?= "localhost"
 QEMU_ARGS ?= ""
+ISO ?= $(shell source ../vm-lib/common.sh &>/dev/null && find_iso &>/dev/null && echo $$ISO_FILE)
 
 SETUP_SCRIPT := vm.sh
 
@@ -31,6 +32,7 @@ help:
 	@echo "  EXTRA_DRIVES  Number of extra NVMe drives (default: $(EXTRA_DRIVES))"
 	@echo "  NET_TYPE      Network type: localhost/bridged (default: $(NET_TYPE))"
 	@echo "  QEMU_ARGS     Additional QEMU arguments"
+	@echo "  ISO           Path to a .iso to be used for OS installation"
 	@echo ""
 	@echo "Examples:"
 	@echo "  make install                    # Manually install an OS on a fresh disk"
@@ -52,7 +54,7 @@ rh-install: disks/rh-boot.qcow2 boot.iso $(SETUP_SCRIPT)
 	@bash ./$(SETUP_SCRIPT) install $< -F -c $(NET_TYPE) -i boot.iso -- $(QEMU_ARGS)
 
 start: disks/boot.qcow2 disks/nvme1.qcow2 $(SETUP_SCRIPT)
-	@bash ./$(SETUP_SCRIPT) start $< -c $(NET_TYPE) -n $(EXTRA_DRIVES) -- $(QEMU_ARGS)
+	@bash ./$(SETUP_SCRIPT) start $< -i $(ISO) -c $(NET_TYPE) -n $(EXTRA_DRIVES) -- $(QEMU_ARGS)
 
 install: disks/boot.qcow2
 	@bash ./$(SETUP_SCRIPT) install $< -c $(NET_TYPE) -n $(EXTRA_DRIVES) -- $(QEMU_ARGS)
@@ -76,7 +78,7 @@ disks/%.qcow2:
 # Simply embed the anaconda kickstart file into the ISO
 boot.iso: anaconda-ks.cfg ../vm-lib/common.sh
 # Look up the prebuilt ISO
-	source ../vm-lib/common.sh && find_iso && sudo mkksiso --ks $< $$ISO_FILE $@
+	sudo mkksiso --ks $< "$(ISO)" $@
 
 anaconda-ks.cfg: anaconda-ks.cfg.template
 	@while true; do \
