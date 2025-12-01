@@ -45,7 +45,7 @@ rh-start: disks/nvme1.qcow2 boot.iso $(SETUP_SCRIPT)
 # .build/rh-boot.qcow2 for its creation. This, however, confuses GNU Make
 # to go rebuild the qcow2 disk unnecessarily.
 	[ -f disks/rh-boot.qcow2 ] || make rh-install
-	@bash ./$(SETUP_SCRIPT) start disks/rh-boot.qcow2 -i boot.iso -c $(NET_TYPE) -n $(EXTRA_DRIVES) -- $(QEMU_ARGS)
+	@bash ./$(SETUP_SCRIPT) start disks/rh-boot.qcow2 -c $(NET_TYPE) -n $(EXTRA_DRIVES) -- $(QEMU_ARGS)
 
 rh-install: disks/rh-boot.qcow2 boot.iso $(SETUP_SCRIPT)
 	@echo -e "\e[31mThe VM is installing in the background. Do not interrupt!\e[0m"
