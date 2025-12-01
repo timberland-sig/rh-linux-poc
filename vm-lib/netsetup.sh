@@ -80,10 +80,11 @@ set -e
 . remote-netsetup.sh $TARGET_MAC2 $TARGET_MAC3 \"$TARGET_CIDR2\" \"$TARGET_CIDR3\"
 cp start-nvme-target.sh /usr/local/bin
 cp start-nvme-target.service /etc/systemd/system/
+mkdir -p /usr/local/etc
+cp tcp.json /usr/local/etc
 systemctl daemon-reload
 systemctl enable --now start-nvme-target.service
 systemctl status start-nvme-target.service
-nvmetcli restore /root/tcp.json
 dmesg | grep nvmet"
         ;;
         host-vm)
