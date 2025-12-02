@@ -238,6 +238,7 @@ If you are not running this as root, you will also be asked for **your** `sudo` 
 If you are running this on a remote machine, the QEMU console window will not appear while the `target-vm` is auto-installing.
 The terminal will be blocked as if it was hanging, but **it is not**. The OS is being installed in the background.
 Both a success and a failure will terminate the command, so **DO NOT TERMINATE** it yourself nor interrupt it (with `Ctrl+C` for example)!!!
+You may, however, run the make target with `QEMU_ARGS='-vnc :0'` and then observe the installation over VNC with `vncviewer <hostname>:0`.
 
 #### Method 2 Manual installation
 
@@ -246,7 +247,8 @@ For any other distribution or if you prefer manual installation:
 - Run `make install` to start a manual installation from an ISO
 - Connect to the VM console and complete the OS installation
 - **Important**: Create a root account with SSH access during installation
-- After installation, reboot and run `make start` to start the VM
+- After installation, **reboot**, login as the `root` user and **shutdown** the `target-vm`.
+- Run `make start` to continue the setup.
 
 Run `make help` to see all available targets and configuration options.
 
@@ -266,15 +268,21 @@ enp0s6           UP             fe80::6e22:d7dd:43f0:5e21/64
 
 ### Step 3 Run `./netsetup.sh` on the hypervisor
 
-The `./netsetup.sh` utility is ran on the hypervisor in the `target-vm`
-directory. It is ran automatically by default, but only once. You can run it yourself too
-using the infromation from the `ip -br addr show` command on the `target-vm`. The script leverages
-password-less login using SSH keys. You will only be prompted for the `root` password once.
+The `./netsetup.sh` utility is ran on the hypervisor in the `target-vm` directory. It is ran automatically by default,
+but only once. If you ran `make start` with `NET_TYPE=bridged`, you
+will be prompted for the IP address of the `target-vm`. You obtained that in the previous step from the `ip -br addr show`
+command on the `target-vm`. The script leverages password-less login using SSH keys. You will only be prompted
+for the `root` password once.
+
+You can run this script yourself too.
 Example:
 
 ```
 ../vm-lib/netsetup.sh 192.168.0.63
 ```
+
+The `target-vm` should now be ready to serve the NVMe soft target. If you reboot the machine, a systemd service
+is going to make sure the NVMe soft target is brought up again correctly.
 
 ## Create the `host-vm`
 
@@ -393,10 +401,10 @@ enp0s6           UP
 
 ### Step 2 Run `./netsetup.sh` on the hypervisor
 
-The `./netsetup.sh` utility is ran on the hypervisor in the `host-vm`
-directory. It is ran automatically by default, but only once. You can run it yourself too
-using the infromation from the `ip -br addr show` command on the `host-vm`. The script leverages
-password-less login using SSH keys. You will only be prompted for the `root` password once.
+The `./netsetup.sh` utility is ran on the hypervisor in the `host-vm` directory. It is ran automatically by default, but only once. If you ran `make start` with `NET_TYPE=bridged`, you
+will be prompted for the IP address of the `host-vm`. You obtained that in the previous step from the `ip -br addr show`
+command on the `host-vm`. The script leverages password-less login using SSH keys. You will only be prompted
+for the `root` password once.
 
 ```
 ...
@@ -435,7 +443,7 @@ to recreate the configuration *anew* interractively.
 ### Start the `host-vm` without NVMe/TCP
 
 Simply run `make start-local` to boot from a local boot drive (that has to be manually installed with `make install-local`). For the installation simply
-follow the instructions.
+follow the on-screen instructions.
 
 ### To restart the `host-vm` after `shutdown -h`
 
