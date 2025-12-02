@@ -96,7 +96,7 @@ wipe:
 	-rm -f disks/*.qcow2
 
 clean:
-	-rm -f disks/*.qcow2
+	-rm -f disks/rh-boot.qcow2 disks/boot.qcow2
 	-rm -f boot.iso
 	-rm -f *.log
 	-rm -rf .build
