@@ -25,6 +25,7 @@ Arguments:
 
 Options:
   -h, --help              Show this help message and exit
+  -i, --iso PATH          Path to the ISO file to use
   -c, --conn-type TYPE    Network connection type: 'localhost' or 'bridged' (default: localhost)
 
 Network connection types:
@@ -51,7 +52,7 @@ NET_CONN="localhost"
 QARGS=""
 
 # Parse options using getopt
-PARSED=$(getopt --options hc: --longoptions help,conn-type: --name "$0" -- "$@")
+PARSED=$(getopt --options hi:c: --longoptions help,conn-type: --name "$0" -- "$@")
 if [ $? -ne 0 ]; then
     echo "Error: Failed to parse arguments"
     echo "Use -h or --help for usage information"
@@ -66,6 +67,10 @@ while true; do
         -h|--help)
             show-help
             exit 0
+            ;;
+        -i|--iso)
+            ISO_FILE="$2"
+            shift 2
             ;;
         -c|--conn-type)
             NET_CONN="$2"
@@ -149,7 +154,7 @@ esac
 
 # Only find ISO for 'install' mode
 if [[ "$MODE" == "install" ]]; then
-    find_iso
+    [ -n "$ISO_FILE" ] || find_iso
     CDROM="-cdrom $ISO_FILE"
 fi
 
