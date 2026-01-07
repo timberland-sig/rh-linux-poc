@@ -44,19 +44,19 @@ help:
 	@echo ""
 
 setup: efidisk
-	@bash ./$(SETUP_SCRIPT) nbft-setup $(NET_TYPE) $(QEMU_ARGS)
+	@bash ./$(SETUP_SCRIPT) -c $(NET_TYPE) nbft-setup -- $(QEMU_ARGS)
 
 start-local: disks/boot.qcow2 $(SETUP_SCRIPT)
-	@bash ./$(SETUP_SCRIPT) start local $(NET_TYPE) $(QEMU_ARGS)
+	@bash ./$(SETUP_SCRIPT) -c $(NET_TYPE) start local -- $(QEMU_ARGS)
 
 install-local: disks/boot.qcow2
-	@bash ./$(SETUP_SCRIPT) install local $(NET_TYPE) $(QEMU_ARGS)
+	@bash ./$(SETUP_SCRIPT) -c $(NET_TYPE) install local -- $(QEMU_ARGS)
 
 install-remote:
-	@bash ./$(SETUP_SCRIPT) install remote $(NET_TYPE) $(QEMU_ARGS)
+	@bash ./$(SETUP_SCRIPT) -c $(NET_TYPE) install remote -- $(QEMU_ARGS)
 
 start-remote:
-	@bash ./$(SETUP_SCRIPT) start remote $(NET_TYPE) $(QEMU_ARGS)
+	@bash ./$(SETUP_SCRIPT) -c $(NET_TYPE) start remote -- $(QEMU_ARGS)
 
 disks/%.qcow2:
 	mkdir -p disks
