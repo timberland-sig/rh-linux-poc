@@ -6,6 +6,7 @@ VMNAME := $(shell basename $$PWD)
 DRIVE_CAP ?= 70G
 NET_TYPE ?= "localhost"
 QEMU_ARGS ?= ""
+ISO ?= $(shell source ../vm-lib/common.sh &>/dev/null && find_iso &>/dev/null && echo $$ISO_FILE)
 
 SETUP_SCRIPT := vm.sh
 
@@ -33,6 +34,7 @@ help:
 	@echo "  DRIVE_CAP     Disk capacity (default: $(DRIVE_CAP))"
 	@echo "  NET_TYPE      Network type: localhost/bridged (default: $(NET_TYPE))"
 	@echo "  QEMU_ARGS     Additional QEMU arguments"
+	@echo "  ISO		   Path to a .iso to be used for OS installation"
 	@echo ""
 	@echo "Examples:"
 	@echo "  make install-local                  # Install to local disk"
@@ -44,16 +46,16 @@ help:
 	@echo ""
 
 setup: efidisk
-	@bash ./$(SETUP_SCRIPT) -c $(NET_TYPE) nbft-setup -- $(QEMU_ARGS)
+	@bash ./$(SETUP_SCRIPT) -c $(NET_TYPE) -i $(ISO) nbft-setup -- $(QEMU_ARGS)
 
 start-local: disks/boot.qcow2 $(SETUP_SCRIPT)
 	@bash ./$(SETUP_SCRIPT) -c $(NET_TYPE) start local -- $(QEMU_ARGS)
 
 install-local: disks/boot.qcow2
-	@bash ./$(SETUP_SCRIPT) -c $(NET_TYPE) install local -- $(QEMU_ARGS)
+	@bash ./$(SETUP_SCRIPT) -c $(NET_TYPE) -i $(ISO) install local -- $(QEMU_ARGS)
 
 install-remote:
-	@bash ./$(SETUP_SCRIPT) -c $(NET_TYPE) install remote -- $(QEMU_ARGS)
+	@bash ./$(SETUP_SCRIPT) -c $(NET_TYPE) -i $(ISO) install remote -- $(QEMU_ARGS)
 
 start-remote:
 	@bash ./$(SETUP_SCRIPT) -c $(NET_TYPE) start remote -- $(QEMU_ARGS)
@@ -148,7 +150,7 @@ efidisk: efidisk.in eficonfig/startup.nsh eficonfig/VConfig.efi eficonfig/NvmeOf
 # Simply embed the anaconda kickstart file into the ISO
 boot.iso: anaconda-ks.cfg ../vm-lib/common.sh
 # Look up the prebuilt ISO
-	source ../vm-lib/common.sh && find_iso && sudo mkksiso --ks $< $$ISO_FILE $@
+	sudo mkksiso --ks $< $(ISO) $@
 
 anaconda-ks.cfg: anaconda-ks.cfg.template
 	@read -p "Enter a root password for the target-vm: " -s PASSWORD; echo; sed -e "s|<ROOT_PASSWD>|$$(openssl passwd -1 -stdin <<< $$PASSWORD)|" $< > $@
