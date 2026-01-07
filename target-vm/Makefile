@@ -19,7 +19,8 @@ help:
 	@echo "  install       Manually install an OS from an ISO onto a fresh boot disk using QEMU"
 	@echo "  start         Start the VM with an existing boot disk using QEMU"
 	@echo "  rh-start      Automatically install the OS with Kickstart and start the VM (Red Hat distros only)"
-	@echo "  clean         Remove all VM disk images and temporary files"
+	@echo "  clean         Remove VM boot disk images and temporary files"
+	@echo "  wipe          Delete ALL disk images (including host-vm data and OS)"
 	@echo ""
 	@echo "Disk creation targets:"
 	@echo "  disks/boot.qcow2      Create an empty boot disk image ($(DRIVE_CAP))"
@@ -94,6 +95,7 @@ anaconda-ks.cfg: anaconda-ks.cfg.template
 
 wipe:
 	-rm -f disks/*.qcow2
+	-rm -f .net  # Necessary to force a re-run of netsetup when re-installing the OS
 
 clean:
 	-rm -f disks/rh-boot.qcow2 disks/boot.qcow2
