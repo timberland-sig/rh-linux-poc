@@ -10,36 +10,34 @@ DIR="$(dirname -- "$(realpath -- "$0")")"
 
 VMNAME=`basename $PWD`
 
-help() {
+show-help() {
+    VM_NAME=$(basename $PWD)
     cat << EOF
-Usage: $0 <MODE> <OS_LOCATION> [NET_CONN] [EXTRA_QEMU_ARGS...]
-   or: $0 nbft-setup
+Usage: $0 [OPTIONS] MODE [OS_LOCATION] [-- [QARGS]]
+   or: $0 [OPTIONS] nbft-setup [-- [QARGS]]
 
 Launches a QEMU/KVM host VM for NVMe/TCP boot testing.
 
-Modes:
-  nbft-setup
-      Configure NBFT (NVMe Boot Firmware Table) in UEFI for network boot
+Arguments:
+  MODE            Operation mode: 'nbft-setup', 'install', or 'start' (required)
+  OS_LOCATION     Boot location: 'local' or 'remote' (required for install/start modes)
+  QARGS           Optional extra commands for QEMU (after --)
 
-  install <local|remote> [localhost|bridged] [EXTRA_QEMU_ARGS...]
-      Install OS to local boot disk or remote NVMe/TCP disk
+Options:
+  -h, --help              Show this help message and exit
+  -c, --conn-type TYPE    Network connection type: 'localhost' or 'bridged' (default: localhost)
 
-  start <local|remote> [localhost|bridged] [EXTRA_QEMU_ARGS...]
-      Start VM from local boot disk or remote NVMe/TCP disk
-
-Network options (default: localhost):
+Network connection types:
   localhost  - User-mode networking with SSH port forwarding
   bridged    - Bridged networking on br0
 
-Additional arguments:
-  Any arguments after NET_CONN are passed directly to QEMU
-
 Examples:
-  $0 install local localhost                    # Install to local disk
-  $0 install remote bridged                     # Install to remote NVMe/TCP disk
   $0 nbft-setup                                 # Configure NBFT for network boot
-  $0 start local localhost -nographic           # Start with extra QEMU args
-  $0 start remote localhost     # Boot from remote NVMe/TCP disk
+  $0 install local                              # Install to local disk
+  $0 -c bridged install remote                  # Install to remote NVMe/TCP disk with bridged networking
+  $0 start local                                # Start from local disk
+  $0 start remote -- -nographic                 # Start from remote disk with extra QEMU args
+  $0 -c localhost start remote -- -vnc :0       # Start with VNC connection
 EOF
     return
 }
@@ -49,56 +47,105 @@ VMNAME=`basename $PWD`
 QEMU=none
 BRIDGE_HELPER=none
 ISO_FILE=""
+NET_CONN="localhost"
+QARGS=""
 
-_1OLD="$1"
-if [ $# -le 0 ] ; then
-    help
+# Parse options using getopt
+PARSED=$(getopt --options hc: --longoptions help,conn-type: --name "$0" -- "$@")
+if [ $? -ne 0 ]; then
+    echo "Error: Failed to parse arguments"
+    echo "Use -h or --help for usage information"
     exit 1
-elif [ $# -eq 1 -a \( "$1" = "-h" -o "$1" = "--help" \) ] ; then
-    help
+fi
+
+eval set -- "$PARSED"
+
+# Extract options
+while true; do
+    case "$1" in
+        -h|--help)
+            show-help
+            exit 0
+            ;;
+        -c|--conn-type)
+            NET_CONN="$2"
+            shift 2
+            ;;
+        --)
+            shift
+            break
+            ;;
+        *)
+            echo "Error: Unexpected option: $1"
+            exit 1
+            ;;
+    esac
+done
+
+# Check if MODE argument is provided
+if [ $# -lt 1 ]; then
+    echo "Error: MODE argument is required"
+    echo "Use -h or --help for usage information"
     exit 1
-elif [ $1 = "nbft-setup" ] ; then
+fi
+
+# Parse positional parameters
+MODE="$1"
+shift 1
+
+# Special handling for nbft-setup mode
+_IS_NBFT_SETUP=false
+if [ "$MODE" = "nbft-setup" ] ; then
+    _IS_NBFT_SETUP=true
     # We shall assume the efidisk exists
     EFI_DISK="-drive file=efidisk,format=raw,if=none,id=NVME1 -device nvme,drive=NVME1,serial=$SN3"
+    # Internally treat as install mode
     MODE="install"
-    shift 1
-elif [ $# -ge 2 ] ; then
-    MODE="$1"
+else
+    # Validate MODE
     if [ "$MODE" != "install" -a "$MODE" != "start" ] ; then
-        echo "Error: MODE must be 'install' or 'start'"
+        echo "Error: MODE must be 'nbft-setup', 'install', or 'start'"
         exit 1
     fi
-    OS_LOCATION="$2"
-    if [ "$2" != "local" -a "$2" != "remote" ] ; then
+
+    # For install/start modes, OS_LOCATION is required
+    if [ $# -lt 1 ]; then
+        echo "Error: OS_LOCATION argument is required for '$MODE' mode"
+        echo "Use -h or --help for usage information"
+        exit 1
+    fi
+
+    OS_LOCATION="$1"
+    shift 1
+
+    # Validate OS_LOCATION
+    if [ "$OS_LOCATION" != "local" -a "$OS_LOCATION" != "remote" ] ; then
         echo "Error: OS_LOCATION must be 'local' or 'remote'"
         exit 1
     fi
-    shift 2
-else
-    echo "Invalid arguments!"
 fi
 
-NET_CONN="${1:-localhost}"
+# Validate NET_CONN
+if [[ "$NET_CONN" != "localhost" && "$NET_CONN" != "bridged" ]]; then
+    echo "Error: --conn-type must be 'localhost' or 'bridged'"
+    exit 1
+fi
+
+# Remaining arguments are QARGS
+QARGS="$@"
+
+# Setup network configuration based on NET_CONN
 case "$NET_CONN" in
     localhost)
         # NET0_NET="-netdev user,id=net0,net=$NET_CIDR,hostfwd=tcp::$NET_PORT-:22"
         NET0_NET="-netdev user,id=net0,hostfwd=tcp::$HOST_PORT-:22"
         NET0_DEV="-device e1000,netdev=net0,addr=4"
-        shift 1
     ;;
     bridged)
         NET0_NET="-netdev bridge,br=br0,id=net0,helper=$BRIDGE_HELPER"
         NET0_DEV="-device virtio-net-pci,netdev=net0,mac=$HOST_MAC1,addr=4"
-        shift 1
-    ;;
-    *)
-        echo " Error: invalid argument $NET_CONN"
-        exit 1
     ;;
 esac
-
-# Collect any extra arguments passed after the network connection parameter
-QARGS="$@"
 
 # Only find ISO for 'install' mode
 if [[ "$MODE" == "install" ]]; then
@@ -193,7 +240,7 @@ if [ -n "$VNC_DISPLAY" ]; then
     echo ""
 fi
 
-if [[ $_1OLD == "nbft-setup" ]] ; then
+if $_IS_NBFT_SETUP ; then
     echo ""
     echo " Connect to the \"host-vm\" console and immediately Press ESC to enter the UEFI setup menu."
     echo " - Select Boot Manager and run the EFI Internal Shell."
