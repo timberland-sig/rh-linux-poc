@@ -4,7 +4,39 @@
 
 # NOTE: caller must include global_vars.sh before including this file.
 
-echo "DIR = $DIR"
+# validate that the interface is connected
+function check_conn() {
+    local iface="$1"
+
+    if [ -z "$iface" ]; then
+        echo "Error: No interface specified" >&2
+        return 2
+    fi
+
+    # Check if interface exists
+    if ! nmcli dev show "$iface" &>/dev/null ; then
+        echo "Error: Interface '$iface' not found" >&2
+        return 2
+    fi
+
+    # Get the device state
+    local state=$(nmcli -t -f DEVICE,STATE dev status | grep "^${iface}:" | cut -d: -f2)
+
+    case "$state" in
+        connected|connecting)
+            echo "Interface '$iface' is up (state: $state)"
+            return 0
+            ;;
+        disconnected|unavailable|unmanaged)
+            echo "Interface '$iface' is down (state: $state)"
+            return 1
+            ;;
+        *)
+            echo "Interface '$iface' has unknown state: $state"
+            return 1
+            ;;
+    esac
+}
 
 check_qargs() {
     if [  -f .qargs ]; then
@@ -45,4 +77,41 @@ find_iso() {
 
 generate_serial_number() {
     hexdump -vn8 -e'4/4 "%08X" 1 "\n"' /dev/urandom
+}
+
+bridge_iface() {
+    local br_name=$1
+
+    if ! nmcli dev show ${br_name} &>/dev/null ; then
+        netdev=""
+        nmcli dev status
+        echo ""
+        read -r -p "Enter name of the network interface to bridge with ${br_name} or \"local\" to skip configuration: " netdev
+
+        if [ -z netdev ]; then
+            exit 1
+        fi
+
+        if [[ "$netdev" == *"local"* ]]; then
+            echo " : local - skipping bridged network setup"
+        else
+            if ! nmcli dev show $netdev &>/dev/null ; then
+                echo "Interface '$netdev' does not exist!"
+                exit 1
+            fi
+
+            if check_conn $netdev; then
+                MAC=$(nmcli -t -f general.hwaddr -e yes dev show $netdev | sed 's/^GENERAL.HWADDR://')
+                sudo nmcli dev down $netdev
+                sudo nmcli con add type bridge ifname ${br_name} autoconnect yes stp off ethernet.cloned-mac-address $MAC
+                sudo nmcli con add type bridge-slave ifname $netdev master ${br_name}
+                sudo nmcli con up bridge-${br_name}
+                sudo nmcli con up bridge-slave-${netdev}
+            else
+                echo "Interface $netdev is down!"
+                echo " try: nmcli con add type ethernet ifname $netdev con-name $netdev autoconnect yes"
+                exit 1
+            fi
+        fi
+    fi
 }
