@@ -116,50 +116,13 @@ install_devel() {
 
 }
 
-# validate that the interface is connected
-function check_conn () {
-    set -o pipefail # optional.
-    nmcli conn show --active | grep -q "$1"
-}
-
 install_network() {
 
     echo " : setup bridged network environment"
 
-    if ! nmcli dev show br0 &>/dev/null ; then
-        netdev=""
-        nmcli dev status
-        echo ""
-        read -r -p "enter name of default network managment device or \"local\" to skip configuration: " netdev
+    bridge_iface 'br0'
 
-        if [ -z netdev ]; then
-            exit 1
-        fi
-
-        if [[ "$netdev" == *"local"* ]]; then
-            echo " : local - skipping default bridged network setup"
-        else
-            if ! nmcli dev show $netdev &>/dev/null ; then
-                echo "Interface $netdev does not exist!"
-                exit 1
-            fi
-
-            if check_conn $netdev; then
-                MAC=$(nmcli -t -f general.hwaddr -e yes dev show $netdev | sed 's/^GENERAL.HWADDR://')
-                sudo nmcli dev down $netdev
-                sudo nmcli con add type bridge ifname br0 autoconnect yes stp off ethernet.cloned-mac-address $MAC
-                sudo nmcli con add type bridge-slave ifname $netdev master br0
-                sudo nmcli con up bridge-br0
-                sudo nmcli con up bridge-slave-$netdev
-            else
-                echo "Interface $netdev is down!"
-                echo " try: nmcli con add type ethernet ifname $netdev con-name $netdev autoconnect yes"
-               exit 1
-            fi
-
-            ip -h -c -o -br address show br0
-        fi
-    fi
+    ip -h -c -o -br address show ${br_name}
 
     if ! nmcli dev show virbr1 &>/dev/null ; then
         sudo nmcli conn add type bridge ifname virbr1 con-name virbr1 stp yes ipv4.addresses $HOSTGW_CIDR2 ipv4.method manual ipv6.method shared
