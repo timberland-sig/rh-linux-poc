@@ -31,11 +31,9 @@ if [ '(' -z $IF2 ')' -o '(' -z $IF3 ')' ] ; then
         BAD_MAC="$MAC3"
     fi
     echo "Failed to find a network interface with MAC address $BAD_MAC!"
-    exit 1
 fi
 
-CONN="$(nmcli conn show | grep $IF2)"
-if [[ "$CONN" == *"$IF2"* ]]; then
+if [[ -n "$IF2" && "$(nmcli conn show | grep $IF2)" == *"$IF2"* ]]; then
 	CCON="$(nmcli --get-values name,device conn | grep $IF2 | cut -d ':' -f 1)"
 	nmcli con delete "$CCON"
 	nmcli con add type ethernet con-name $IF2 ifname $IF2 ipv4.addresses $IP2 ipv4.method manual ipv6.method shared
@@ -51,8 +49,7 @@ else
 	fi
 fi
 
-CONN="$(nmcli conn show | grep $IF3)"
-if [[ "$CONN" == *"$IF3"* ]]; then
+if [[ -n "$IF3" && "$(nmcli conn show | grep $IF3)" == *"$IF3"* ]]; then
 	CCON="$(nmcli --get-values name,device conn | grep $IF3 | cut -d ':' -f 1)"
 	nmcli con delete "$CCON"
 	nmcli con add type ethernet con-name $IF3 ifname $IF3 ipv4.addresses $IP3 ipv4.method manual ipv6.method shared

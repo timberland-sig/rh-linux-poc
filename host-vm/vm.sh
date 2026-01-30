@@ -193,10 +193,14 @@ else
     echo "using a remote drive"
 fi
 
-NET1_NET="-netdev bridge,br=virbr1,id=net1,helper=$BRIDGE_HELPER"
-NET1_DEV="-device virtio-net-pci,netdev=net1,mac=$HOST_MAC2,addr=5"
-NET2_NET="-netdev bridge,br=virbr2,id=net2,helper=$BRIDGE_HELPER"
-NET2_DEV="-device virtio-net-pci,netdev=net2,mac=$HOST_MAC3,addr=6"
+if nmcli dev | grep 'virbr1' &>/dev/null ; then
+	NET1_NET="-netdev bridge,br=virbr1,id=net1,helper=$BRIDGE_HELPER"
+	NET1_DEV="-device virtio-net-pci,netdev=net1,mac=$HOST_MAC2,addr=5"
+fi
+if nmcli dev | grep 'virbr2' &>/dev/null ; then
+	NET2_NET="-netdev bridge,br=virbr2,id=net2,helper=$BRIDGE_HELPER"
+	NET2_DEV="-device virtio-net-pci,netdev=net2,mac=$HOST_MAC3,addr=6"
+fi
 
 BOOT_OPTIONS="-boot menu=on,splash-time=2000"
 
