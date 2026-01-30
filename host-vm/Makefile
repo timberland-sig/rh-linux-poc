@@ -165,8 +165,7 @@ clean: clean-config
 	-rm -f boot.iso
 	-rm -f *.log
 	-rm -rf .build
-	-rm -f .netport
-	-rm -f .netaddr
+	-rm -f .net*
 	-rm -f anaconda-ks.cfg
 	-rm -f efidisk
 

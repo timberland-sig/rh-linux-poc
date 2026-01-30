@@ -103,8 +103,7 @@ clean:
 	-rm -f *.log
 	-rm -rf .build
 	-rm -f anaconda-ks.cfg
-	-rm -f .net
-	-rm -f .netport
+	-rm -f .net*
 
 .PHONY: help install start rh-start stop clean
 .ONESHELL: .build/tcp.json
