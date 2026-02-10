@@ -256,16 +256,15 @@ if $_IS_NBFT_SETUP ; then
     echo " - The UEFI Shell will execute the \"startup.nsh\" script and program the NBFT."
     echo " - Press ESC to exit Boot Manager select Reset to reboot the VM."
     echo " - UEFI will automatically boot with NVMe/TCP if possible."
-    echo " - Shutdown the VM and restart with "$0 install remote" to install the remote disk with NVMe/TCP."
-    echo " - Shutdown the VM and restart with "$0 start remote" to boot with NVMe/TCP."
     echo ""
-elif [[ "$MODE" == "install" ]]; then
+fi
+
+if [[ "$MODE" == "install" ]]; then
     if [[ "$OS_LOCATION" == "remote" ]] ; then
-        echo ""
         echo " Connect to the \"host-vm\" console and wait for the Anaconda installer to start"
         echo " - The remote nvme-tcp disk should appear in the install menu"
+	echo ""
     fi
-    echo ""
     echo " Be sure to create the root account with ssh access."
     echo " Reboot to complete the install and login to the root account."
     echo ""
@@ -275,29 +274,27 @@ elif [[ "$MODE" == "install" ]]; then
     echo ""
 elif [[ "$MODE" == "start" ]] ; then
     if [[ "$OS_LOCATION" == "local" ]] ; then
-        echo ""
         echo " Allow the VM to boot normally, using the default"
         echo " - UEFI will automatically boot from the local disk without NVMe/TCP."
         echo " - Complete your work updating or modifying the local disk and shutdown."
         echo " - Shutdown the host-vm before starting the target-vm."
-        echo " - Start target-vm nvme/tcp target server with \"start_nvme_target.sh\"."
         echo " - Restart the host-vm with "$0 nbft-setup" to program the NBFT and boot with NVMe/TCP."
         echo ""
     else
-        echo ""
         echo " Connect to the \"host-vm\" console and immediately Press ESC to enter the UEFI setup menu."
         echo " - Select Reset to reboot the VM."
         echo " - UEFI will automatically boot with NVMe/TCP."
         echo ""
     fi
-
-    HOST_IP1='localhost'
-    if [ $NET_CONN = 'bridged' ] ; then
-        echo " Record the host interface name and ip address with \"ip -br address show\" command."
-        echo ""
-        read -p "Enter host interface IP address: " HOST_IP1
-    fi
-    $DIR/../vm-lib/netsetup.sh "$HOST_IP1"
-    echo ""
-    echo " The setup is finished now. Enjoy using your test environment!"
 fi
+HOST_IP1='localhost'
+if [ $NET_CONN = 'bridged' ] ; then
+	echo " Record the host interface name and ip address with \"ip -br address show\" command."
+	echo ""
+	read -p "Enter host interface IP address: " HOST_IP1
+	echo ""
+fi
+
+$DIR/../vm-lib/netsetup.sh "$HOST_IP1"
+echo " The setup is finished now. Enjoy using your test environment!"
+echo ""
