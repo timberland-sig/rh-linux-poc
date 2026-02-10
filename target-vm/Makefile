@@ -77,7 +77,7 @@ disks/%.qcow2:
 	qemu-img create -f qcow2 $@ $(DRIVE_CAP)
 
 # Simply embed the anaconda kickstart file into the ISO
-boot.iso: anaconda-ks.cfg ../vm-lib/common.sh
+boot.iso: anaconda-ks.cfg
 # Look up the prebuilt ISO
 	sudo mkksiso --ks $< "$(ISO)" $@
 
