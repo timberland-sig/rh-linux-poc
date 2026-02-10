@@ -89,7 +89,7 @@ systemctl status start-nvme-target.service
 dmesg | grep nvmet"
         ;;
         host-vm)
-            scp -i $DIR/../.ssh/id_ecdsa -o StrictHostKeyChecking=no .build/hosts.txt $DIR/../vm-lib/remote-netsetup.sh scp://${SSH_TARGET}
+            scp -i $DIR/../.ssh/id_ecdsa -o StrictHostKeyChecking=no .build/* $DIR/../vm-lib/remote-netsetup.sh scp://${SSH_TARGET}
             ssh -t -i $DIR/../.ssh/id_ecdsa ssh://${SSH_TARGET} "\
                 . remote-netsetup.sh $HOST_MAC2 $HOST_MAC3 \"$HOST_CIDR2\" \"$HOST_CIDR3\""
         ;;
@@ -102,5 +102,5 @@ dmesg | grep nvmet"
 fi
 
 echo ""
-echo "Use \"ssh -i \$PWD/../.ssh/id_ecdsa ssh://${SSH_TARGET}\" to login to the $VMNAME"
+echo "Use \"ssh -i $(realpath $PWD/../.ssh/id_ecdsa) ssh://${SSH_TARGET}\" to login to the $VMNAME"
 echo ""
