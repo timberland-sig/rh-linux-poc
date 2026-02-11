@@ -45,7 +45,7 @@ help:
 	@echo "  make NET_TYPE=bridged start-local   # Start with bridged networking"
 	@echo ""
 
-setup: efidisk
+setup: efidisk .build/hostid
 	@bash ./$(SETUP_SCRIPT) -c $(NET_TYPE) -i $(ISO) nbft-setup -- $(QEMU_ARGS)
 
 start-local: disks/boot.qcow2 $(SETUP_SCRIPT)
@@ -147,6 +147,11 @@ efidisk: efidisk.in eficonfig/startup.nsh eficonfig/VConfig.efi eficonfig/NvmeOf
 	sudo umount $$PWD/efi
 	rmdir efi
 
+.build/hostid: ../global_vars.sh
+	source $<
+	mkdir -p .build
+	echo "$$HOSTID" > $@
+
 # Simply embed the anaconda kickstart file into the ISO
 boot.iso: anaconda-ks.cfg ../vm-lib/common.sh
 # Look up the prebuilt ISO
@@ -169,6 +174,6 @@ clean: clean-config
 	-rm -f anaconda-ks.cfg
 	-rm -f efidisk
 
-.ONESHELL: eficonfig/config
+.ONESHELL: eficonfig/config .build/hostid
 .SILENT: eficonfig/config
 .PHONY: help setup install-local start-local install-remote start-remote clean-config reconfig clean
