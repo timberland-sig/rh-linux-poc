@@ -71,18 +71,33 @@ eficonfig/config: eficonfig/config.in eficonfig/config2.in
 	sed -i "s/HOSTNQN/$$HOSTNQN/" $@
 	sed -i "s/HOSTID/$$HOSTID/" $@
 	sed -i "s/HOST_MAC2/$$HOST_MAC2/" $@
-	sed -i "s/HOST_IP2/$$HOST_IP2/" $@
+
+	read -p "Host IP address on virbr1 (default: $$HOST_IP2): " INPUT_HOST_IP2
+	INPUT_HOST_IP2=$${INPUT_HOST_IP2:-$$HOST_IP2}
+	sed -i "s/HOST_IP2/$$INPUT_HOST_IP2/" $@
+
 	sed -i "s/HOSTGW_IP2/0.0.0.0/" $@
-	sed -i "s/TARGET_IP2/$$TARGET_IP2/" $@
+
+	read -p "Target IP address on virbr1 (default: $$TARGET_IP2): " INPUT_TARGET_IP2
+	INPUT_TARGET_IP2=$${INPUT_TARGET_IP2:-$$TARGET_IP2}
+	sed -i "s/TARGET_IP2/$$INPUT_TARGET_IP2/" $@
 
 	while true; do
 		read -p "Enable multipath? (y/n): " MULTIPATH;
 		if [ "$$MULTIPATH" = "y" ]; then
 			cat eficonfig/config2.in >> $@;
 			sed -i "s/HOST_MAC3/$$HOST_MAC3/" $@;
-			sed -i "s/HOST_IP3/$$HOST_IP3/" $@;
-			sed -i "s/HOSTGW_IP3/0.0.0.0/" $@;
-			sed -i "s/TARGET_IP3/$$TARGET_IP3/" $@;
+
+			read -p "Host IP address on virbr2 (default: $$HOST_IP3): " INPUT_HOST_IP3;
+			INPUT_HOST_IP3=$${INPUT_HOST_IP3:-$$HOST_IP3};
+			sed -i "s/HOST_IP3/$$INPUT_HOST_IP3/" $@;
+
+			sed -i "s/HOSTGW_IP3/0.0.0.0/" $@
+
+			read -p "Target IP address on virbr2 (default: $$TARGET_IP3): " INPUT_TARGET_IP3;
+			INPUT_TARGET_IP3=$${INPUT_TARGET_IP3:-$$TARGET_IP3};
+			sed -i "s/TARGET_IP3/$$INPUT_TARGET_IP3/" $@;
+
 			break;
 		elif [ "$$MULTIPATH" = "n" ]; then
 			break;

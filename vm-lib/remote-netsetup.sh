@@ -38,7 +38,7 @@ if [[ -n "$IF2" && "$(nmcli conn show | grep $IF2)" == *"$IF2"* ]]; then
 	nmcli con delete "$CCON"
 	nmcli con add type ethernet con-name $IF2 ifname $IF2 ipv4.addresses $IP2 ipv4.method manual ipv6.method shared
 	nmcli con up "$IF2"
-else
+elif [[ -n "$IF2" ]] ; then
 	CONN2="$(nmcli dev status | grep $IF2)"
 	if [[ "$CONN2" == *"$IF2"* ]]; then
 			nmcli con add type ethernet con-name $IF2 ifname $IF2 ipv4.addresses $IP2 ipv4.method manual ipv6.method shared
@@ -54,7 +54,7 @@ if [[ -n "$IF3" && "$(nmcli conn show | grep $IF3)" == *"$IF3"* ]]; then
 	nmcli con delete "$CCON"
 	nmcli con add type ethernet con-name $IF3 ifname $IF3 ipv4.addresses $IP3 ipv4.method manual ipv6.method shared
 	nmcli con up "$IF3"
-else
+elif [[ -n "$IF3" ]] ; then
 	CONN2="$(nmcli dev status | grep $IF3)"
 	if [[ "$CONN2" == *"$IF3"* ]]; then
 		nmcli con add type ethernet con-name $IF3 ifname $IF3 ipv4.addresses $IP3 ipv4.method manual ipv6.method shared

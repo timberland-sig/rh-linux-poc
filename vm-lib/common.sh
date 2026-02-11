@@ -94,24 +94,41 @@ bridge_iface() {
 
         if [[ "$netdev" == *"local"* ]]; then
             echo " : local - skipping bridged network setup"
+	    sudo nmcli conn add type bridge ifname ${br_name} con-name ${br_name} stp yes autoconnect yes
+	    local br_conn=${br_name}
         else
             if ! nmcli dev show $netdev &>/dev/null ; then
                 echo "Interface '$netdev' does not exist!"
                 exit 1
             fi
+	    # ip link set $netdev promisc on
 
-            if check_conn $netdev; then
-                MAC=$(nmcli -t -f general.hwaddr -e yes dev show $netdev | sed 's/^GENERAL.HWADDR://')
-                sudo nmcli dev down $netdev
-                sudo nmcli con add type bridge ifname ${br_name} autoconnect yes stp off ethernet.cloned-mac-address $MAC
-                sudo nmcli con add type bridge-slave ifname $netdev master ${br_name}
-                sudo nmcli con up bridge-${br_name}
-                sudo nmcli con up bridge-slave-${netdev}
-            else
-                echo "Interface $netdev is down!"
-                echo " try: nmcli con add type ethernet ifname $netdev con-name $netdev autoconnect yes"
-                exit 1
-            fi
+	    local MAC=$(nmcli -t -f general.hwaddr -e yes dev show $netdev | sed 's/^GENERAL.HWADDR://')
+	    local br_conn="${br_name}"
+	    sudo nmcli dev down $netdev || true
+	    sudo nmcli con add type bridge ifname ${br_name} con-name ${br_name} autoconnect yes stp off ethernet.cloned-mac-address $MAC
+	    sudo nmcli con add type bridge-slave ifname $netdev con-name bridge-slave-${netdev} master ${br_name}
+	    sudo nmcli con up ${br_name}
+	    sudo nmcli con up bridge-slave-${netdev}
         fi
+	case ${br_name} in
+	    virbr1)
+		    local ip_addr_default=$HOSTGW_CIDR2;;
+            virbr2)
+                    local ip_addr_default=$HOSTGW_CIDR3;;
+            *)
+                    local ip_addr_default='dhcp';;
+        esac
+	echo ""
+	read -r -p "Enter the IP address in CIDR notation of the hypervisor (this machine) on the ${br_name} network or \"dhcp\" to keep dynamic addressing (default: ${ip_addr_default}): " ip_addr
+
+	ip_addr=${ip_addr:-$ip_addr_default}
+        if [ ${ip_addr} = 'dhcp' ]; then
+	    sudo nmcli conn modify ${br_conn} ipv4.method auto ipv6.method shared
+            return 0
+	elif [ ${netdev} != 'local' ] ; then
+	    sudo nmcli conn modify ${br_conn} ipv4.method manual ipv6.method shared ipv4.addresses ${ip_addr}
+	    sudo nmcli dev reapply ${br_conn}
+	fi
     fi
 }
