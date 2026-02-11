@@ -70,6 +70,10 @@ nmcli g hostname $VMNAME
 ip -h -c -o -br address show
 
 cat hosts.txt >> /etc/hosts
+if [ -f $HOME/hostid ] ; then
+       /bin/cp -f hostid /etc/nvme	# 'cp' may be aliased to 'cp -i'
+fi
+
 
 if [[ $(grep EDITOR ~/.bashrc) =~ vim ]] ; then
    echo "$EDITOR"
@@ -80,4 +84,4 @@ else
 	sed -i "s/# %wheel/%wheel/g" /etc/sudoers
 fi
 
-dnf install -y nvme-cli nvmetcli libnvme && echo "$TARGETID" > /etc/nvme/hostid
+dnf install -y nvme-cli nvmetcli libnvme
