@@ -90,6 +90,40 @@ firmware via the NBFT table.
      ----------------------      |                     |      -------------------------
                                  -----------------------
 ```
+
+When connecting to a physical storage array:
+
+```
+                                             host-gw
+           host-vm               ----------------------------------
+     ----------------------      |         hypervisor             |
+     |     QEMU+UEFI      |      |                                |
+     |                 enp0s4 <--|--- br0 WAN (dhcp) -------------|--+
+     |      nvme0n1       |      |                                |  |
+     |      EFIDISK       |      |         eth0         eth1      |  |
+     |                    |      |          |            |        |  |
+     |  NVMe/TCP host     |      |          |            |        |  |
+     |        |        enp0s5 <--|----------+ virbr1     |        |  |
+     |        |           |      |          |            |        |  |
+     |     nvme1n1     enp0s6 <--|-----------------------+ virbr2 |  |
+     |     rootfs         |      |          |            |        |  |
+     |                    |      |          |            |        |  |
+     ----------------------      -----------|------------|---------  |
+                                            |            |           |
+                                            |            |           |
+                                           \|/          \|/         \|/
+                                            |            |           |
+                                        ---------------------------------
+                                        |        Storage Array          |
+                                        |                               |
+                                        |         NVMe/TCP target       |
+                                        |          port0   port1        |
+                                        |            |       |          |
+                                        |            nvme1n1            |
+                                        |         host-vm rootfs        |
+                                        |                               |
+                                        ---------------------------------
+```
 # Directories and files
 
 Directories and files are explained here:
@@ -126,16 +160,24 @@ an error, correct the problem and run it again.
 
 Run `./setup.sh net` - This will modify your hypervisor network configuration and
 create three bridged networks. Run this script with caution because it will
-change your network config.  You should not run this script from a remote shell
-because the 'br0' network will be disconnected and reconfigured by this script.
-It is best to run this script from the console login. When in doubt, configure
-the bridged networks yourself, manually.
+change your network config. Running this script from a remote shell may
+disconnect your session. When in doubt, configure the bridged networks yourself, manually.
+
+During setup, you will be prompted to configure IP addresses for each bridge. You can:
+- enter an IP address in CIDR notation (e.g., `192.168.101.1/24`) for static addressing,
+- enter `dhcp` to use dynamic addressing,
+- press `Enter` to accept the default value.
+
+This enables connecting virtual bridges to physical network interfaces, allowing the `host-vm` to access external NVMe targets on the network.
+
+**CAUTION:** Mistyping the IP addresses is the most common configuration mistake we encounter.
+If you find NVMe/TCP boot not working later, please double-check all IP address configurations.
 
 | Network  | Decription |
 | :-----   | :----      |
 | `br0`    | A bridged public gateway network that requires DHCP  |
-| `virbr1` | a virtual bridged network with the static address `192.168.101.1/24` |
-| `virbr2` | a virtual bridged network with the static address `192.168.110.1/24` |
+| `virbr1` | a virtual bridged network (default: static address `192.168.101.1/24`) |
+| `virbr2` | a virtual bridged network (default: static address `192.168.110.1/24`) |
 
 Run `./setup.sh virt` - This script will install the needed qemu-kvm packages
 and change the permissions of `/etc/qemu/bridge.conf` and
@@ -304,9 +346,24 @@ make setup
 ```
 The setup will show a few prompts with which you can customize the boot attempt configuration.
 ```
+Host IP address on virbr1 (default: ...):
+```
+Press `Enter` to use the default or enter a custom IP address. This allows connecting to physical storage arrays instead of the virtual target-vm.
+```
+Target IP address on virbr1 (default: ...):
+```
+Press `Enter` to use the default target-vm address or enter the IP of another NVMe target.
+```
 Enable multipath? (y/n):
 ```
 Respond `y` to enable to test with multipath network connection for redundancy.
+
+If multipath is enabled, you will also be prompted for:
+```
+Host IP address on virbr2 (default: ...):
+Target IP address on virbr2 (default: ...):
+```
+Press `Enter` for defaults or customize for your intended setup.
 ```
 Connection timeout (default: 3000):
 ```
@@ -454,6 +511,15 @@ should not need to be programmed by running `startup.nsh` again. To boot the
 In case of boot issues (e.g. the remote drive not showing in the Boot manager),
 type `reset -w` in the `Shell>` prompt to
 do a warm restart. The firmware variables will be reloaded and the `host-vm` should immediately find the remote disk and boot with NVMe/TCP.
+
+## Resetting the POC configuration
+
+To reset the network configuration and ensure test repeatability, run:
+```
+./teardown.sh net
+```
+
+This will remove all bridge interfaces and restore the original network configuration. The SSH key created during setup is preserved and must be removed manually if needed.
 
 # For developers
 
