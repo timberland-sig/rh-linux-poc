@@ -90,6 +90,12 @@ revert_network() {
     echo ""
     echo "Note: The SSH key at $DIR/.ssh/id_ecdsa was created by setup but is not removed"
     echo "      by this script as it may be in use. Remove it manually if needed."
+    echo ""
+    echo "nmcli dev"
+    nmcli dev
+    echo ""
+    echo "nmcli conn"
+    nmcli conn
 }
 
 while getopts "h" opt; do
