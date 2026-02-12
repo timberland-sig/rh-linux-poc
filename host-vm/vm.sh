@@ -139,6 +139,9 @@ fi
 # Remaining arguments are QARGS
 QARGS="$@"
 
+# Check QEMU installation and find the bridge helper
+check_qemu_command
+
 # Setup network configuration based on NET_CONN
 case "$NET_CONN" in
     localhost)
@@ -157,8 +160,6 @@ if [[ "$MODE" == "install" ]]; then
     [ -n "$ISO_FILE" ] || find_iso
     CDROM="-cdrom $ISO_FILE"
 fi
-
-check_qemu_command
 
 if [ ! -f eficonfig/NvmeOfCli.efi ]; then
     echo "Error: $PWD/eficonfig/NvmeOfCli.efi not found!"
