@@ -296,6 +296,5 @@ if [ $NET_CONN = 'bridged' ] ; then
 	echo ""
 fi
 
-$DIR/../vm-lib/netsetup.sh "$HOST_IP1"
 echo " The setup is finished now. Enjoy using your test environment!"
 echo ""
