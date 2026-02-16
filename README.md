@@ -234,11 +234,10 @@ and correctly working.
 ## The ./netsetup.sh script
 
 During the installation of both VMs the `./vm-lib/netsetup.sh` script will be
-run.  This script will create a VM specific network configuration for that VM.
+run. This script will create a VM specific network configuration for that VM.
 It is important to specify the `ipaddr` parameter correctly.
 
-This script is ran automatically after the installation of a VM. It can be ran
-manually as well, but **make sure you run it from the correct working directory** (`target-vm/` or `host-vm/`)
+**Make sure you run it from the correct working directory** (`target-vm/` or `host-vm/`)
 
 ```
  Usage: netsetup.sh <ipaddr | localhost>
@@ -252,9 +251,9 @@ manually as well, but **make sure you run it from the correct working directory*
    configured on the hypervisor. See "./install.sh" help for more information.
 
    E.g.:
-          ./vm-lib/netsetup.sh 192.168.0.63
-          ./vm-lib/netsetup.sh 10.16.188.66
-          ./vm-lib/netsetup.sh localhost
+          ./netsetup.sh 192.168.0.63
+          ./netsetup.sh 10.16.188.66
+          ./netsetup.sh localhost
 ```
 
 ## Create the `target-vm`
@@ -310,17 +309,15 @@ enp0s6           UP             fe80::6e22:d7dd:43f0:5e21/64
 
 ### Step 3 Run `./netsetup.sh` on the hypervisor
 
-The `./netsetup.sh` utility is ran on the hypervisor in the `target-vm` directory. It is ran automatically by default,
-but only once. If you ran `make start` with `NET_TYPE=bridged`, you
+The `./netsetup.sh` utility is ran on the hypervisor in the `target-vm` directory. If you ran `make start` with `NET_TYPE=bridged`, you
 will be prompted for the IP address of the `target-vm`. You obtained that in the previous step from the `ip -br addr show`
 command on the `target-vm`. The script leverages password-less login using SSH keys. You will only be prompted
 for the `root` password once.
 
-You can run this script yourself too.
 Example:
 
 ```
-../vm-lib/netsetup.sh 192.168.0.63
+./netsetup.sh 192.168.0.63
 ```
 
 The `target-vm` should now be ready to serve the NVMe soft target. If you reboot the machine, a systemd service
@@ -458,7 +455,7 @@ enp0s6           UP
 
 ### Step 2 Run `./netsetup.sh` on the hypervisor
 
-The `./netsetup.sh` utility is ran on the hypervisor in the `host-vm` directory. It is ran automatically by default, but only once. If you ran `make start` with `NET_TYPE=bridged`, you
+The `./netsetup.sh` utility is ran on the hypervisor in the `host-vm` directory. If you ran `make start` with `NET_TYPE=bridged`, you
 will be prompted for the IP address of the `host-vm`. You obtained that in the previous step from the `ip -br addr show`
 command on the `host-vm`. The script leverages password-less login using SSH keys. You will only be prompted
 for the `root` password once.

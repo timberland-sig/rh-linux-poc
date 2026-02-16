@@ -17,7 +17,7 @@ if [ $# -lt 1 ] ; then
     echo " "
     echo " Configures the network of $VMNAME"
     echo " "
-    echo "  ipaddr - dhcp assigned ipv4 address of $VMNAME"
+    echo "  ipaddr - dhcp assigned IPv4 address of $VMNAME"
     echo "           - corresponds to br0 on the hypervisor host"
     echo ""
     echo "   Passing \"localhost\" in the ipaddr field is used with there is no br0 interface"
@@ -63,19 +63,14 @@ case "$1" in
 esac
 chmod 644 .build/hosts.txt
 
-if ! [ -f .net ] ; then
-    ssh-keygen -R "${SSH_KNOWN_HOST_ID}"
+ssh-keygen -R "${SSH_KNOWN_HOST_ID}"
+ssh-copy-id -i $DIR/../.ssh/id_ecdsa.pub ssh://${SSH_TARGET}
 
-    until ssh-copy-id -i $DIR/../.ssh/id_ecdsa.pub ssh://${SSH_TARGET} ; do
-        echo "Waiting for SSH connection..."
-        sleep 5
-    done
-
-    case "$VMNAME" in
-        target-vm)
-            make --makefile="$PWD/Makefile" .build/tcp.json
-            scp -i $DIR/../.ssh/id_ecdsa -o StrictHostKeyChecking=no .build/{tcp.json,hosts.txt} $PWD/start-nvme-target.service $PWD/start-nvme-target.sh $DIR/../vm-lib/remote-netsetup.sh scp://${SSH_TARGET}
-            ssh -t -i $DIR/../.ssh/id_ecdsa ssh://${SSH_TARGET} "
+case "$VMNAME" in
+    target-vm)
+        make --makefile="$PWD/Makefile" .build/tcp.json
+        scp -i $DIR/../.ssh/id_ecdsa -o StrictHostKeyChecking=no .build/{tcp.json,hosts.txt} $PWD/start-nvme-target.service $PWD/start-nvme-target.sh $DIR/../vm-lib/remote-netsetup.sh scp://${SSH_TARGET}
+        ssh -t -i $DIR/../.ssh/id_ecdsa ssh://${SSH_TARGET} "
 set -e
 . remote-netsetup.sh $TARGET_MAC2 $TARGET_MAC3 \"$TARGET_CIDR2\" \"$TARGET_CIDR3\"
 cp start-nvme-target.sh /usr/local/bin
@@ -87,19 +82,17 @@ systemctl daemon-reload
 systemctl enable --now start-nvme-target.service
 systemctl status start-nvme-target.service
 dmesg | grep nvmet"
-        ;;
-        host-vm)
-            scp -i $DIR/../.ssh/id_ecdsa -o StrictHostKeyChecking=no .build/* $DIR/../vm-lib/remote-netsetup.sh scp://${SSH_TARGET}
-            ssh -t -i $DIR/../.ssh/id_ecdsa ssh://${SSH_TARGET} "\
-                . remote-netsetup.sh $HOST_MAC2 $HOST_MAC3 \"$HOST_CIDR2\" \"$HOST_CIDR3\""
-        ;;
-        *)
-            # This should never be reached
-            exit 500
-        ;;
-    esac
-    touch $PWD/.net
-fi
+    ;;
+    host-vm)
+        scp -i $DIR/../.ssh/id_ecdsa -o StrictHostKeyChecking=no .build/* $DIR/../vm-lib/remote-netsetup.sh scp://${SSH_TARGET}
+        ssh -t -i $DIR/../.ssh/id_ecdsa ssh://${SSH_TARGET} "\
+	    . remote-netsetup.sh $HOST_MAC2 $HOST_MAC3 \"$HOST_CIDR2\" \"$HOST_CIDR3\""
+    ;;
+    *)
+        # This should never be reached
+        exit 500
+    ;;
+esac
 
 echo ""
 echo "Use \"ssh -i $(realpath $PWD/../.ssh/id_ecdsa) ssh://${SSH_TARGET}\" to login to the $VMNAME"
