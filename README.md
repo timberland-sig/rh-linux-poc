@@ -95,34 +95,34 @@ When connecting to a physical storage array:
 
 ```
                                              host-gw
-           host-vm               ----------------------------------
-     ----------------------      |         hypervisor             |
-     |     QEMU+UEFI      |      |                                |
-     |                 enp0s4 <--|--- br0 WAN (dhcp) -------------|--+
-     |      nvme0n1       |      |                                |  |
-     |      EFIDISK       |      |         eth0         eth1      |  |
-     |                    |      |          |            |        |  |
-     |  NVMe/TCP host     |      |          |            |        |  |
-     |        |        enp0s5 <--|----------+ virbr1     |        |  |
-     |        |           |      |          |            |        |  |
-     |     nvme1n1     enp0s6 <--|-----------------------+ virbr2 |  |
-     |     rootfs         |      |          |            |        |  |
-     |                    |      |          |            |        |  |
-     ----------------------      -----------|------------|---------  |
-                                            |            |           |
-                                            |            |           |
-                                           \|/          \|/         \|/
-                                            |            |           |
-                                        ---------------------------------
-                                        |        Storage Array          |
-                                        |                               |
-                                        |         NVMe/TCP target       |
-                                        |          port0   port1        |
-                                        |            |       |          |
-                                        |            nvme1n1            |
-                                        |         host-vm rootfs        |
-                                        |                               |
-                                        ---------------------------------
+           host-vm               ---------------------------------
+     ----------------------      |         hypervisor            |
+     |     QEMU+UEFI      |      |                        br0    |
+     |                 enp0s4 <--|------- WAN (dhcp) ------+     |
+     |      nvme0n1       |      |                         |     |
+     |      EFIDISK       |      |                         |     |
+     |                    |      |                         |     |
+     |  NVMe/TCP host     |      |        virbr1           |     |
+     |        |        enp0s5 <--|-- LAN --+               |     |
+     |        |           |      |         |      virbr2   |     |
+     |     nvme1n1     enp0s6 <--|-- LAN -----------+      |     |
+     |     rootfs         |      |         |        |      |     |
+     |                    |      |         |        |      |     |
+     ----------------------      ---------eth0-----eth1---eno*----
+                                           |        |      |
+                                           |        |      |
+                                          \|/      \|/    \|/
+                                           |        |      |
+                                   ---------------------------------
+                                   |        Storage Array          |
+                                   |                               |
+                                   |         NVMe/TCP target       |
+                                   |          port0   port1        |
+                                   |            |       |          |
+                                   |             nvme1n1           |
+                                   |         host-vm rootfs        |
+                                   |                               |
+                                   ---------------------------------
 ```
 # Directories and files
 
