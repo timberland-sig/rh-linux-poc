@@ -70,72 +70,95 @@ eficonfig/config: eficonfig/config.in eficonfig/config2.in
 	source ../global_vars.sh
 	sed -i "s/HOSTNQN/$$HOSTNQN/" $@
 	sed -i "s/HOSTID/$$HOSTID/" $@
-	sed -i "s/HOST_MAC2/$$HOST_MAC2/" $@
 
-	read -p "Host IP address on virbr1 (default: $$HOST_IP2): " INPUT_HOST_IP2
-	INPUT_HOST_IP2=$${INPUT_HOST_IP2:-$$HOST_IP2}
-	sed -i "s/HOST_IP2/$$INPUT_HOST_IP2/" $@
+	echo -e "\033[1;33mhost-vm host NQN: $$HOSTNQN\033[0m"
+	echo -e "\033[1;33mhost-vm host ID:  $$HOSTID\033[0m"
+	echo ""
 
-	sed -i "s/HOSTGW_IP2/0.0.0.0/" $@
+# Function to configure a boot attempt
+	configure_attempt() {
+		local num=$$1
+		local mac_default=$$2
+		local ip_default=$$3
+		local target_default=$$4
+		if [ $$num -gt 1 ]; then
+			echo ""
+			while true; do
+				read -p "Configure boot attempt number $$num? (y/n): " ANSWER
+				if [ "$$ANSWER" = "y" ]; then
+					break
+				elif [ "$$ANSWER" = "n" ]; then
+					return 1
+				fi
+			done
+		fi
+		echo "=== Configuring Boot Attempt $$num ==="
+		if [ "$$num" != "1" ]; then
+			cat eficonfig/config2.in >> $@
+			sed -i "s/AttemptX/Attempt$$num/" $@
+		fi
+		if [ -n "$$mac_default" ]; then
+			read -p "MAC address (default: $$mac_default): " INPUT_MAC
+			INPUT_MAC=$${INPUT_MAC:-$$mac_default}
+		else
+			read -p "MAC address: " INPUT_MAC
+		fi
+		sed -i "s/HOST_MAC/$$INPUT_MAC/" $@
+		if [ -n "$$ip_default" ]; then
+			read -p "Host IP address (default: $$ip_default): " INPUT_IP
+			INPUT_IP=$${INPUT_IP:-$$ip_default}
+		else
+			read -p "Host IP address: " INPUT_IP
+		fi
+		sed -i "s/HOST_IP/$$INPUT_IP/" $@
+		sed -i "s/HOSTGW_IP/0.0.0.0/" $@
+		if [ -n "$$target_default" ]; then
+			read -p "Target IP address (default: $$target_default): " INPUT_TARGET
+			INPUT_TARGET=$${INPUT_TARGET:-$$target_default}
+		else
+			read -p "Target IP address: " INPUT_TARGET
+		fi
+		sed -i "s/TARGET_IP/$$INPUT_TARGET/" $@
+		while true; do
+			read -p "Use discovery NQN? (y/n): " DISCOVERY
+			if [ "$$DISCOVERY" = "y" ]; then
+				NQN_VALUE="nqn.2014-08.org.nvmexpress.discovery"
+				break
+			elif [ "$$DISCOVERY" = "n" ]; then
+				read -p "Subsystem NQN (default: $$SUBNQN): " INPUT_NQN
+				NQN_VALUE=$${INPUT_NQN:-$$SUBNQN}
+				break
+			fi
+		done
+		sed -i "s/SUBNQN/$$NQN_VALUE/" $@
+		return 0
+	}
 
-	read -p "Target IP address on virbr1 (default: $$TARGET_IP2): " INPUT_TARGET_IP2
-	INPUT_TARGET_IP2=$${INPUT_TARGET_IP2:-$$TARGET_IP2}
-	sed -i "s/TARGET_IP2/$$INPUT_TARGET_IP2/" $@
-
-	while true; do
-		read -p "Enable multipath? (y/n): " MULTIPATH;
-		if [ "$$MULTIPATH" = "y" ]; then
-			cat eficonfig/config2.in >> $@;
-			sed -i "s/HOST_MAC3/$$HOST_MAC3/" $@;
-
-			read -p "Host IP address on virbr2 (default: $$HOST_IP3): " INPUT_HOST_IP3;
-			INPUT_HOST_IP3=$${INPUT_HOST_IP3:-$$HOST_IP3};
-			sed -i "s/HOST_IP3/$$INPUT_HOST_IP3/" $@;
-
-			sed -i "s/HOSTGW_IP3/0.0.0.0/" $@
-
-			read -p "Target IP address on virbr2 (default: $$TARGET_IP3): " INPUT_TARGET_IP3;
-			INPUT_TARGET_IP3=$${INPUT_TARGET_IP3:-$$TARGET_IP3};
-			sed -i "s/TARGET_IP3/$$INPUT_TARGET_IP3/" $@;
-
-			break;
-		elif [ "$$MULTIPATH" = "n" ]; then
-			break;
-		fi;
-	done
+# Configure boot attempts
+	-configure_attempt 1 "$$HOST_MAC2" "$$HOST_IP2" "$$TARGET_IP2" && \
+	configure_attempt 2 "$$HOST_MAC3" "$$HOST_IP3" "$$TARGET_IP3" && \
+	configure_attempt 3 "" "" "" && \
+	configure_attempt 4 "" "" ""
 
 	read -p "Connection timeout (default: 3000): " TIMEOUT
 	TIMEOUT=$${TIMEOUT:-3000}
 	sed -i "s/TIMEOUT/$$TIMEOUT/" $@;
 
-	while true; do
-		read -p "Use discovery NQN? (y/n): " DISCOVERY
-		if [ "$$DISCOVERY" = "y" ]; then
-			sed -i "s/SUBNQN/nqn.2014-08.org.nvmexpress.discovery/" $@
-			sed -i "s/SUBNQN/nqn.2014-08.org.nvmexpress.discovery/" $@
-			break
-		elif [ "$$DISCOVERY" = "n" ]; then
-			sed -i "s/SUBNQN/$$SUBNQN/" $@
-			sed -i "s/SUBNQN/$$SUBNQN/" $@
-			break
-		fi
-	done
-
-	while true; do
-		echo "1 -> Set NID to NSUUID=$$NSUUID"
-		echo "2 -> Set NID to NSNGUID=$$NSNGUID"
-		echo "n -> Do not set NID."
-		read -p "Set NID? (1/2/n): " NID
-		if [ "$$NID" = "1" ]; then
-			sed -Ei "/ConnectTimeout:[0-9]+/i\NID:$$NSUUID" $@
-			break
-		elif [ "$$NID" = "2" ]; then
-			sed -Ei "/ConnectTimeout:[0-9]+/i\NID:$$NSNGUID" $@
-			break
-		elif [ "$$NID" = "n" ]; then
-			break
-		fi
-	done
+# 	while true; do
+# 		echo "1 -> Set NID to NSUUID=$$NSUUID"
+# 		echo "2 -> Set NID to NSNGUID=$$NSNGUID"
+# 		echo "n -> Do not set NID."
+# 		read -p "Set NID? (1/2/n): " NID
+# 		if [ "$$NID" = "1" ]; then
+# 			sed -Ei "/ConnectTimeout:[0-9]+/i\NID:$$NSUUID" $@
+# 			break
+# 		elif [ "$$NID" = "2" ]; then
+# 			sed -Ei "/ConnectTimeout:[0-9]+/i\NID:$$NSNGUID" $@
+# 			break
+# 		elif [ "$$NID" = "n" ]; then
+# 			break
+# 		fi
+# 	done
 
 	@echo ""
 	@echo "EFI Configuration file created successfully"
