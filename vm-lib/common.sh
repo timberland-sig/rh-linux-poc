@@ -38,6 +38,36 @@ function check_conn() {
     esac
 }
 
+# validate IPv4 CIDR notation
+validate_cidr() {
+    local cidr="$1"
+
+    # Check if CIDR notation format is correct (xxx.xxx.xxx.xxx/yy)
+    if ! [[ "$cidr" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}/[0-9]{1,2}$ ]]; then
+        return 1
+    fi
+
+    # Extract IP address and prefix length
+    local ip="${cidr%/*}"
+    local prefix="${cidr#*/}"
+
+    # Validate prefix length (0-32 for IPv4)
+    if [ "$prefix" -lt 0 ] || [ "$prefix" -gt 32 ]; then
+        return 1
+    fi
+
+    # Validate each octet of the IP address (0-255)
+    local IFS='.'
+    local -a octets=($ip)
+    for octet in "${octets[@]}"; do
+        if [ "$octet" -lt 0 ] || [ "$octet" -gt 255 ]; then
+            return 1
+        fi
+    done
+
+    return 0
+}
+
 check_qargs() {
     if [  -f .qargs ]; then
         QARGS="$(cat .qargs)"
@@ -120,9 +150,15 @@ bridge_iface() {
                     local ip_addr_default='dhcp';;
         esac
 	echo ""
-	read -r -p "Enter the IP address in CIDR notation of the hypervisor (this machine) on the ${br_name} network or \"dhcp\" to keep dynamic addressing (default: ${ip_addr_default}): " ip_addr
+	while true; do
+	    read -r -p "Enter the IP address in CIDR notation of the hypervisor (this machine) on the ${br_name} network or \"dhcp\" to keep dynamic addressing (default: ${ip_addr_default}): " ip_addr
+	    ip_addr=${ip_addr:-$ip_addr_default}
+	    if [ "${ip_addr}" = 'dhcp' ] || validate_cidr "${ip_addr}"; then
+	        break
+	    fi
+	    echo "Error: Invalid CIDR notation. Please enter a valid IPv4 address in CIDR format (e.g., 192.168.101.1/24) or \"dhcp\"."
+	done
 
-	ip_addr=${ip_addr:-$ip_addr_default}
         if [ ${ip_addr} = 'dhcp' ]; then
 	    sudo nmcli conn modify ${br_conn} ipv4.method auto ipv6.method shared
             return 0
