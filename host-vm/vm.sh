@@ -182,7 +182,7 @@ if [ "$OS_LOCATION" = "local" ] ; then
     if [ -f "$BOOT_DISK" ] ; then
         echo "using $BOOT_DISK"
         BOOT_DISK=$(cat << EOF
--device nvme,drive=NVME1,max_ioqpairs=4,physical_block_size=4096,logical_block_size=4096,use-intel-id=on,serial=$SN4
+-device nvme,drive=NVME1,max_ioqpairs=4,physical_block_size=4096,logical_block_size=4096,use-intel-id=on,serial=$SN4 \
 -drive file=$BOOT_DISK,if=none,id=NVME1
 EOF
         )
@@ -225,6 +225,7 @@ for ((i=0; i<${#QARGS_ARRAY[@]}; i++)); do
     fi
 done
 
+cat > .build/start-vm.sh << EOF
 $QEMU -name $VMNAME -M q35 -accel kvm -cpu host -m 4G -smp 4 $QARGS \
 -uuid $HOST_SYS_UUID \
 $BOOT_OPTIONS \
@@ -242,6 +243,10 @@ $NET2_NET \
 $NET2_DEV &
 
 disown %1
+EOF
+
+chmod +x .build/start-vm.sh
+. .build/start-vm.sh
 
 if [ -n "$VNC_DISPLAY" ]; then
     VNC_PORT=$((5900 + VNC_DISPLAY))
