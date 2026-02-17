@@ -180,7 +180,7 @@ if [ "$MODE" == "start" ]; then
     fi
 
     NBFT_DRIVE_OPTIONS=$(cat << EOF
--device nvme,drive=NVME2,addr=0x08,max_ioqpairs=4,physical_block_size=4096,logical_block_size=4096,use-intel-id=on,serial=$SN1
+-device nvme,drive=NVME2,addr=0x08,max_ioqpairs=4,physical_block_size=4096,logical_block_size=4096,use-intel-id=on,serial=$SN1 \
 -drive file=$NBFT_DISK,if=none,id=NVME2
 EOF
     )
@@ -209,21 +209,23 @@ for ((i=0; i<${#QARGS_ARRAY[@]}; i++)); do
     fi
 done
 
-qemu_command() {
-    $QEMU -name $VMNAME -M q35 -accel kvm -bios OVMF-pure-efi.fd -cpu host -m 4G -smp 4 $QARGS \
-    -uuid $TARGET_SYS_UUID \
-    $BOOT_OPTIONS \
-    -device nvme,drive=NVME1,addr=0x07,max_ioqpairs=4,physical_block_size=4096,use-intel-id=on,serial=$SN0 \
-    -drive file=$BOOT_DISK,if=none,id=NVME1 \
-    $NBFT_DRIVE_OPTIONS \
-    ${EXTRA_NVMES[@]} \
-    $NET0_NET \
-    $NET0_DEV \
-    $NET1_NET \
-    $NET1_DEV \
-    $NET2_NET \
-    $NET2_DEV
-}
+cat - > .build/start-vm.sh << EOF
+$QEMU -name $VMNAME -M q35 -accel kvm -bios OVMF-pure-efi.fd -cpu host -m 4G -smp 4 $QARGS \
+-uuid $TARGET_SYS_UUID \
+$BOOT_OPTIONS \
+-device nvme,drive=NVME1,addr=0x07,max_ioqpairs=4,physical_block_size=4096,use-intel-id=on,serial="$SN0" \
+-drive file=$BOOT_DISK,if=none,id=NVME1 \
+$NBFT_DRIVE_OPTIONS \
+${EXTRA_NVMES[@]} \
+$NET0_NET \
+$NET0_DEV \
+$NET1_NET \
+$NET1_DEV \
+$NET2_NET \
+$NET2_DEV
+EOF
+
+chmod +x .build/start-vm.sh
 
 if [ -n "$VNC_DISPLAY" ]; then
     VNC_PORT=$((5900 + VNC_DISPLAY))
@@ -233,9 +235,9 @@ if [ -n "$VNC_DISPLAY" ]; then
 fi
 
 if $RUN_FOREGROUND; then
-    qemu_command
+    . .build/start-vm.sh
 else
-    qemu_command &
+    . .build/start-vm.sh &
     disown %1
 fi
 
