@@ -8,7 +8,7 @@ TargetPort:TARGET_PORT
 Enabled:1
 IpMode:0
 LocalIp:HOST_IP
-SubnetMask:255.255.255.0
+SubnetMask:SUBNET_MASK
 Gateway:HOSTGW_IP
 TargetIp:TARGET_IP
 NQN:SUBNQN

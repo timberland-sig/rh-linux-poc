@@ -105,6 +105,91 @@ find_iso() {
     fi
 }
 
+# Convert CIDR prefix length to dotted decimal subnet mask
+cidr_to_netmask() {
+    local prefix="$1"
+    local mask=""
+    local full_octets=$((prefix / 8))
+    local partial_octet=$((prefix % 8))
+
+    # Add full octets (255)
+    for ((i=0; i<full_octets; i++)); do
+        mask="${mask}255."
+    done
+
+    # Add partial octet if needed
+    if [ $partial_octet -gt 0 ]; then
+        local value=$((256 - 2**(8-partial_octet)))
+        mask="${mask}${value}."
+    fi
+
+    # Fill remaining octets with 0
+    while [ $(echo -n "$mask" | tr -cd '.' | wc -c) -lt 4 ]; do
+        mask="${mask}0."
+    done
+
+    # Remove trailing dot
+    echo "${mask%.}"
+}
+
+# Validate subnet mask (accepts both CIDR bits and dotted decimal)
+# Returns 0 if valid, 1 if invalid
+validate_subnet_mask() {
+    local mask="$1"
+
+    # Check if it's a number (CIDR notation)
+    if [[ "$mask" =~ ^[0-9]+$ ]]; then
+        if [ "$mask" -ge 1 ] && [ "$mask" -le 31 ]; then
+            return 0
+        fi
+        return 1
+    fi
+
+    # Check if it's dotted decimal format
+    if ! [[ "$mask" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}$ ]]; then
+        return 1
+    fi
+
+    # Validate each octet (0-255)
+    local IFS='.'
+    local -a octets=($mask)
+    if [ ${#octets[@]} -ne 4 ]; then
+        return 1
+    fi
+
+    for octet in "${octets[@]}"; do
+        if [ "$octet" -lt 0 ] || [ "$octet" -gt 255 ]; then
+            return 1
+        fi
+    done
+
+    # Validate that it's a valid subnet mask (contiguous 1s followed by 0s)
+    local binary=""
+    for octet in "${octets[@]}"; do
+        binary="${binary}$(printf '%08d' $(echo "obase=2; $octet" | bc))"
+    done
+
+    # Check for pattern: 1s followed by 0s
+    if ! [[ "$binary" =~ ^1*0*$ ]] || [[ "$binary" =~ ^0+$ ]]; then
+        return 1
+    fi
+
+    return 0
+}
+
+# Normalize subnet mask to dotted decimal format
+# Converts CIDR bits to dotted decimal if needed
+normalize_subnet_mask() {
+    local mask="$1"
+
+    # If it's a number, convert to dotted decimal
+    if [[ "$mask" =~ ^[0-9]+$ ]]; then
+        cidr_to_netmask "$mask"
+    else
+        echo "$mask"
+    fi
+}
+
 generate_serial_number() {
     hexdump -vn8 -e'4/4 "%08X" 1 "\n"' /dev/urandom
 }
