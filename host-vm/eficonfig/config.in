@@ -4,7 +4,7 @@ $Start
 AttemptName:Attempt1
 HostName:host-vm
 MacString:HOST_MAC
-TargetPort:4420
+TargetPort:TARGET_PORT
 Enabled:1
 IpMode:0
 LocalIp:HOST_IP
