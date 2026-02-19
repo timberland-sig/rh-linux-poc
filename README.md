@@ -168,7 +168,8 @@ During setup, you will be prompted to configure IP addresses for each bridge. Yo
 - enter `dhcp` to use dynamic addressing,
 - press `Enter` to accept the default value.
 
-This enables connecting virtual bridges to physical network interfaces, allowing the `host-vm` to access external NVMe targets on the network.
+This enables connecting virtual bridges to physical network interfaces, allowing the `host-vm` to access external NVMe targets on the network. For example, if you have an NVMe storage array reachable via one the network interfaces, you may choose
+to bridge `virbr1` or `virbr2` with that interface and thus obtain the ability to test NVMe/TCP boot from that storage array.
 
 **CAUTION:** Mistyping the IP addresses is the most common configuration mistake we encounter.
 If you find NVMe/TCP boot not working later, please double-check all IP address configurations.
@@ -341,41 +342,37 @@ First run:
 ```
 make setup
 ```
-The setup will show a few prompts with which you can customize the boot attempt configuration.
+The setup allows configuring up to 4 boot attempts. The first two can be easily configured using defaults.
+For each boot attempt, you will be prompted with:
 ```
-Host IP address on virbr1 (default: ...):
+MAC address (default: ...):
 ```
-Press `Enter` to use the default or enter a custom IP address. This allows connecting to physical storage arrays instead of the virtual target-vm.
+Press `Enter` to use the default or enter a custom MAC address.
 ```
-Target IP address on virbr1 (default: ...):
+Host IP address (default: ...):
+```
+Press `Enter` to use the default or enter a custom IP address. This allows for example connecting to physical storage arrays instead of the virtual target-vm.
+```
+Subnet mask (CIDR bits 1-31 or dotted decimal, default: 24):
+```
+Press `Enter` for default `24` or enter another number (e.g., `16`) or dotted decimal (e.g., `255.255.0.0`).
+```
+Target IP address (default: ...):
 ```
 Press `Enter` to use the default target-vm address or enter the IP of another NVMe target.
 ```
-Enable multipath? (y/n):
+Port number (default: 4420):
 ```
-Respond `y` to enable to test with multipath network connection for redundancy.
-
-If multipath is enabled, you will also be prompted for:
-```
-Host IP address on virbr2 (default: ...):
-Target IP address on virbr2 (default: ...):
-```
-Press `Enter` for defaults or customize for your intended setup.
-```
-Connection timeout (default: 3000):
-```
-Hit `Enter` to keep the default value of `3000` or enter a custom value and hit `Enter`.
+Press `Enter` to use the default NVMe/TCP port or enter a custom port.
 ```
 Use discovery NQN? (y/n):
 ```
-Respond `y` to enable discovery NQN.
+Respond `y` to use the discovery NQN.
+If you respond `n`, you may enter the NQN of the subsystem you wish to target or use the default.
 ```
-1 -> Set NID to NSUUID=...
-2 -> Set NID to NSNGUID=...
-n -> Do not set NID.
-Set NID? (1/2/n):
+Connection timeout (default: 3000):
 ```
-Respond `1` or `2` to set an NID.
+Hit `Enter` to keep the default value of `3000` or enter a custom value.
 
 This setup creates a `/boot/efi` `vfat` partiton in the `efidisk`.
 This partition is then modified to include the following NBFT boot files.
@@ -508,6 +505,8 @@ should not need to be programmed by running `startup.nsh` again. To boot the
 In case of boot issues (e.g. the remote drive not showing in the Boot manager),
 type `reset -w` in the `Shell>` prompt to
 do a warm restart. The firmware variables will be reloaded and the `host-vm` should immediately find the remote disk and boot with NVMe/TCP.
+
+**Note:** The QEMU launch command is saved to `.build/start-vm.sh` for both VMs, useful for debugging or manual execution.
 
 ## Resetting the POC configuration
 
