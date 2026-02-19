@@ -112,6 +112,16 @@ eficonfig/config: eficonfig/config.in eficonfig/config2.in
 		fi
 		sed -i "s/HOST_IP/$$INPUT_IP/" $@
 		sed -i "s/HOSTGW_IP/0.0.0.0/" $@
+		while true; do
+			read -p "Subnet mask (CIDR bits 1-31 or dotted decimal, default: 24): " INPUT_MASK
+			INPUT_MASK=$${INPUT_MASK:-24}
+			if source ../vm-lib/common.sh && validate_subnet_mask "$$INPUT_MASK"; then
+				INPUT_MASK=$$(normalize_subnet_mask "$$INPUT_MASK")
+				break
+			fi
+			echo "Error: Invalid subnet mask. Enter CIDR bit count (1-31) or dotted decimal (e.g., 255.255.255.0)."
+		done
+		sed -i "s/SUBNET_MASK/$$INPUT_MASK/" $@
 		if [ -n "$$target_default" ]; then
 			read -p "Target IP address (default: $$target_default): " INPUT_TARGET
 			INPUT_TARGET=$${INPUT_TARGET:-$$target_default}
