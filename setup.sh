@@ -244,23 +244,28 @@ install_prebuilt_iso() {
         exit 1
     fi
     echo "$DOWNLOAD_URL" > .durl
-    ISOVERSION=$(echo $DOWNLOAD_URL | awk -F/ '{print $NF}' | cut -d'?' -f1)
-    if [ -z "$ISOVERSION" ]; then
+    ISONAME=$(echo $DOWNLOAD_URL | awk -F/ '{print $NF}' | cut -d'?' -f1)
+    if [ -z "$ISONAME" ]; then
         echo "No .iso found"
         exit 1
     fi
 
-    if [ ! -f ISO/$ISOVERSION ]; then
+    # Ensure filename ends with .iso if it contains .iso
+    if [[ "$ISONAME" == *.iso* ]]; then
+        ISONAME="${ISONAME%.iso*}.iso"
+    fi
+
+    if [ ! -f ISO/$ISONAME ]; then
         pushd ISO
         echo "wget ${DOWNLOAD_URL}"
-        wget --no-check-certificate -O ${ISOVERSION} ${DOWNLOAD_URL}
+        wget --no-check-certificate -O ${ISONAME} ${DOWNLOAD_URL}
 		if [ $? -eq 0 ]; then
-			echo "${ISOVERSION}" > $DIR/.diso
+			echo "${ISONAME}" > $DIR/.diso
 		fi
         popd
     else
-		echo "ISO $ISOVERSION already exists"
-		echo "${ISOVERSION}" > $DIR/.diso
+		echo "ISO $ISONAME already exists"
+		echo "${ISONAME}" > $DIR/.diso
 	fi
 }
 
