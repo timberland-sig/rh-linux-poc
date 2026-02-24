@@ -147,7 +147,7 @@ case "$NET_CONN" in
     localhost)
         # NET0_NET="-netdev user,id=net0,net=$NET_CIDR,hostfwd=tcp::$NET_PORT-:22"
         NET0_NET="-netdev user,id=net0,hostfwd=tcp::$HOST_PORT-:22"
-        NET0_DEV="-device e1000,netdev=net0,addr=4"
+        NET0_DEV="-device virtio-net-pci,netdev=net0,addr=4"
     ;;
     bridged)
         NET0_NET="-netdev bridge,br=br0,id=net0,helper=$BRIDGE_HELPER"
