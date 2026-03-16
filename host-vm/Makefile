@@ -20,7 +20,9 @@ help:
 	@echo "  start-local     Start VM from local boot disk"
 	@echo "  install-remote  Install OS to remote NVMe/TCP disk"
 	@echo "  start-remote    Start VM from remote NVMe/TCP disk"
-	@echo "  reconfig		 Re-run the interactive setup of the boot attempt configuration"
+	@echo "  config		 Run the interactive setup of the boot attempt configuration"
+	@echo "  reconfig	 Re-run the interactive setup of the boot attempt configuration"
+	@echo "  		 This will NOT overwrite vm_vars.fd! Run 'make setup' again for that."
 	@echo "  clean-config	 Remove the boot attempt configuration file"
 	@echo "  clean           Remove all VM disk images and temporary files"
 	@echo ""
@@ -45,8 +47,7 @@ help:
 	@echo "  make NET_TYPE=bridged start-local   # Start with bridged networking"
 	@echo ""
 
-setup: efidisk .build/hostid
-	bash ./$(SETUP_SCRIPT) -c $(NET_TYPE) -i $(ISO) nbft-setup -- $(QEMU_ARGS)
+setup: vm_vars.fd .build/hostid
 
 start-local: disks/boot.qcow2 $(SETUP_SCRIPT)
 	bash ./$(SETUP_SCRIPT) -c $(NET_TYPE) start local -- $(QEMU_ARGS)
@@ -177,6 +178,7 @@ eficonfig/config: eficonfig/config.in eficonfig/config2.in
 	@echo "EFI Configuration file created successfully"
 	@echo ""
 
+# This will likely be deprecated
 efidisk: efidisk.in eficonfig/startup.nsh eficonfig/VConfig.efi eficonfig/NvmeOfCli.efi eficonfig/config
 	-[ -d efi ] && rmdir efi
 # This ensures the target execution can be interrupted
@@ -198,6 +200,13 @@ efidisk: efidisk.in eficonfig/startup.nsh eficonfig/VConfig.efi eficonfig/NvmeOf
 	sudo umount $$PWD/efi
 	rmdir efi
 
+vm_vars.fd: eficonfig/config nvmeof-utils/ovmf_vars_set
+	cp ../ISO/OVMF_VARS.fd $@
+	./nvmeof-utils/ovmf_vars_set $@ $<
+
+nvmeof-utils/ovmf_vars_set: nvmeof-utils/ovmf_vars_set.c
+	make -C $$(dirname $@)
+
 .build/hostid: ../global_vars.sh
 	source $<
 	mkdir -p .build
@@ -216,6 +225,8 @@ clean-config:
 
 reconfig: clean-config eficonfig/config
 
+config: reconfig
+
 clean: clean-config
 	-rm -f disks/*.qcow2
 	-rm -f boot.iso
@@ -227,4 +238,4 @@ clean: clean-config
 
 .ONESHELL: eficonfig/config .build/hostid
 .SILENT: eficonfig/config
-.PHONY: help setup install-local start-local install-remote start-remote clean-config reconfig clean
+.PHONY: help setup install-local start-local install-remote start-remote clean-config config reconfig clean

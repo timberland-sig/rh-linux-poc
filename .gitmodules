@@ -10,3 +10,6 @@
 	path = dracut_rpm/dracut
 	url = git@github.com:timberland-sig/dracut.git
 	branch = timberland_final_v2
+[submodule "host-vm/nvmeof-utils"]
+	path = host-vm/nvmeof-utils
+	url = git@github.com:timberland-sig/nvmeof-utils.git
