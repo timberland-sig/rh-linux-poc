@@ -232,6 +232,7 @@ $QEMU -name $VMNAME -M q35 -accel kvm -cpu host -m 4G -smp 4 $QARGS \
 $BOOT_OPTIONS \
 $CDROM \
 $BOOT_DISK \
+-debugcon file:bootlog -global isa-debugcon.iobase=0x402 \
 -device virtio-rng \
 -drive if=pflash,format=raw,readonly=on,file=OVMF_CODE.fd \
 $VM_VARS_FLASH \

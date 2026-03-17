@@ -235,6 +235,7 @@ clean: clean-config
 	-rm -f .net*
 	-rm -f anaconda-ks.cfg
 	-rm -f efidisk
+	-rm -f bootlog
 
 .ONESHELL: eficonfig/config .build/hostid
 .SILENT: eficonfig/config
