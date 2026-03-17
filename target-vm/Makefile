@@ -11,6 +11,7 @@ ISO ?= $(shell source ../vm-lib/common.sh &>/dev/null && find_iso &>/dev/null &&
 
 SETUP_SCRIPT := vm.sh
 
+.PHONY: help
 help:
 	@echo "Target VM Makefile - Build and manage virtual machines"
 	@echo ""
@@ -43,6 +44,7 @@ help:
 	@echo "  make NET_TYPE=bridged start     # Start with bridged networking"
 	@echo ""
 
+.PHONY: rh-start
 rh-start: disks/nvme1.qcow2 boot.iso $(SETUP_SCRIPT)
 # disks/rh-boot.qcow2 is not an explicit dependency because it consumes
 # .build/rh-boot.qcow2 for its creation. This, however, confuses GNU Make
@@ -50,16 +52,20 @@ rh-start: disks/nvme1.qcow2 boot.iso $(SETUP_SCRIPT)
 	[ -f disks/rh-boot.qcow2 ] || make rh-install
 	@bash ./$(SETUP_SCRIPT) start disks/rh-boot.qcow2 -c $(NET_TYPE) -n $(EXTRA_DRIVES) -- $(QEMU_ARGS)
 
+.PHONY: rh-install
 rh-install: disks/rh-boot.qcow2 boot.iso $(SETUP_SCRIPT)
 	@echo -e "\e[31mThe VM is installing in the background. Do not interrupt!\e[0m"
 	@bash ./$(SETUP_SCRIPT) install $< -F -c $(NET_TYPE) -i boot.iso -- $(QEMU_ARGS)
 
+.PHONY: start
 start: disks/boot.qcow2 disks/nvme1.qcow2 $(SETUP_SCRIPT)
 	@bash ./$(SETUP_SCRIPT) start $< -i $(ISO) -c $(NET_TYPE) -n $(EXTRA_DRIVES) -- $(QEMU_ARGS)
 
+.PHONY: install
 install: disks/boot.qcow2
 	@bash ./$(SETUP_SCRIPT) install $< -c $(NET_TYPE) -n $(EXTRA_DRIVES) -- $(QEMU_ARGS)
 
+.ONESHELL: .build/tcp.json
 .build/tcp.json: tcp.json.in Makefile ../global_vars.sh
 	source ../global_vars.sh
 	cp $< $@
@@ -93,10 +99,12 @@ anaconda-ks.cfg: anaconda-ks.cfg.template
 		fi; \
 	done
 
+.PHONY: wipe
 wipe:
 	-rm -f disks/*.qcow2
 	-rm -f .net  # Necessary to force a re-run of netsetup when re-installing the OS
 
+.PHONY: clean
 clean:
 	-rm -f disks/rh-boot.qcow2 disks/boot.qcow2
 	-rm -f boot.iso
@@ -105,5 +113,3 @@ clean:
 	-rm -f anaconda-ks.cfg
 	-rm -f .net*
 
-.PHONY: help install start rh-start stop clean
-.ONESHELL: .build/tcp.json

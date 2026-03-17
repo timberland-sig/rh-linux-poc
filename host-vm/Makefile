@@ -10,6 +10,7 @@ ISO ?= $(shell source ../vm-lib/common.sh &>/dev/null && find_iso &>/dev/null &&
 
 SETUP_SCRIPT := vm.sh
 
+.PHONY: help
 help:
 	@echo "Host VM Makefile - Manage NVMe/TCP boot test host VM"
 	@echo ""
@@ -47,17 +48,22 @@ help:
 	@echo "  make NET_TYPE=bridged start-local   # Start with bridged networking"
 	@echo ""
 
+.PHONY: setup
 setup: vm_vars.fd .build/hostid
 
+.PHONY: start-local
 start-local: disks/boot.qcow2 $(SETUP_SCRIPT)
 	bash ./$(SETUP_SCRIPT) -c $(NET_TYPE) start local -- $(QEMU_ARGS)
 
+.PHONY: install-local
 install-local: disks/boot.qcow2
 	bash ./$(SETUP_SCRIPT) -c $(NET_TYPE) -i $(ISO) install local -- $(QEMU_ARGS)
 
+.PHONY: install-remote
 install-remote:
 	bash ./$(SETUP_SCRIPT) -c $(NET_TYPE) -i $(ISO) install remote -- $(QEMU_ARGS)
 
+.PHONY: start-remote
 start-remote:
 	bash ./$(SETUP_SCRIPT) -c $(NET_TYPE) start remote -- $(QEMU_ARGS)
 
@@ -220,13 +226,17 @@ boot.iso: anaconda-ks.cfg ../vm-lib/common.sh
 anaconda-ks.cfg: anaconda-ks.cfg.template
 	@read -p "Enter a root password for the target-vm: " -s PASSWORD; echo; sed -e "s|<ROOT_PASSWD>|$$(openssl passwd -1 -stdin <<< $$PASSWORD)|" $< > $@
 
+.PHONY: clean-config
 clean-config:
 	-rm -f eficonfig/config
 
+.PHONY: reconfig
 reconfig: clean-config eficonfig/config
 
+.PHONY: config
 config: reconfig
 
+.PHONY: clean
 clean: clean-config
 	-rm -f disks/*.qcow2
 	-rm -f boot.iso
@@ -239,4 +249,4 @@ clean: clean-config
 
 .ONESHELL: eficonfig/config .build/hostid
 .SILENT: eficonfig/config
-.PHONY: help setup install-local start-local install-remote start-remote clean-config config reconfig clean
+
