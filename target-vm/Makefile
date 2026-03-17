@@ -20,6 +20,7 @@ help:
 	@echo "  install       Manually install an OS from an ISO onto a fresh boot disk using QEMU"
 	@echo "  start         Start the VM with an existing boot disk using QEMU"
 	@echo "  rh-start      Automatically install the OS with Kickstart and start the VM (Red Hat distros only)"
+	@echo "  kill          Kill all $(VMNAME) instances"
 	@echo "  clean         Remove VM boot disk images and temporary files"
 	@echo "  wipe          Delete ALL disk images (including host-vm data and OS)"
 	@echo ""
@@ -113,3 +114,9 @@ clean:
 	-rm -f anaconda-ks.cfg
 	-rm -f .net*
 
+# We put q in [] to prevent 'kill' from killing its parent shell process
+.PHONY: kill
+kill:
+	@if [ -n "$$(pgrep -f "[q]emu-system-x86.*$(VMNAME)")" ] ; then \
+		kill $$(pgrep -f "[q]emu-system-x86.*$(VMNAME)") ; \
+	fi

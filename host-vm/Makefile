@@ -21,6 +21,7 @@ help:
 	@echo "  start-local     Start VM from local boot disk"
 	@echo "  install-remote  Install OS to remote NVMe/TCP disk"
 	@echo "  start-remote    Start VM from remote NVMe/TCP disk"
+	@echo "  kill            Kill all $(VMNAME) instances"
 	@echo "  config		 Run the interactive setup of the boot attempt configuration"
 	@echo "  reconfig	 Re-run the interactive setup of the boot attempt configuration"
 	@echo "  		 This will NOT overwrite vm_vars.fd! Run 'make setup' again for that."
@@ -246,6 +247,13 @@ clean: clean-config
 	-rm -f anaconda-ks.cfg
 	-rm -f efidisk
 	-rm -f bootlog
+
+# We put q in [] to prevent 'kill' from killing its parent shell process
+.PHONY: kill
+kill:
+	@if [ -n "$$(pgrep -f "[q]emu-system-x86.*$(VMNAME)")" ] ; then \
+		kill $$(pgrep -f "[q]emu-system-x86.*$(VMNAME)") ; \
+	fi
 
 .ONESHELL: eficonfig/config .build/hostid
 .SILENT: eficonfig/config
