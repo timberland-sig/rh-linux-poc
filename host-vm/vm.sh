@@ -225,6 +225,7 @@ for ((i=0; i<${#QARGS_ARRAY[@]}; i++)); do
     fi
 done
 
+mkdir -p $PWD/.build
 cat > .build/start-vm.sh << EOF
 $QEMU -name $VMNAME -M q35 -accel kvm -cpu host -m 4G -smp 4 $QARGS \
 -uuid $HOST_SYS_UUID \
