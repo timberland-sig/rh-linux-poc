@@ -47,6 +47,8 @@ install_user() {
     else
         echo " : Nothing to do!"
     fi
+
+    git submodule update --init host-vm/nvmeof-utils
 }
 
 install_devel() {
