@@ -374,53 +374,11 @@ Connection timeout (default: 3000):
 ```
 Hit `Enter` to keep the default value of `3000` or enter a custom value.
 
-This setup creates a `/boot/efi` `vfat` partiton in the `efidisk`.
-This partition is then modified to include the following NBFT boot files.
-
-* `eficonfig/startup.nsh`    - the NVMe-oF Boot startup file, used by NvmeOfCli.efi
-* `eficonfig/config`         - the NVMe-oF Boot NBFT Attempt Configuration
-* `eficonfig/NvmeOfCli.efi`  - the edk2 build artifact
-
-This `efidisk` is used in this QEMU parameter:
-```
--drive file=efidisk,format=raw,if=none,id=NVME1 -device nvme,drive=NVME1,serial=$SN3
-```
-to program the NBFT in the EFI shell, as you will see below.
-
-Once you connect to the `host-vm` console, you will observe the UEFI boot
-process starting.  Immediately press the `ESC` button repeatedly to enter the UEFI setup
-menu.
-
-![alt uefi boot menu](images/uefi_boot_menu.png)
-
-Select the `Boot Manager`.
-
-![alt uefi boot menu](images/uefi_boot_manager.png)
-
-Select the `EFI Internal Shell` and hit `Enter`.
-
-![alt uefi boot select uefi](images/uefi_boot_select.png)
-
-The `EFI Internal Shell` will run and `NvmeOfCli setattempt Config` will run.
-Allow the coutdown to expire so that `startup.nsh` runs.
-This will program your NBFT/ACPI table with the information
-programmed in the `host-vm/eficonfig/config` attempt file.
-
-![alt uefi count down](images/uefi_count_down.png)
-
-After `!!!The UEFI variables has been set successfully!!!` the EFI Shell will
-return to the Boot Manager menu. Press ESC and select `Reset` to continue.
-
-![alt uefi reset](images/uefi_reset.png)
-
-The EFI firmware will reset and NVMe/TCP will now be possible.
-
-In case of a first-time setup you may now continue directly to step 1 (install) since a GRUB menu should appear now.
-Otherwise shut the VM down and continue to [To restart the host-vm after `shutdown -h`](#to-restart-the-host-vm-after-shutdown--h).
+The configuration shall then be written into `vm_vars.fd` using the `host-vm/nvmeof-utils/ovmf_vars_set` command line tool.
 
 ### Step 1 Install an OS for the `host-vm`
 
-If you do not yet have the `host-vm` running, run:
+To install the OS on the remote drive, run:
 ```
 make install-remote
 ```
@@ -479,6 +437,11 @@ Package "libnvme-1.12-1.fc42.x86_64" is already installed.
 Nothing to do.
 
  The setup is finished now. Enjoy using your test environment!
+```
+
+To shut the VM down from the hypervisor's terminal, run:
+```
+make kill
 ```
 
 ## Using the `host-vm`
