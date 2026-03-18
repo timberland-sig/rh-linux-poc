@@ -247,7 +247,7 @@ bridge_iface() {
         if [ ${ip_addr} = 'dhcp' ]; then
 	    sudo nmcli conn modify ${br_conn} ipv4.method auto ipv6.method shared
             return 0
-	elif [ ${netdev} != 'local' ] ; then
+        else
 	    sudo nmcli conn modify ${br_conn} ipv4.method manual ipv6.method shared ipv4.addresses ${ip_addr}
 	    sudo nmcli dev reapply ${br_conn}
 	fi
