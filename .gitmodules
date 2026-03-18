@@ -12,4 +12,4 @@
 	branch = timberland_final_v2
 [submodule "host-vm/nvmeof-utils"]
 	path = host-vm/nvmeof-utils
-	url = git@github.com:timberland-sig/nvmeof-utils.git
+	url = https://github.com/timberland-sig/nvmeof-utils.git
