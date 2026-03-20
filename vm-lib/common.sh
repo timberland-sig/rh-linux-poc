@@ -4,6 +4,10 @@
 
 # NOTE: caller must include global_vars.sh before including this file.
 
+# Source color definitions
+DIR="$(dirname -- "$(realpath -- "${BASH_SOURCE[0]}")")"
+. "$DIR/colors.sh"
+
 # validate that the interface is connected
 function check_conn() {
     local iface="$1"

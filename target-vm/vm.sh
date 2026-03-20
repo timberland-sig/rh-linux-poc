@@ -5,7 +5,7 @@
 DIR="$(dirname -- "$(realpath -- "$0")")"
 . $DIR/../global_vars.sh
 . $DIR/../vm-lib/common.sh
-
+. $DIR/../vm-lib/colors.sh
 
 show-help() {
     VM_NAME=$(basename $PWD)
@@ -251,8 +251,8 @@ if [[ "$MODE" == "install" ]]; then
     echo ""
 elif [[ "$MODE" == "start" ]]; then
     if $RUN_FOREGROUND; then
-        echo -e "\e[32mThe $VMNAME is running in the foreground.\e[0m"
+        echo -e "${GREEN}The $VMNAME is running in the foreground.${NC}"
     else
-        echo -e "\e[32mThe $VMNAME is running in the background.\e[0m"
+        echo -e "${GREEN}The $VMNAME is running in the background.${NC}"
     fi
 fi

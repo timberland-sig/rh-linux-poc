@@ -76,11 +76,12 @@ eficonfig/config: eficonfig/config.in eficonfig/config2.in
 # Copy the skeleton
 	cat $< > $@
 	source ../global_vars.sh
+	source ../vm-lib/colors.sh
+
 	sed -i "s/HOSTNQN/$$HOSTNQN/" $@
 	sed -i "s/HOSTID/$$HOSTID/" $@
-
-	echo -e "\033[1;33mhost-vm host NQN: $$HOSTNQN\033[0m"
-	echo -e "\033[1;33mhost-vm host ID:  $$HOSTID\033[0m"
+	echo -e "$${YELLOW}host-vm host NQN: $$HOSTNQN$${NC}"
+	echo -e "$${YELLOW}host-vm host ID:  $$HOSTID$${NC}"
 	echo ""
 
 # Function to configure a boot attempt
