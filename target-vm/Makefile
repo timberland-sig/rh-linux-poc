@@ -55,7 +55,7 @@ rh-start: disks/nvme1.qcow2 boot.iso $(SETUP_SCRIPT)
 
 .PHONY: rh-install
 rh-install: disks/rh-boot.qcow2 boot.iso $(SETUP_SCRIPT)
-	@echo -e "\e[31mThe VM is installing in the background. Do not interrupt!\e[0m"
+	@source ../vm-lib/colors.sh && echo -e "$${RED}The VM is installing in the background. Do not interrupt!$${NC}"
 	@bash ./$(SETUP_SCRIPT) install $< -F -c $(NET_TYPE) -i boot.iso -- $(QEMU_ARGS)
 
 .PHONY: start
