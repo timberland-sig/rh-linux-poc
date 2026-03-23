@@ -3,7 +3,7 @@
 # Copyright (C) 2026 Michal Rábek <mrabek@redhat.com> All rights reserved.
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-. $DIR/global_vars.sh
+. $DIR/defaults.sh
 
 # Configuration
 MODES="net"

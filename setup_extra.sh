@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0+
 # Copyright (C) 2023 John Meneghini <jmeneghi@redhat.com> All rights reserved.
 
-. $DIR/global_vars.sh
+. $DIR/defaults.sh
 
 MODES="iso|copr|rpms|artif|mock|build"
 MODE=""

@@ -5,7 +5,7 @@
 set -e
 
 DIR="$(dirname -- "$(realpath -- "$0")")"
-. $DIR/../global_vars.sh
+. $DIR/../defaults.sh
 . $DIR/../vm-lib/common.sh
 
 VMNAME=`basename $PWD`

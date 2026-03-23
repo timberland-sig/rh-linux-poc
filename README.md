@@ -136,7 +136,7 @@ Directories and files are explained here:
 | nvme_rpm | libnvm.spec | A modified version of the Fedora libnvme.spec file from: https://src.fedoraproject.org/rpms/libnvme/blob/rawhide/f/libnvme.spec. This spec file has been modified to work with the timberland-sig libnvme source code in this submodule.
 | `dracut_rpm` | - | Contains the git submodule for https://github.com/timberland-sig/dracut. The rpm is generated using this source code with the `dracut.spec` file located in this directory. The code used to generate the rpm can be developed and changed by working in the provided *dracut_rpm/dracut* git repository.  Normal git workflows apply. |
 | `dracut_rpm` | dracut.spec | A modified version of the Fedora dracut.spec file from:  https://src.fedoraproject.org/rpms/dracut/blob/rawhide/f/dracut.spec. This spec file has been modified to work with the timberland-sig dracut source code in this submodule. |
-|  - | `global_vars.sh` | Contains global variables which control the test bed configuration. If you need to change sometihing, look here first. |
+|  - | `defaults.sh` | Contains global variables which control the test bed configuration. If you need to change sometihing, look here first. |
 |  - | `rmp_lib.sh` | Contains global functions used by the scripts in the `libnvme_rpm`, `nvme_rpm`, and `dracut_rpm`  subdirectories. |
 | `vm-lib` | - | Contains shared scripts and functions used by both *target-vm* and *host-vm* subdirectories. Includes common network setup scripts and Makefile targets. |
 | `vm-lib` | `common.sh` | Contains global functions used by the scripts in the `target-vm` and `host-vm` subdirectories. |
@@ -200,7 +200,7 @@ If your hypervisor is on a remote system, you can use `make <target> QEMU_ARGS="
 argment and connect to the VM console with `vncviewer` on your local machine.
 
 *Note that changing the specfic configuration - in terms of IP and MAC
-addresses, HOSTNQNs, etc. can be done by modifying the `global_vars.sh` file.*
+addresses, HOSTNQNs, etc. can be done by modifying the `defaults.sh` file.*
 
 Also note that the scripts and `Makefile`s in the `host-vm` and `target-vm` directories are
 context sensitive. You can only run these scripts as: `./vm.sh` or
@@ -501,7 +501,7 @@ created in the follow directories:
 1. Create your user account, enable [sudo](https://developers.redhat.com/blog/2018/08/15/how-to-enable-sudo-on-rhel#:~:text=DR%3A%20Basic%20sudo-,TL%3BDR%3A%20Basic%20sudo,out%20and%20back%20in%20again) access, and configure your github [ssh-key](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/adding-a-new-ssh-key-to-your-github-account).
 2. Set up a [copr](https://docs.pagure.org/copr.copr/user_documentation.html#quick-start) user account and add [.config/copr](https://copr.fedorainfracloud.org/api/) to your user account.
 3. Create a working branch with `git checkout -b MYBRANCH` to keep configuration changes for your test bed.
-4. Edit the *global_vars.sh* file and set the `COPR_USER` and `COPR_PROJECT` variables (c.f. `corp-cli whoami` and `corp-cli list`).
+4. Edit the `defaults.sh` file and set the `COPR_USER` and `COPR_PROJECT` variables (c.f. `corp-cli whoami` and `corp-cli list`).
 
 Now run the following commands to build and install your NVMe/TCP Boot test environment:
 

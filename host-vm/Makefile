@@ -75,7 +75,7 @@ disks/%.qcow2:
 eficonfig/config: eficonfig/config.in eficonfig/config2.in
 # Copy the skeleton
 	cat $< > $@
-	source ../global_vars.sh
+	source ../defaults.sh
 	source ../vm-lib/colors.sh
 
 	sed -i "s/HOSTNQN/$$HOSTNQN/" $@
@@ -215,7 +215,7 @@ vm_vars.fd: eficonfig/config nvmeof-utils/ovmf_vars_set
 nvmeof-utils/ovmf_vars_set: nvmeof-utils/ovmf_vars_set.c
 	make -C $$(dirname $@)
 
-.build/hostid: ../global_vars.sh
+.build/hostid: ../defaults.sh
 	source $<
 	mkdir -p .build
 	echo "$$HOSTID" > $@

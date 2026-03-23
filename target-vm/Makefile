@@ -67,8 +67,8 @@ install: disks/boot.qcow2
 	@bash ./$(SETUP_SCRIPT) install $< -c $(NET_TYPE) -n $(EXTRA_DRIVES) -- $(QEMU_ARGS)
 
 .ONESHELL: .build/tcp.json
-.build/tcp.json: tcp.json.in Makefile ../global_vars.sh
-	source ../global_vars.sh
+.build/tcp.json: tcp.json.in Makefile ../defaults.sh
+	source ../defaults.sh
 	cp $< $@
 
 	sed -i "s/HOSTNQN/$$HOSTNQN/" $@

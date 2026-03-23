@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0+
 # Copyright (C) 2023 John Meneghini <jmeneghi@redhat.com> All rights reserved.
 
-# NOTE: caller must include global_vars.sh before including this file.
+# NOTE: caller must include defaults.sh before including this file.
 
 # Source color definitions
 DIR="$(dirname -- "$(realpath -- "${BASH_SOURCE[0]}")")"

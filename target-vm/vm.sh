@@ -3,7 +3,7 @@
 # Copyright (C) 2023 John Meneghini <jmeneghi@redhat.com> All rights reserved.
 
 DIR="$(dirname -- "$(realpath -- "$0")")"
-. $DIR/../global_vars.sh
+. $DIR/../defaults.sh
 . $DIR/../vm-lib/common.sh
 . $DIR/../vm-lib/colors.sh
 

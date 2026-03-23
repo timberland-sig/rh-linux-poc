@@ -4,7 +4,7 @@
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 #echo "DIR = $DIR"
-. $DIR/global_vars.sh
+. $DIR/defaults.sh
 
 # Configuraiton
 MODES="user|devel|virt|net|edk2|iso"
@@ -101,14 +101,14 @@ install_devel() {
             echo " : gen_macaddr.py failed! "
             exit 1
         else
-            sed -i "s/^TARGET_MAC1.*/TARGET_MAC1\=$FOO/" global_vars.sh
+            sed -i "s/^TARGET_MAC1.*/TARGET_MAC1\=$FOO/" defaults.sh
         fi
         FOO="$(./gen_macaddr.py)"
         if [ -z "$FOO" ]; then
             echo " : gen_macaddr.py failed! "
             exit 1
         else
-            sed -i "s/^HOST_MAC1.*/HOST_MAC1\=$FOO/" global_vars.sh
+            sed -i "s/^HOST_MAC1.*/HOST_MAC1\=$FOO/" defaults.sh
         fi
 
         touch .macaddr

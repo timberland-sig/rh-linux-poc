@@ -10,8 +10,8 @@ NET_TYPE ?= "localhost"
 	ssh-keygen -t ecdsa -C "$$USER@$$HOSTNAME" -f $$PWD/.ssh/id_ecdsa -P ""
 	chmod 600 .ssh/id_ecdsa
 
-.build/hosts.txt: Makefile ../global_vars.sh
-		@source ../global_vars.sh
+.build/hosts.txt: Makefile ../defaults.sh
+		@source ../defaults.sh
 		@cat << EOF > $@
 	$$HOSTGW_IP2    host-gw-br2
 	$$HOSTGW_IP3    host-gw-br3
