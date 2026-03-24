@@ -199,61 +199,131 @@ generate_serial_number() {
 }
 
 bridge_iface() {
-    local br_name=$1
+    # Parse arguments and check for help
+    local br_name=""
+    local netdev=""
+    local ip_addr=""
 
-    if ! nmcli dev show ${br_name} &>/dev/null ; then
-        netdev=""
+    # Check if help is requested
+    for arg in "$@"; do
+        if [[ "$arg" == "-h" || "$arg" == "--help" ]]; then
+            cat <<EOF
+Usage: bridge_iface BRIDGE_NAME [SLAVE_INTERFACE] [IP_ADDRESS]
+
+Configure a network bridge using NetworkManager.
+
+Arguments:
+  BRIDGE_NAME       Name of the bridge interface (e.g., br0, virbr1, virbr2)
+  SLAVE_INTERFACE   Network interface to bridge (optional)
+                    - Use 'local' to create bridge without a slave interface
+                    - If not provided, will prompt interactively
+  IP_ADDRESS        IPv4 address in CIDR notation or 'dhcp' (optional)
+                    - If not provided, will prompt interactively
+                    - Default for virbr1: $HOSTGW_CIDR2
+                    - Default for virbr2: $HOSTGW_CIDR3
+                    - Default for others: dhcp
+
+Examples:
+  bridge_iface br0 eth0 192.168.1.1/24
+  bridge_iface virbr1 local dhcp
+  bridge_iface virbr2 enp2s0
+  bridge_iface br0                    # Interactive mode
+
+Options:
+  -h, --help        Show this help message
+
+Note: If the bridge already exists, this function will skip configuration.
+EOF
+            return 0
+        fi
+    done
+
+    # Parse positional arguments
+    br_name="$1"
+    netdev="$2"
+    ip_addr="$3"
+
+    if [ -z "$br_name" ]; then
+        echo "Error: Bridge name is required" >&2
+        echo "Try: bridge_iface --help" >&2
+        return 1
+    fi
+
+    # Check if bridge already exists
+    if nmcli dev show "${br_name}" &>/dev/null ; then
+        echo "Bridge ${br_name} already exists, skipping configuration"
+        return 0
+    fi
+
+    # Interactive prompt for network device if not provided
+    if [ -z "$netdev" ]; then
         nmcli dev status
         echo ""
         read -r -p "Enter name of the network interface to bridge with ${br_name} or \"local\" to skip configuration: " netdev
 
-        if [ -z netdev ]; then
-            exit 1
+        if [ -z "$netdev" ]; then
+            echo "Error: No network device specified" >&2
+            return 1
         fi
+    fi
 
-        if [[ "$netdev" == *"local"* ]]; then
-            echo " : local - skipping bridged network setup"
-	    sudo nmcli conn add type bridge ifname ${br_name} con-name ${br_name} stp yes autoconnect yes
-	    local br_conn=${br_name}
-        else
-            if ! nmcli dev show $netdev &>/dev/null ; then
-                echo "Interface '$netdev' does not exist!"
-                exit 1
+    # Create bridge based on whether it's local or bridged
+    if [[ "$netdev" == *"local"* ]]; then
+        echo " : local - skipping bridged network setup"
+        sudo nmcli conn add type bridge ifname ${br_name} con-name ${br_name} stp yes autoconnect yes
+        local br_conn=${br_name}
+    else
+        if ! nmcli dev show $netdev &>/dev/null ; then
+            echo "Interface '$netdev' does not exist!" >&2
+            return 1
+        fi
+        # ip link set $netdev promisc on
+
+        local MAC=$(nmcli -t -f general.hwaddr -e yes dev show $netdev | sed 's/^GENERAL.HWADDR://')
+        local br_conn="${br_name}"
+        sudo nmcli dev down $netdev || true
+        sudo nmcli con add type bridge ifname ${br_name} con-name ${br_name} autoconnect yes stp off ethernet.cloned-mac-address $MAC
+        sudo nmcli con add type bridge-slave ifname $netdev con-name bridge-slave-${netdev} master ${br_name}
+        sudo nmcli con up ${br_name}
+        sudo nmcli con up bridge-slave-${netdev}
+    fi
+
+    # Determine default IP address based on bridge name
+    case ${br_name} in
+        virbr1)
+            local ip_addr_default=$HOSTGW_CIDR2;;
+        virbr2)
+            local ip_addr_default=$HOSTGW_CIDR3;;
+        *)
+            local ip_addr_default='dhcp';;
+    esac
+
+    # Interactive prompt for IP address if not provided
+    if [ -z "$ip_addr" ]; then
+        echo ""
+        while true; do
+            read -r -p "Enter the IP address in CIDR notation of the hypervisor (this machine) on the ${br_name} network or \"dhcp\" to keep dynamic addressing (default: ${ip_addr_default}): " ip_addr
+            ip_addr=${ip_addr:-$ip_addr_default}
+            if [ "${ip_addr}" = 'dhcp' ] || validate_cidr "${ip_addr}"; then
+                break
             fi
-	    # ip link set $netdev promisc on
-
-	    local MAC=$(nmcli -t -f general.hwaddr -e yes dev show $netdev | sed 's/^GENERAL.HWADDR://')
-	    local br_conn="${br_name}"
-	    sudo nmcli dev down $netdev || true
-	    sudo nmcli con add type bridge ifname ${br_name} con-name ${br_name} autoconnect yes stp off ethernet.cloned-mac-address $MAC
-	    sudo nmcli con add type bridge-slave ifname $netdev con-name bridge-slave-${netdev} master ${br_name}
-	    sudo nmcli con up ${br_name}
-	    sudo nmcli con up bridge-slave-${netdev}
+            echo "Error: Invalid CIDR notation. Please enter a valid IPv4 address in CIDR format (e.g., 192.168.101.1/24) or \"dhcp\"."
+        done
+    else
+        # Validate the provided IP address
+        if [ "${ip_addr}" != 'dhcp' ] && ! validate_cidr "${ip_addr}"; then
+            echo "Error: Invalid CIDR notation: ${ip_addr}" >&2
+            echo "Please enter a valid IPv4 address in CIDR format (e.g., 192.168.101.1/24) or \"dhcp\"." >&2
+            return 1
         fi
-	case ${br_name} in
-	    virbr1)
-		    local ip_addr_default=$HOSTGW_CIDR2;;
-            virbr2)
-                    local ip_addr_default=$HOSTGW_CIDR3;;
-            *)
-                    local ip_addr_default='dhcp';;
-        esac
-	echo ""
-	while true; do
-	    read -r -p "Enter the IP address in CIDR notation of the hypervisor (this machine) on the ${br_name} network or \"dhcp\" to keep dynamic addressing (default: ${ip_addr_default}): " ip_addr
-	    ip_addr=${ip_addr:-$ip_addr_default}
-	    if [ "${ip_addr}" = 'dhcp' ] || validate_cidr "${ip_addr}"; then
-	        break
-	    fi
-	    echo "Error: Invalid CIDR notation. Please enter a valid IPv4 address in CIDR format (e.g., 192.168.101.1/24) or \"dhcp\"."
-	done
+    fi
 
-        if [ ${ip_addr} = 'dhcp' ]; then
-	    sudo nmcli conn modify ${br_conn} ipv4.method auto ipv6.method shared
-            return 0
-        else
-	    sudo nmcli conn modify ${br_conn} ipv4.method manual ipv6.method shared ipv4.addresses ${ip_addr}
-	    sudo nmcli dev reapply ${br_conn}
-	fi
+    # Configure IP address
+    if [ ${ip_addr} = 'dhcp' ]; then
+        sudo nmcli conn modify ${br_conn} ipv4.method auto ipv6.method shared
+        return 0
+    else
+        sudo nmcli conn modify ${br_conn} ipv4.method manual ipv6.method shared ipv4.addresses ${ip_addr}
+        sudo nmcli dev reapply ${br_conn}
     fi
 }

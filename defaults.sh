@@ -7,13 +7,12 @@
 COPR_PROJECT=timberland-v15.2
 COPR_USER=johnmeneghini
 
-# These are the system-uuid, Hostnqn and Hostid for the target-vm
-TARGETID="e1df2843-7f74-48c4-adb0-b2a5b9bab8f1"
+# These are the system UUID, Host NQN and Host ID for the target-vm
 # The TARGET_SYS_UUID is generated with TARGET_SYS_UUID="$(uuidgen)"
 TARGET_SYS_UUID="a53caec2-eb2d-4bca-819e-f2bbfb10e1fa"
 TARGETNQN="nqn.2014-08.org.nvmexpress:uuid:$TARGET_SYS_UUID"
 
-# These are the system-uuid, Hostnqn and Hostid for the host-vm
+# These are the system UUID, Host NQN and Host ID for the host-vm
 # This HostNQN appears in the target-vm/tcp.json file and in the host-vm/discover_target.sh file
 # The HOST_SYS_UUID is generated with HOST_SYS_UUID="$(uuidgen)"
 HOST_SYS_UUID="f8131bac-cdef-4165-866b-5998c1e67890"
