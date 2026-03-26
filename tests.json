@@ -1,0 +1,93 @@
+{
+  "environments": [
+    {
+      "name": "Localhost Environment",
+      "network": {
+        "br0": {
+          "slave": "local",
+          "hypervisorIp": "dhcp",
+          "targetVmIp": "dhcp",
+          "hostVmIp": "dhcp"
+        },
+        "virbr1": {
+          "slave": "local",
+          "hypervisorIp": "192.168.101.1",
+          "targetVmIp": "192.168.101.20",
+          "hostVmIp": "192.168.101.30",
+          "subnetMask": 24
+        },
+        "virbr2": {
+          "slave": "local",
+          "hypervisorIp": "192.168.110.1",
+          "targetVmIp": "192.168.110.20",
+          "hostVmIp": "192.168.110.30",
+          "subnetMask": 24
+        }
+      },
+      "tests": [
+        {
+          "name": "Soft Target Static NQN Test",
+          "timeout": 90,
+          "bootAttempts": [
+            {
+              "macAddress": "default",
+              "hostIp": "default",
+              "subnetMask": 24,
+              "targetIp": "default",
+              "subsystemNQN": "nqn.2014-08.org.nvmexpress:uuid:0c468c4d-a385-47e0-8299-6e95051277db"
+            }
+          ]
+        },
+        {
+          "name": "Soft Target Discovery Test",
+          "timeout": 90,
+          "bootAttempts": [
+            {
+              "macAddress": "default",
+              "hostIp": "default",
+              "subnetMask": 24,
+              "targetIp": "default",
+              "subsystemNQN": "nqn.2014-08.org.nvmexpress.discovery"
+            }
+          ]
+        },
+        {
+          "name": "Soft Target Dual path Static NQN Test",
+          "timeout": 90,
+          "bootAttempts": [
+            {
+              "macAddress": "default",
+              "hostIp": "default",
+              "targetIp": "default",
+              "subsystemNQN": "nqn.2014-08.org.nvmexpress:uuid:0c468c4d-a385-47e0-8299-6e95051277db"
+            },
+            {
+              "macAddress": "default",
+              "hostIp": "default",
+              "targetIp": "default",
+              "subsystemNQN": "nqn.2014-08.org.nvmexpress:uuid:0c468c4d-a385-47e0-8299-6e95051277db"
+            }
+          ]
+        },
+        {
+          "name": "Soft Target Dual path Discovery Test",
+          "timeout": 90,
+          "bootAttempts": [
+            {
+              "macAddress": "default",
+              "hostIp": "default",
+              "targetIp": "default",
+              "subsystemNQN": "nqn.2014-08.org.nvmexpress.discovery"
+            },
+            {
+              "macAddress": "default",
+              "hostIp": "default",
+              "targetIp": "default",
+              "subsystemNQN": "nqn.2014-08.org.nvmexpress.discovery"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

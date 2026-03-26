@@ -1,0 +1,231 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/test-environments.schema.json",
+  "title": "Test Environments",
+  "description": "Configuration schema for test environments with network and boot attempt settings",
+  "type": "object",
+  "properties": {
+    "environments": {
+      "type": "array",
+      "description": "Array of test environments",
+      "items": {
+        "$ref": "#/$defs/environment"
+      }
+    }
+  },
+  "required": ["environments"],
+  "$defs": {
+    "environment": {
+      "type": "object",
+      "description": "A single test environment configuration",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Name of the environment"
+        },
+        "network": {
+          "type": "object",
+          "description": "Network configuration for the three network interfaces",
+          "properties": {
+            "br0": {
+              "$ref": "#/$defs/networkInterface"
+            },
+            "virbr1": {
+              "$ref": "#/$defs/networkInterface"
+            },
+            "virbr2": {
+              "$ref": "#/$defs/networkInterface"
+            }
+          },
+          "required": ["br0", "virbr1", "virbr2"]
+        },
+        "tests": {
+          "type": "array",
+          "description": "List of test configurations",
+          "items": {
+            "$ref": "#/$defs/test"
+          }
+        }
+      },
+      "required": ["network", "tests"]
+    },
+    "networkInterface": {
+      "type": "object",
+      "description": "Network interface configuration",
+      "properties": {
+        "slave": {
+          "type": "string",
+          "description": "Name of the slave interface to bridge (or 'local' to skip bridging)"
+        },
+        "hypervisorIp": {
+          "oneOf": [
+            {
+              "type": "string",
+              "pattern": "^(([0-9]{1,3}\\.){3}[0-9]{1,3}(/([0-9]|[1-2][0-9]|3[0-2]))?|dhcp)$",
+              "description": "IPv4 address with optional CIDR notation or 'dhcp'"
+            }
+          ]
+        },
+        "targetVmIp": {
+          "oneOf": [
+            {
+              "type": "string",
+              "pattern": "^(([0-9]{1,3}\\.){3}[0-9]{1,3}(/([0-9]|[1-2][0-9]|3[0-2]))?|dhcp)$",
+              "description": "IPv4 address with optional CIDR notation or 'dhcp'"
+            }
+          ]
+        },
+        "subnetMask": {
+          "oneOf": [
+            {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 31,
+              "description": "Subnet mask as CIDR prefix length (1-31)"
+            },
+            {
+              "type": "string",
+              "pattern": "^([0-9]{1,3}\\.){3}[0-9]{1,3}$",
+              "description": "Subnet mask in dotted decimal notation"
+            },
+            {
+              "type": "string",
+              "const": "default",
+              "description": "Use default subnet mask (24)"
+            }
+          ]
+        }
+      },
+      "required": ["hypervisorIp", "targetVmIp"]
+    },
+    "test": {
+      "type": "object",
+      "description": "A single test configuration",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Name of the test"
+        },
+        "host-uuid": {
+          "type": "string",
+          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+          "description": "Unique identifier for the host in UUID format"
+        },
+        "hostVmIp": {
+          "oneOf": [
+            {
+              "type": "string",
+              "pattern": "^(([0-9]{1,3}\\.){3}[0-9]{1,3}(/([0-9]|[1-2][0-9]|3[0-2]))?|dhcp)$",
+              "description": "IPv4 address with optional CIDR notation or 'dhcp'"
+            }
+          ]
+        },
+        "timeout": {
+          "type": "integer",
+          "minimum": 10,
+          "maximum": 3600,
+          "description": "Boot timeout in seconds (10-3600, default: 120)"
+        },
+        "bootAttempts": {
+          "type": "array",
+          "description": "List of boot attempts for the host-vm",
+          "items": {
+            "$ref": "#/$defs/bootAttempt"
+          }
+        }
+      },
+      "required": ["bootAttempts"]
+    },
+    "bootAttempt": {
+      "type": "object",
+      "description": "Configuration for a single boot attempt",
+      "properties": {
+        "macAddress": {
+          "oneOf": [
+            {
+              "type": "string",
+              "pattern": "^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$",
+              "description": "MAC address in format XX:XX:XX:XX:XX:XX"
+            },
+            {
+              "type": "string",
+              "const": "default",
+              "description": "Use default MAC address"
+            }
+          ]
+        },
+        "hostIp": {
+          "oneOf": [
+            {
+              "type": "string",
+              "pattern": "^([0-9]{1,3}\\.){3}[0-9]{1,3}$",
+              "description": "IPv4 address of the host"
+            },
+            {
+              "type": "string",
+              "const": "default",
+              "description": "Use default host IP"
+            }
+          ]
+        },
+        "targetIp": {
+          "oneOf": [
+            {
+              "type": "string",
+              "pattern": "^([0-9]{1,3}\\.){3}[0-9]{1,3}$",
+              "description": "IPv4 address of the target"
+            },
+            {
+              "type": "string",
+              "const": "default",
+              "description": "Use default target IP"
+            }
+          ]
+        },
+        "port": {
+          "oneOf": [
+            {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 65535,
+              "description": "Port number (default: 4420)"
+            },
+            {
+              "type": "string",
+              "const": "default",
+              "description": "Use default port (4420)"
+            }
+          ]
+        },
+        "subsystemNQN": {
+          "oneOf": [
+            {
+              "type": "string",
+              "description": "Subsystem NQN (e.g., nqn.2014-08.org.nvmexpress.discovery)"
+            },
+            {
+              "type": "string",
+              "const": "default",
+              "description": "Use default subsystem NQN"
+            }
+          ]
+        },
+        "timeout": {
+          "oneOf": [
+            {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Connection timeout in milliseconds (default: 3000)"
+            },
+            {
+              "type": "string",
+              "const": "default",
+              "description": "Use default timeout (3000)"
+            }
+          ]
+        }
+      },
+      "required": ["macAddress", "hostIp", "targetIp", "subsystemNQN"]
+    }
+  }
+}
