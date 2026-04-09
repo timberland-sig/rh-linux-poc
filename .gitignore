@@ -18,6 +18,7 @@ cscope.*
 */.netaddr
 */.start
 */.netport
+.private
 .edk2pkgs
 .pkgs
 .pkgs2
@@ -41,7 +42,7 @@ artifacts/checksum.sha256
 artifacts/timberland-ovmf.zip
 artifacts/top-commit.txt
 *-vm/.net
-host-vm/bootlog
+host-vm/bootlog*
 host-vm/efi
 host-vm/OVMF_CODE.fd
 host-vm/vm_vars.fd
