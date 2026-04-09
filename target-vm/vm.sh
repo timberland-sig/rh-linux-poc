@@ -198,8 +198,10 @@ done
 # Check if VNC is enabled in QARGS
 VNC_DISPLAY=""
 QARGS_ARRAY=($QARGS)
+VNC_IN_QARGS=false
 for ((i=0; i<${#QARGS_ARRAY[@]}; i++)); do
     if [[ "${QARGS_ARRAY[$i]}" == "-vnc" ]]; then
+        VNC_IN_QARGS=true
         VNC_ARG="${QARGS_ARRAY[$((i+1))]}"
         # Extract display number from formats like ":0", "127.0.0.1:0", etc.
         if [[ "$VNC_ARG" =~ :([0-9]+)$ ]]; then
@@ -208,6 +210,12 @@ for ((i=0; i<${#QARGS_ARRAY[@]}; i++)); do
         break
     fi
 done
+
+# Auto-enable VNC if no graphical interface is available
+if [[ -z "$DISPLAY" && "$VNC_IN_QARGS" == "false" ]]; then
+    QARGS="$QARGS -vnc :0"
+    VNC_DISPLAY="0"
+fi
 
 mkdir -p $PWD/.build
 cat - > .build/start-vm.sh << EOF
