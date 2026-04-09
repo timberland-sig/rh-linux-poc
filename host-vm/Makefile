@@ -208,6 +208,7 @@ efidisk: efidisk.in eficonfig/startup.nsh eficonfig/VConfig.efi eficonfig/NvmeOf
 	sudo umount $$PWD/efi
 	rmdir efi
 
+.PHONY: vm_vars.fd
 vm_vars.fd: eficonfig/config nvmeof-utils/ovmf_vars_set
 	cp ../ISO/OVMF_VARS.fd $@
 	./nvmeof-utils/ovmf_vars_set $@ $<
