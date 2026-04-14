@@ -27,6 +27,12 @@ display_help() {
         exit 1
 }
 
+shutdown_vms() {
+	local DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+	make -C $DIR/target-vm kill
+	make -C $DIR/host-vm kill
+}
+
 revert_bridge_iface() {
     local br_name=$1
 
@@ -125,7 +131,8 @@ fi
 
 case "${MODE}" in
     net)
-        revert_network
+		shutdown_vms
+		revert_network
     ;;
     *)
         echo "  Invalid argument: $MODE" >&2
