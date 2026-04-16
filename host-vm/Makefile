@@ -72,11 +72,14 @@ disks/%.qcow2:
 	mkdir -p disks
 	qemu-img create -f qcow2 $@ $(DRIVE_CAP)
 
+.ONESHELL: eficonfig/config
+.SILENT: eficonfig/config
 eficonfig/config: eficonfig/config.in eficonfig/config2.in
 # Copy the skeleton
 	cat $< > $@
 	source ../defaults.sh
 	source ../vm-lib/colors.sh
+	source ../vm-lib/common.sh
 
 	sed -i "s/HOSTNQN/$$HOSTNQN/" $@
 	sed -i "s/HOSTID/$$HOSTID/" $@
@@ -90,6 +93,7 @@ eficonfig/config: eficonfig/config.in eficonfig/config2.in
 		local mac_default=$$2
 		local ip_default=$$3
 		local target_default=$$4
+		local mask_default=$$5
 		if [ $$num -gt 1 ]; then
 			echo ""
 			while true; do
@@ -122,8 +126,8 @@ eficonfig/config: eficonfig/config.in eficonfig/config2.in
 		sed -i "s/HOST_IP/$$INPUT_IP/" $@
 		sed -i "s/HOSTGW_IP/0.0.0.0/" $@
 		while true; do
-			read -p "Subnet mask (CIDR bits 1-31 or dotted decimal, default: 24): " INPUT_MASK
-			INPUT_MASK=$${INPUT_MASK:-24}
+			read -p "Subnet mask (CIDR bits 1-31 or dotted decimal, default: $$mask_default): " INPUT_MASK
+			INPUT_MASK=$${INPUT_MASK:-$$mask_default}
 			if source ../vm-lib/common.sh && validate_subnet_mask "$$INPUT_MASK"; then
 				INPUT_MASK=$$(normalize_subnet_mask "$$INPUT_MASK")
 				break
@@ -157,8 +161,13 @@ eficonfig/config: eficonfig/config.in eficonfig/config2.in
 	}
 
 # Configure boot attempts
-	-configure_attempt 1 "$$HOST_MAC2" "$$HOST_IP2" "$$TARGET_IP2" && \
-	configure_attempt 2 "$$HOST_MAC3" "$$HOST_IP3" "$$TARGET_IP3" && \
+	split_cidr $$TARGET_CIDR2 TARGET_IP2 MASK2
+	split_cidr $$TARGET_CIDR3 TARGET_IP3 MASK3
+	split_cidr $$HOST_CIDR2   HOST_IP2   MASK
+	split_cidr $$HOST_CIDR3   HOST_IP3   MASK
+
+	-configure_attempt 1 "$$HOST_MAC2" "$$HOST_IP2" "$$TARGET_IP2" "$$MASK2" && \
+	configure_attempt 2 "$$HOST_MAC3" "$$HOST_IP3" "$$TARGET_IP3" "$$MASK3" && \
 	configure_attempt 3 "" "" "" && \
 	configure_attempt 4 "" "" ""
 
@@ -257,6 +266,5 @@ kill:
 		kill $$(pgrep -f "[q]emu-system-x86.*$(VMNAME)") ; \
 	fi
 
-.ONESHELL: eficonfig/config .build/hostid
-.SILENT: eficonfig/config
+.ONESHELL: .build/hostid
 

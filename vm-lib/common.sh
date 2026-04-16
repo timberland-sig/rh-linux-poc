@@ -190,6 +190,32 @@ normalize_subnet_mask() {
     fi
 }
 
+split_cidr() {
+    if [ $# -lt 3 ]; then
+        cat <<EOF
+Usage: split_cidr <IP_ADDR_CIDR> <IP_VAR_NAME> <MASK_VAR_NAME>
+
+Splits the provided CIDR IP address into its two components by the slash character.
+
+Arguments:
+  IP_ADDR_CIDR      Valid IP address with mask in CIDR format
+  IP_VAR_NAME       Name of the variable to store the address part into
+  MASK_VAR_NAME     Name of the variable to store the mask into
+
+If any of these two variables does not exist yet, it is created.
+If the IP address on input is not in valid CIDR, the behavior is undefined.
+EOF
+        return 1
+    fi
+
+    local ip_addr=$1
+    local -n ip_addr_var=$2
+    local -n ip_mask_var=$3
+
+    ip_addr_var=$(echo "$ip_addr" | cut -d'/' -f1)
+    ip_mask_var=$(echo "$ip_addr" | cut -d'/' -f2)
+}
+
 generate_serial_number() {
     hexdump -vn8 -e'4/4 "%08X" 1 "\n"' /dev/urandom
 }

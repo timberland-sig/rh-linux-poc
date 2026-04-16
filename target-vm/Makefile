@@ -68,9 +68,13 @@ install: disks/boot.qcow2
 
 .ONESHELL: .build/tcp.json
 .build/tcp.json: tcp.json.in Makefile ../defaults.sh
-	source ../defaults.sh
-	cp $< $@
+	@source ../defaults.sh
+	@source ../vm-lib/common.sh
 
+	split_cidr $$TARGET_CIDR2 TARGET_IP2 MASK
+	split_cidr $$TARGET_CIDR3 TARGET_IP3 MASK
+
+	cp $< $@
 	sed -i "s/HOSTNQN/$$HOSTNQN/" $@
 	sed -i "s/SUBNQN/$$SUBNQN/" $@
 	sed -i "s/TARGET_IP2/$$TARGET_IP2/" $@

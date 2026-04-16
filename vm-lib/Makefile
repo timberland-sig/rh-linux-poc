@@ -12,6 +12,13 @@ NET_TYPE ?= "localhost"
 
 .build/hosts.txt: Makefile ../defaults.sh
 		@source ../defaults.sh
+		@source ../vm-lib/common.sh
+
+		split_cidr $$TARGET_CIDR2 TARGET_IP2 MASK
+		split_cidr $$TARGET_CIDR3 TARGET_IP3 MASK
+		split_cidr $$HOST_CIDR2   HOST_IP2   MASK
+		split_cidr $$HOST_CIDR3   HOST_IP3   MASK
+
 		@cat << EOF > $@
 	$$HOSTGW_IP2    host-gw-br2
 	$$HOSTGW_IP3    host-gw-br3
