@@ -136,7 +136,7 @@ Directories and files are explained here:
 | nvme_rpm | libnvm.spec | A modified version of the Fedora libnvme.spec file from: https://src.fedoraproject.org/rpms/libnvme/blob/rawhide/f/libnvme.spec. This spec file has been modified to work with the timberland-sig libnvme source code in this submodule.
 | `dracut_rpm` | - | Contains the git submodule for https://github.com/timberland-sig/dracut. The rpm is generated using this source code with the `dracut.spec` file located in this directory. The code used to generate the rpm can be developed and changed by working in the provided *dracut_rpm/dracut* git repository.  Normal git workflows apply. |
 | `dracut_rpm` | dracut.spec | A modified version of the Fedora dracut.spec file from:  https://src.fedoraproject.org/rpms/dracut/blob/rawhide/f/dracut.spec. This spec file has been modified to work with the timberland-sig dracut source code in this submodule. |
-|  - | `defaults.sh` | Contains global variables which control the test bed configuration. If you need to change sometihing, look here first. |
+|  - | `defaults.sh` | Contains global variables which control the test bed configuration. If you need to change sometihing, look here first. MAC and IP address variables can be overridden by setting them as environment variables before sourcing this file. |
 |  - | `rmp_lib.sh` | Contains global functions used by the scripts in the `libnvme_rpm`, `nvme_rpm`, and `dracut_rpm`  subdirectories. |
 | `vm-lib` | - | Contains shared scripts and functions used by both *target-vm* and *host-vm* subdirectories. Includes common network setup scripts and Makefile targets. |
 | `vm-lib` | `common.sh` | Contains global functions used by the scripts in the `target-vm` and `host-vm` subdirectories. |
@@ -510,5 +510,109 @@ Now run the following commands to build and install your NVMe/TCP Boot test envi
 ```
 
 The next step is to go to [Setup your Virtual Machines](#setup-your-virtual-machines) and install the `host-vm`.
+
+# Automated Test Runner
+
+The `run_tests.py` script automates NVMe/TCP boot testing by reading test configurations from `tests.json`, setting up network environments, generating EFI boot configurations, and executing boot tests with pytest.
+
+## Requirements
+
+- Python 3.6+
+- `jsonschema` module (optional, for validation): `pip install jsonschema`
+- `pytest` module (required for test execution): `pip install pytest`
+
+## Quick Start
+
+```bash
+# Validate test configuration
+./run_tests.py --dry-run
+
+# Run all configured tests with pytest
+./run_tests.py
+
+# Run with verbose pytest output
+./run_tests.py -v -s
+
+# Use custom test file
+./run_tests.py -t my-tests.json
+```
+
+## What It Does
+
+1. **Validates** test configuration against `schemata/tests.json`
+2. **Sets up networks** by calling `./setup.sh net` with appropriate arguments
+3. **Generates** `host-vm/eficonfig/config` for each test with boot attempt parameters
+4. **Executes tests** by running `make setup` and `make start-remote` in host-vm directory
+5. **Verifies boot** by checking if the VM becomes responsive (SSH/ping) within timeout
+6. **Reports results** using pytest's familiar test output format
+
+## Test Configuration Structure
+
+The `tests.json` file defines test environments and boot configurations:
+
+```json
+{
+  "environments": [
+    {
+      "name": "Environment Name",
+      "network": {
+        "br0":    { "slave": "local", "hypervisorIp": "dhcp", "targetVmIp": "dhcp" },
+        "virbr1": { "slave": "local", "hypervisorIp": "192.168.101.1/24", "targetVmIp": "192.168.101.20", "subnetMask": 24 },
+        "virbr2": { "slave": "local", "hypervisorIp": "192.168.110.1/24", "targetVmIp": "192.168.110.20", "subnetMask": 24 }
+      },
+      "tests": [
+        {
+          "name": "Test Name",
+          "host-uuid": "optional-uuid",
+          "timeout": 120,
+          "bootAttempts": [
+            {
+              "macAddress": "AA:BB:CC:DD:EE:FF",
+              "hostIp": "192.168.101.30",
+              "targetIp": "192.168.101.20",
+              "subsystemNQN": "nqn.2014-08.org.nvmexpress.discovery",
+              "port": 4420,
+              "timeout": 3000,
+              "subnetMask": 24
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
+```
+
+### Test Fields
+
+- **name**: Test description
+- **timeout**: Boot timeout in seconds (10-3600, default: 120) - how long to wait for VM to become responsive
+- **host-uuid**: Optional host UUID override
+- **bootAttempts**: Array of NVMe/TCP boot attempt configurations
+
+## Using Default Values
+
+Specify `"default"` for any boot attempt field to use values from `defaults.sh`:
+
+```json
+{
+  "macAddress": "default",    // Uses HOST_MAC2 for attempt 1, HOST_MAC3 for attempt 2
+  "hostIp": "default",        // Uses virbr1.hostVmIp for attempt 1, virbr2.hostVmIp for attempt 2
+  "targetIp": "default",      // Uses virbr1.targetVmIp for attempt 1, virbr2.targetVmIp for attempt 2
+  "subsystemNQN": "default",  // Uses SUBNQN from defaults.sh
+  "port": "default",          // Uses 4420
+  "timeout": "default"        // Uses 3000
+}
+```
+
+## Network Configuration
+
+Each bridge interface configuration:
+
+- **slave**: Network interface to bridge (e.g., `"ens1f0np0"`) or `"local"` to skip bridging
+- **hypervisorIp**: IP for hypervisor (CIDR optional, e.g., `"192.168.101.1/24"` or `"dhcp"`)
+- **targetVmIp**: IP for target VM (CIDR optional)
+- **hostVmIp**: IP for host VM (optional, CIDR optional)
+- **subnetMask**: Integer (1-31), dotted decimal, or `"default"`
 
 **END**

@@ -33,6 +33,7 @@ lorax/*
 lorax_results/*
 mock_result/*
 mock_repo/*
+__pycache__/*
 ISO/*
 artifacts/NvmeOfCli.efi
 artifacts/OVMF_CODE.fd

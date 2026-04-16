@@ -64,13 +64,13 @@ esac
 chmod 644 .build/hosts.txt
 
 ssh-keygen -R "${SSH_KNOWN_HOST_ID}"
-ssh-copy-id -i $DIR/../.ssh/id_ecdsa.pub ssh://${SSH_TARGET}
+ssh-copy-id -o StrictHostKeyChecking=no -o ConnectTimeout=20 -i $DIR/../.ssh/id_ecdsa.pub ssh://${SSH_TARGET}
 
 case "$VMNAME" in
     target-vm)
         make --makefile="$PWD/Makefile" .build/tcp.json
         scp -i $DIR/../.ssh/id_ecdsa -o StrictHostKeyChecking=no .build/{tcp.json,hosts.txt} $PWD/start-nvme-target.service $PWD/start-nvme-target.sh $DIR/../vm-lib/remote-netsetup.sh scp://${SSH_TARGET}
-        ssh -t -i $DIR/../.ssh/id_ecdsa ssh://${SSH_TARGET} "
+        ssh -t -i $DIR/../.ssh/id_ecdsa -o StrictHostKeyChecking=no ssh://${SSH_TARGET} "
 set -e
 . remote-netsetup.sh $TARGET_MAC2 $TARGET_MAC3 \"$TARGET_CIDR2\" \"$TARGET_CIDR3\"
 cp start-nvme-target.sh /usr/local/bin
@@ -85,7 +85,7 @@ dmesg | grep nvmet"
     ;;
     host-vm)
         scp -i $DIR/../.ssh/id_ecdsa -o StrictHostKeyChecking=no .build/* $DIR/../vm-lib/remote-netsetup.sh scp://${SSH_TARGET}
-        ssh -t -i $DIR/../.ssh/id_ecdsa ssh://${SSH_TARGET} "\
+        ssh -t -i $DIR/../.ssh/id_ecdsa -o StrictHostKeyChecking=no ssh://${SSH_TARGET} "\
 	    . remote-netsetup.sh $HOST_MAC2 $HOST_MAC3 \"$HOST_CIDR2\" \"$HOST_CIDR3\""
     ;;
     *)
