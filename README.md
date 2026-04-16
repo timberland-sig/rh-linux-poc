@@ -241,16 +241,16 @@ It is important to specify the IP address parameter correctly.
 **Make sure you run it from the correct working directory** (`target-vm/` or `host-vm/`)
 
 ```
- Usage: netsetup.sh [IP_ADDRESS]
+ Usage: netsetup.sh [--gen-nqn] [IP_ADDRESS]
 
  Configures the network of rh-linux-poc
 
-  IP_ADDRESS - Host interface IP address (default: localhost)
+  IP_ADDRESS   - Host interface IP address (default: localhost)
+  --gen-nqn    - Generate a fresh random NQN
 
    E.g.:
           ./netsetup.sh 192.168.0.63
-          ./netsetup.sh 10.16.188.66
-          ./netsetup.sh localhost
+          ./netsetup.sh --gen-nqn
 ```
 
 ## Create the `target-vm`

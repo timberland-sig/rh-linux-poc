@@ -9,21 +9,21 @@ COPR_USER=johnmeneghini
 
 # These are the system UUID, Host NQN and Host ID for the target-vm
 # The TARGET_SYS_UUID is generated with TARGET_SYS_UUID="$(uuidgen)"
-TARGET_SYS_UUID="a53caec2-eb2d-4bca-819e-f2bbfb10e1fa"
+TARGET_SYS_UUID="${TARGET_SYS_UUID:-a53caec2-eb2d-4bca-819e-f2bbfb10e1fa}"
 TARGETNQN="nqn.2014-08.org.nvmexpress:uuid:$TARGET_SYS_UUID"
 
 # These are the system UUID, Host NQN and Host ID for the host-vm
 # This HostNQN appears in the target-vm/tcp.json file and in the host-vm/discover_target.sh file
 # The HOST_SYS_UUID is generated with HOST_SYS_UUID="$(uuidgen)"
-HOST_SYS_UUID="f8131bac-cdef-4165-866b-5998c1e67890"
+HOST_SYS_UUID="${HOST_SYS_UUID:-f8131bac-cdef-4165-866b-5998c1e67890}"
 HOSTNQN="nqn.2014-08.org.nvmexpress:uuid:$HOST_SYS_UUID"
 HOSTID="$HOST_SYS_UUID"
 
 # These are the Namespace identifiers and Subsystem NQN for the Linux Ctrl soft target.
 # See the target-vm/tcp.json.in file for more information.
-SUBNQN="nqn.2014-08.org.nvmexpress:uuid:0c468c4d-a385-47e0-8299-6e95051277db"
-NSNGUID="ace42e00-1510-2fce-2ee4-ac0000000001"
-NSUUID="bee9c2b7-1761-44b5-a4e6-0f690498a94b"
+SUBNQN="${SUBNQN:-nqn.2014-08.org.nvmexpress:uuid:0c468c4d-a385-47e0-8299-6e95051277db}"
+NSNGUID="${NSNGUID:-ace42e00-1510-2fce-2ee4-ac0000000001}"
+NSUUID="${NSUUID:-bee9c2b7-1761-44b5-a4e6-0f690498a94b}"
 
 # Serial numbers for nvme disks, used by target-vm/install.sh
 # Generated with SN=$(hexdump -vn8 -e'4/4 "%08X" 1 "\n"' /dev/urandom)
