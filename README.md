@@ -236,20 +236,16 @@ and correctly working.
 
 During the installation of both VMs the `./vm-lib/netsetup.sh` script will be
 run. This script will create a VM specific network configuration for that VM.
-It is important to specify the `ipaddr` parameter correctly.
+It is important to specify the IP address parameter correctly.
 
 **Make sure you run it from the correct working directory** (`target-vm/` or `host-vm/`)
 
 ```
- Usage: netsetup.sh <ipaddr | localhost>
+ Usage: netsetup.sh [IP_ADDRESS]
 
  Configures the network of rh-linux-poc
 
-  ipaddr - dhcp assigned ipv4 address of rh-linux-poc
-           - corresponds to br0 on the hypervisor host
-
-   Passing "localhost" in the ipaddr field is used with there is no br0 interface
-   configured on the hypervisor. See "./install.sh" help for more information.
+  IP_ADDRESS - Host interface IP address (default: localhost)
 
    E.g.:
           ./netsetup.sh 192.168.0.63
