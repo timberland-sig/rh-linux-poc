@@ -7,11 +7,12 @@ to_lower() {
 }
 
 mac2iface() {
-    find /sys/class/net -mindepth 1 ! -name lo -execdir sh -c "MAC=\$(cat {}/address 2>/dev/null); if [ \"\$MAC\" = \"$1\" ]; then echo \"\$(basename {})\"; fi" \;
+	local macaddr=$1
+    find /sys/class/net -mindepth 1 ! -name lo -execdir sh -c "MAC=\$(cat {}/address 2>/dev/null); if [ \"\$MAC\" = \"$macaddr\" ]; then echo \"\$(basename {})\"; fi" \;
 }
 
-if [ $# -ne 4 ] ; then
-	echo "Usage: $0 <mac address 2> <mac address 3> <ip address 2> <ip address 3>"
+if [ $# -ne 0 -a $# -ne 2 -a $# -ne 4 ] ; then
+	echo "Usage: $0 [<mac address 2> <mac address 3>] [<ip address 2> <ip address 3>]"
 	exit 1
 fi
 
@@ -71,7 +72,7 @@ ip -h -c -o -br address show
 
 cat hosts.txt >> /etc/hosts
 if [ -f $HOME/hostid ] ; then
-       /bin/cp -f hostid /etc/nvme	# 'cp' may be aliased to 'cp -i'
+	/bin/cp -f hostid /etc/nvme	# 'cp' may be aliased to 'cp -i'
 fi
 
 

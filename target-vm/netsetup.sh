@@ -15,6 +15,10 @@ show-help() {
     echo ""
     echo "  IP_ADDRESS - Host interface IP address (default: localhost)"
     echo ""
+    echo " Environment variables:"
+    echo "  TARGET_CIDR2 - Soft target IP address in CIDR notation (default: 192.168.101.20/24)"
+    echo "  TARGET_CIDR3 - Soft target IP address in CIDR notation (default: 192.168.110.20/24)"
+    echo ""
     exit 0
 }
 

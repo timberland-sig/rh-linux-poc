@@ -10,6 +10,7 @@ echo "$DIR"
 . $DIR/../vm-lib/common.sh
 
 VMNAME=`basename $PWD`
+target_ip="$1"
 
 if [ $# -lt 1 ] ; then
     echo " "
@@ -49,9 +50,9 @@ mkdir -p .build
 mkdir -p $HOME/.ssh
 touch $HOME/.ssh/known_hosts
 
-SSH_TARGET="root@$1"
-SSH_KNOWN_HOST_ID="$1"
-case "$1" in
+SSH_TARGET="root@$target_ip"
+SSH_KNOWN_HOST_ID="$target_ip"
+case "$target_ip" in
     localhost)
         make --makefile="$DIR/Makefile" NET_TYPE=localhost .build/hosts.txt
         SSH_TARGET="${SSH_TARGET}:$SSH_PORT"

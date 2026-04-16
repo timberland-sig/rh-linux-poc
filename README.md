@@ -306,15 +306,19 @@ enp0s6           UP             fe80::6e22:d7dd:43f0:5e21/64
 
 ### Step 3 Run `./netsetup.sh` on the hypervisor
 
-The `./netsetup.sh` utility is ran on the hypervisor in the `target-vm` directory. If you ran `make start` with `NET_TYPE=bridged`, you
-will be prompted for the IP address of the `target-vm`. You obtained that in the previous step from the `ip -br addr show`
-command on the `target-vm`. The script leverages password-less login using SSH keys. You will only be prompted
-for the `root` password once.
+The `./netsetup.sh` utility is ran on the hypervisor in the `target-vm` directory. If you ran `make start` with `NET_TYPE=bridged`,
+pass the IP address of the `target-vm` as a parameter. You obtained that in the previous step from the `ip -br addr show`
+command on the `target-vm`. If omitted, it defaults to `localhost`. The script leverages password-less login using SSH keys.
+You will only be prompted for the `root` password once.
+
+The soft target IP addresses can be configured via environment variables `TARGET_CIDR2` and `TARGET_CIDR3`
+(defaults: `192.168.101.20/24` and `192.168.110.20/24`).
 
 Example:
 
 ```
 ./netsetup.sh 192.168.0.63
+./netsetup.sh              # defaults to localhost
 ```
 
 The `target-vm` should now be ready to serve the NVMe soft target. If you reboot the machine, a systemd service
@@ -406,10 +410,13 @@ enp0s6           UP
 
 ### Step 2 Run `./netsetup.sh` on the hypervisor
 
-The `./netsetup.sh` utility is ran on the hypervisor in the `host-vm` directory. If you ran `make start` with `NET_TYPE=bridged`, you
-will be prompted for the IP address of the `host-vm`. You obtained that in the previous step from the `ip -br addr show`
-command on the `host-vm`. The script leverages password-less login using SSH keys. You will only be prompted
-for the `root` password once.
+The `./netsetup.sh` utility is ran on the hypervisor in the `host-vm` directory. If you ran `make start` with `NET_TYPE=bridged`,
+pass the IP address of the `host-vm` as a parameter. You obtained that in the previous step from the `ip -br addr show`
+command on the `host-vm`. If omitted, it defaults to `localhost`. The script leverages password-less login using SSH keys.
+You will only be prompted for the `root` password once.
+
+The soft target IP addresses can be configured via environment variables `TARGET_CIDR2` and `TARGET_CIDR3`
+(defaults: `192.168.101.20/24` and `192.168.110.20/24`).
 
 ```
 ...
