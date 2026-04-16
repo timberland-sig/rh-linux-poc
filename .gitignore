@@ -50,7 +50,6 @@ host-vm/vm_vars.fd
 host-vm/eficonfig/NvmeOfCli.efi
 host-vm/eficonfig/VConfig.efi
 host-vm/efi.tgz
-host-vm/discover_target.sh
 host-vm/copy_efi.sh
 host-vm/eficonfig/config
 host-vm/efidisk
