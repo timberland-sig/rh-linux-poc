@@ -129,14 +129,12 @@ install_network() {
     ip -h -c -o -br address show ${br_name}
 
     if ! nmcli dev show virbr1 &>/dev/null ; then
-        # sudo nmcli conn add type bridge ifname virbr1 con-name virbr1 stp yes ipv4.addresses $HOSTGW_CIDR2 ipv4.method manual ipv6.method shared
-	bridge_iface 'virbr1' "$3" "$4"
+	    bridge_iface 'virbr1' "$3" "$4"
         ip -h -c -o -br address show virbr1
     fi
 
     if ! nmcli dev show virbr2 &>/dev/null ; then
-        # sudo nmcli conn add ifname virbr2 type bridge con-name virbr2 stp yes ipv4.addresses $HOSTGW_CIDR3 ipv4.method manual ipv6.method shared
-	bridge_iface 'virbr2' "$5" "$6"
+	    bridge_iface 'virbr2' "$5" "$6"
         ip -h -c -o -br address show virbr2
     fi
 
