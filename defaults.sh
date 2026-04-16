@@ -38,20 +38,23 @@ SN4='5B36AC547362E851'
 # Note that TARGET_MAC1 and HOST_MAC1 are used with DHCP and must be unique to
 # your testbed.  Use the ./gen_macaddr.py script and replace these values
 # for your testbed.
+#
+# All MAC and IP address variables can be overridden by setting them as
+# environment variables before sourcing this file.
 
-TARGET_MAC1=00:16:3E:36:38:90
-HOST_MAC1=00:16:3E:3E:3A:3E
+TARGET_MAC1="${TARGET_MAC1:-00:16:3E:36:38:90}"
+HOST_MAC1="${HOST_MAC1:-00:16:3E:3E:3A:3E}"
 
 # The Following MAC and IP addresses are static and only used on the private
 # virbr1 and virbr2 networks.  These can all be safely left and unchanged.
 
-HOST_PORT="5555"
-TARGET_PORT="5556"
+TARGET_PORT="${TARGET_PORT:-5555}"
+HOST_PORT="${HOST_PORT:-5556}"
 
-TARGET_MAC2="EA:EB:D3:56:89:56"
-TARGET_MAC3="EA:EB:D3:57:89:57"
-HOST_MAC2="EA:EB:D3:58:89:58"
-HOST_MAC3="EA:EB:D3:59:89:59"
+TARGET_MAC2="${TARGET_MAC2:-EA:EB:D3:56:89:56}"
+TARGET_MAC3="${TARGET_MAC3:-EA:EB:D3:57:89:57}"
+HOST_MAC2="${HOST_MAC2:-EA:EB:D3:58:89:58}"
+HOST_MAC3="${HOST_MAC3:-EA:EB:D3:59:89:59}"
 
 TARGET_CIDR2="${TARGET_CIDR2:-192.168.101.20/24}"
 TARGET_CIDR3="${TARGET_CIDR3:-192.168.110.20/24}"
