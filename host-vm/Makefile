@@ -259,6 +259,10 @@ clean: clean-config
 	-rm -f efidisk
 	-rm -f bootlog
 
+.PHONY: is-running
+is-running:
+	@pgrep -f "[q]emu-system-x86.*$(VMNAME)" > /dev/null && echo "YES" || { echo "NO"; exit 1; }
+
 # We put q in [] to prevent 'kill' from killing its parent shell process
 .PHONY: kill
 kill:
