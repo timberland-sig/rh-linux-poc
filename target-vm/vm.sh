@@ -160,9 +160,9 @@ case "$NET_CONN" in
 esac
 
 NET1_NET="-netdev bridge,br=virbr1,id=net1,helper=$BRIDGE_HELPER"
-NET1_DEV="-device virtio-net-pci,netdev=net1,mac=$TARGET_MAC2,addr=5"
+NET1_DEV="-device rtl8139,netdev=net1,mac=$TARGET_MAC2,addr=5"
 NET2_NET="-netdev bridge,br=virbr2,id=net2,helper=$BRIDGE_HELPER"
-NET2_DEV="-device virtio-net-pci,netdev=net2,mac=$TARGET_MAC3,addr=6"
+NET2_DEV="-device rtl8139,netdev=net2,mac=$TARGET_MAC3,addr=6"
 
 # Set boot options based on mode
 if [ "$MODE" == "install" ]; then
