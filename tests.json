@@ -4,20 +4,20 @@
       "name": "Localhost Environment",
       "network": {
         "br0": {
-          "slave": "local",
+          "slave": "none",
           "hypervisorIp": "dhcp",
           "targetVmIp": "dhcp",
           "hostVmIp": "dhcp"
         },
         "virbr1": {
-          "slave": "local",
+          "slave": "none",
           "hypervisorIp": "192.168.101.1",
           "targetVmIp": "192.168.101.20",
           "hostVmIp": "192.168.101.30",
           "subnetMask": 24
         },
         "virbr2": {
-          "slave": "local",
+          "slave": "none",
           "hypervisorIp": "192.168.110.1",
           "targetVmIp": "192.168.110.20",
           "hostVmIp": "192.168.110.30",

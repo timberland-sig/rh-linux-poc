@@ -559,9 +559,9 @@ The `tests.json` file defines test environments and boot configurations:
     {
       "name": "Environment Name",
       "network": {
-        "br0":    { "slave": "local", "hypervisorIp": "dhcp", "targetVmIp": "dhcp" },
-        "virbr1": { "slave": "local", "hypervisorIp": "192.168.101.1/24", "targetVmIp": "192.168.101.20", "subnetMask": 24 },
-        "virbr2": { "slave": "local", "hypervisorIp": "192.168.110.1/24", "targetVmIp": "192.168.110.20", "subnetMask": 24 }
+        "br0":    { "slave": "none", "hypervisorIp": "dhcp", "targetVmIp": "dhcp" },
+        "virbr1": { "slave": "none", "hypervisorIp": "192.168.101.1/24", "targetVmIp": "192.168.101.20", "subnetMask": 24 },
+        "virbr2": { "slave": "none", "hypervisorIp": "192.168.110.1/24", "targetVmIp": "192.168.110.20", "subnetMask": 24 }
       },
       "tests": [
         {
@@ -612,7 +612,7 @@ Specify `"default"` for any boot attempt field to use values from `defaults.sh`:
 
 Each bridge interface configuration:
 
-- **slave**: Network interface to bridge (e.g., `"ens1f0np0"`) or `"local"` to skip bridging
+- **slave**: Network interface to bridge (e.g., `"ens1f0np0"`) or `"none"` to skip bridging
 - **hypervisorIp**: IP for hypervisor (CIDR optional, e.g., `"192.168.101.1/24"` or `"dhcp"`)
 - **targetVmIp**: IP for target VM (CIDR optional)
 - **hostVmIp**: IP for host VM (optional, CIDR optional)

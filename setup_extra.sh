@@ -25,7 +25,7 @@ display_help() {
         echo "                : - results at: https://copr.fedorainfracloud.org/coprs/"
         echo "  net           : configure network environment "
         echo "                : - script prompts for \"bridged\" primary interface."
-        echo "                :   Enter \"local\" to skip primary interace reconfiguration."
+        echo "                :   Enter \"none\" to skip primary interace reconfiguration."
         echo "  artifacts     : install prebuilt EDK2 artifacts"
         echo "                :   Download artifacts.zip in \"artifacts\" directory first. "
         echo "  mock  < $ALL_VERSIONS > "

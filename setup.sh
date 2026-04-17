@@ -27,7 +27,7 @@ display_help() {
         echo "                : - use -s or --source to build from source instead of downloading the prebuilt zip"
         echo "  net           : configure network environment "
         echo "                : - script prompts for \"bridged\" primary interface."
-        echo "                :   Enter \"local\" to skip primary interace reconfiguration."
+        echo "                :   Enter \"none\" to skip primary interace reconfiguration."
         echo "  iso           : download an ISO file of an OS you wish to install on the VMs from a URL"
         echo ""
         echo " Examples: "

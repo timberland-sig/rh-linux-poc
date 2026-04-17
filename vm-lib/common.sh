@@ -237,7 +237,7 @@ Configure a network bridge using NetworkManager.
 Arguments:
   BRIDGE_NAME       Name of the bridge interface (e.g., br0, virbr1, virbr2)
   SLAVE_INTERFACE   Network interface to bridge (optional)
-                    - Use 'local' to create bridge without a slave interface
+                    - Use 'none' to create bridge without a slave interface
                     - If not provided, will prompt interactively
   IP_ADDRESS        IPv4 address in CIDR notation or 'dhcp' (optional)
                     - If not provided, will prompt interactively
@@ -247,7 +247,7 @@ Arguments:
 
 Examples:
   bridge_iface br0 eth0 192.168.1.1/24
-  bridge_iface virbr1 local dhcp
+  bridge_iface virbr1 none dhcp
   bridge_iface virbr2 enp2s0
   bridge_iface br0                    # Interactive mode
 
@@ -281,7 +281,7 @@ EOF
     if [ -z "$netdev" ]; then
         nmcli dev status
         echo ""
-        read -r -p "Enter name of the network interface to bridge with ${br_name} or \"local\" to skip configuration: " netdev
+        read -r -p "Enter name of the network interface to bridge with ${br_name} or \"none\" to skip configuration: " netdev
 
         if [ -z "$netdev" ]; then
             echo "Error: No network device specified" >&2
@@ -289,8 +289,8 @@ EOF
         fi
     fi
 
-    # Create bridge based on whether it's local or bridged
-    if [[ "$netdev" == *"local"* ]]; then
+    # Create bridge based on whether it's none or bridged
+    if [[ "$netdev" == *"none"* ]]; then
         echo " : local - skipping bridged network setup"
         sudo nmcli conn add type bridge ifname ${br_name} con-name ${br_name} stp yes autoconnect yes
         local br_conn=${br_name}

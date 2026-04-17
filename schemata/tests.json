@@ -55,7 +55,7 @@
       "properties": {
         "slave": {
           "type": "string",
-          "description": "Name of the slave interface to bridge (or 'local' to skip bridging)"
+          "description": "Name of the slave interface to bridge (or 'none' to skip bridging)"
         },
         "hypervisorIp": {
           "oneOf": [
