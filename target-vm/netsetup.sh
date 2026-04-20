@@ -20,6 +20,8 @@ show-help() {
     echo ""
     echo " Environment variables:"
     echo "  SUBNQN       - Soft target NVMe subsystem NQN"
+    echo "  NVME_NS_PATH - Optional: Path to the NVMe namespace to bind to the soft-target"
+    echo "                 - Deduced from PCIe address if not specified"
     echo "  TARGET_CIDR2 - Soft target IP address in CIDR notation (default: 192.168.101.20/24)"
     echo "  TARGET_CIDR3 - Soft target IP address in CIDR notation (default: 192.168.110.20/24)"
     echo ""

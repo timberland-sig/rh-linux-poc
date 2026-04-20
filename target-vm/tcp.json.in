@@ -77,7 +77,7 @@
           "ana_grpid": 1,
           "device": {
             "nguid": "NSNGUID",
-            "path": "/dev/nvme1n1",
+            "path": "DISKPATH",
             "uuid": "NSUUID"
           },
           "enable": 1,

@@ -70,19 +70,12 @@ ssh-copy-id -o StrictHostKeyChecking=no -o ConnectTimeout=20 -i $DIR/../.ssh/id_
 case "$VMNAME" in
     target-vm)
         make --makefile="$PWD/Makefile" .build/tcp.json
-        scp -i $DIR/../.ssh/id_ecdsa -o StrictHostKeyChecking=no .build/{tcp.json,hosts.txt} $PWD/start-nvme-target.service $PWD/start-nvme-target.sh $DIR/../vm-lib/remote-netsetup.sh scp://${SSH_TARGET}
+        scp -i $DIR/../.ssh/id_ecdsa -o StrictHostKeyChecking=no .build/{tcp.json,hosts.txt} $PWD/setup-nvme-target.sh $DIR/../vm-lib/remote-netsetup.sh scp://${SSH_TARGET}
         ssh -t -i $DIR/../.ssh/id_ecdsa -o StrictHostKeyChecking=no ssh://${SSH_TARGET} "
 set -e
 . remote-netsetup.sh $TARGET_MAC2 $TARGET_MAC3 \"$TARGET_CIDR2\" \"$TARGET_CIDR3\"
-cp start-nvme-target.sh /usr/local/bin
-cp start-nvme-target.service /etc/systemd/system/
-mkdir -p /usr/local/etc
-cp tcp.json /usr/local/etc
-
-systemctl daemon-reload
-systemctl enable --now start-nvme-target.service
-systemctl status start-nvme-target.service
-dmesg | grep nvmet"
+. setup-nvme-target.sh \"$NVME_NS_PATH\"
+"
     ;;
     host-vm)
         scp -i $DIR/../.ssh/id_ecdsa -o StrictHostKeyChecking=no .build/* $DIR/../vm-lib/remote-netsetup.sh scp://${SSH_TARGET}
