@@ -215,58 +215,12 @@ install_edk2_zip() {
 }
 
 install_prebuilt_iso() {
-    pushd $DIR
     if [ ! -f .pkgs2 ]; then
-        sudo dnf -y install vim tar wget net-tools zip unzip
+        sudo dnf -y install vim tar wget net-tools zip unzip python3 python3-blessed
         touch .pkgs2
     fi
-    if [ ! -d ISO ]; then
-        mkdir -p ISO
-    fi
-
-	touch .durl
-	touch .diso
-
-    # https://mirror.stream.centos.org/10-stream/BaseOS/x86_64/iso/
-    # https://mirror.stream.centos.org/9-stream/BaseOS/x86_64/iso/
-    # https://download.eng.rdu.redhat.com/rhel-9/composes/RHEL-9/
-    # https://download.eng.rdu.redhat.com/rhel-10/composes/RHEL-10/
-    # https://dl.fedoraproject.org/pub/fedora/linux/releases/42/Everything/x86_64/os/
-
-    DOWNLOAD_URL="$(cat .durl)"
-    read -r -p "Enter URL of the ISO or DVD ($DOWNLOAD_URL): " INPUT
-    if [ -z "$INPUT" ]; then
-        INPUT="$DOWNLOAD_URL"
-    fi
-    DOWNLOAD_URL="$INPUT"
-    if [ -z "$DOWNLOAD_URL" ]; then
-        echo "No URL provided"
-        exit 1
-    fi
-    echo "$DOWNLOAD_URL" > .durl
-    ISONAME=$(echo $DOWNLOAD_URL | awk -F/ '{print $NF}' | cut -d'?' -f1)
-    if [ -z "$ISONAME" ]; then
-        echo "No .iso found"
-        exit 1
-    fi
-
-    # Ensure filename ends with .iso if it contains .iso
-    if [[ "$ISONAME" == *.iso* ]]; then
-        ISONAME="${ISONAME%.iso*}.iso"
-    fi
-
-    if [ ! -f ISO/$ISONAME ]; then
-        pushd ISO
-        echo "wget ${DOWNLOAD_URL}"
-        wget --no-check-certificate -O ${ISONAME} ${DOWNLOAD_URL}
-		if [ $? -eq 0 ]; then
-			echo "${ISONAME}" > $DIR/.diso
-		fi
-        popd
-    else
-		echo "ISO $ISONAME already exists"
-		echo "${ISONAME}" > $DIR/.diso
-	fi
+    export MIRROR_RHEL MIRROR_CENTOS MIRROR_FEDORA
+    python3 "$DIR/iso_selector.py"
 }
 
 while getopts "h" opt; do

@@ -65,10 +65,8 @@ HOST_CIDR3="${HOST_CIDR3:-192.168.110.30/24}"
 HOSTGW_CIDR2="${HOSTGW_IP2:-192.168.101.1/24}"
 HOSTGW_CIDR3="${HOSTGW_IP3:-192.168.110.1/24}"
 
-ISO_VERSIONS="fedora-38|fedora-39|fedora-42|centos-9|centos-10|download"
-ISOVERSION_F36="Fedora-Everything-netinst-x86_64-36-1.5.iso"
-ISOVERSION_F37="Fedora-Everything-netinst-x86_64-37-1.7.iso"
-ISOVERSION_F42="Fedora-Everything-netinst-x86_64-42-1.1.iso"
+MIRROR_CENTOS="${MIRROR_CENTOS:-https://mirror.stream.centos.org/10-stream/BaseOS/x86_64/iso/}"
+MIRROR_FEDORA="${MIRROR_FEDORA:-https://download.fedoraproject.org/pub/fedora/linux/}"
 
 OVMF_ZIP="timberland-ovmf-release-edk2-stable201903-4950-g72976af.zip"
 OVMF_URL="https://github.com/timberland-sig/edk2/releases/download/release-edk2-stable201903-4950-g72976af/"
