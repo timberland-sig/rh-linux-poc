@@ -6,10 +6,23 @@ VMNAME := $(shell basename $$PWD)
 DRIVE_CAP ?= 70G
 NET_TYPE ?= "localhost"
 QEMU_ARGS ?= ""
-ISO ?= $(shell source ../vm-lib/common.sh &>/dev/null && find_iso &>/dev/null && echo $$ISO_FILE)
+METHOD ?= auto
+INPUT_ISO ?= $(shell source ../vm-lib/common.sh &>/dev/null && find_iso &>/dev/null && echo $$ISO_FILE)
+
+ifeq ($(METHOD),auto)
+    ISO ?= boot.iso
+else ifeq ($(METHOD),manual)
+	ISO = $(INPUT_ISO)
+    ifndef ISO
+        $(error 'ISO' must contain an ISO file path when METHOD="manual"!)
+    endif
+else
+    $(error 'METHOD' must be either "auto" or "manual!")
+endif
 
 SETUP_SCRIPT := vm.sh
 
+.ONESHELL: help
 .PHONY: help
 help:
 	@echo "Host VM Makefile - Manage NVMe/TCP boot test host VM"
@@ -58,11 +71,11 @@ start-local: disks/boot.qcow2 $(SETUP_SCRIPT)
 	bash ./$(SETUP_SCRIPT) -c $(NET_TYPE) start local -- $(QEMU_ARGS)
 
 .PHONY: install-local
-install-local: disks/boot.qcow2
+install-local: iso disks/boot.qcow2 $(ISO)
 	bash ./$(SETUP_SCRIPT) -c $(NET_TYPE) -i $(ISO) install local -- $(QEMU_ARGS)
 
 .PHONY: install-remote
-install-remote:
+install-remote: iso $(ISO)
 	bash ./$(SETUP_SCRIPT) -c $(NET_TYPE) -i $(ISO) install remote -- $(QEMU_ARGS)
 
 .PHONY: start-remote
@@ -236,12 +249,14 @@ nvmeof-utils/ovmf_vars_set: nvmeof-utils/ovmf_vars_set.c
 	echo "$$HOSTID" > $@
 
 # Simply embed the anaconda kickstart file into the ISO
-boot.iso: anaconda-ks.cfg ../vm-lib/common.sh
-# Look up the prebuilt ISO
-	sudo mkksiso --ks $< $(ISO) $@
+.ONESHELL: boot.iso
+boot.iso: iso anaconda-ks.cfg ../vm-lib/common.sh
+	if ! [ -f $@ ] ; then
+		sudo mkksiso --ks anaconda-ks.cfg $(INPUT_ISO) $@
+	fi
 
 anaconda-ks.cfg: anaconda-ks.cfg.template
-	@read -p "Enter a root password for the target-vm: " -s PASSWORD; echo; sed -e "s|<ROOT_PASSWD>|$$(openssl passwd -1 -stdin <<< $$PASSWORD)|" $< > $@
+	@read -p "Enter a root password for the host-vm: " -s PASSWORD; echo; sed -e "s|<ROOT_PASSWD>|$$(openssl passwd -1 -stdin <<< $$PASSWORD)|" $< > $@
 
 .PHONY: clean-config
 clean-config:
