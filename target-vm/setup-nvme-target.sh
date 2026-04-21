@@ -2,6 +2,11 @@
 
 set -e
 
+if [ "$(id -u)" -ne 0 ] ; then
+    echo "This script must be run as root!" >&2
+    exit 1
+fi
+
 nvme_disk_path="$1"
 
 if [ -z "$nvme_disk_path" ] ; then
@@ -24,6 +29,7 @@ echo "Exposing $nvme_disk_path..."
 
 modprobe nvme_fabrics
 modprobe nvmet_tcp
+cp nvmet-mods.conf /etc/modules-load.d/
 
 # Configure firewall to allow NVMe/TCP traffic (port 4420) on all zones
 systemctl start firewalld
