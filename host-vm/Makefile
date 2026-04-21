@@ -36,10 +36,10 @@ help:
 	@echo "  install-remote  Install OS to remote NVMe/TCP disk"
 	@echo "  start-remote    Start VM from remote NVMe/TCP disk"
 	@echo "  kill            Kill all $(VMNAME) instances"
-	@echo "  config		 Run the interactive setup of the boot attempt configuration"
-	@echo "  reconfig	 Re-run the interactive setup of the boot attempt configuration"
-	@echo "  		 This will NOT overwrite vm_vars.fd! Run 'make setup' again for that."
-	@echo "  clean-config	 Remove the boot attempt configuration file"
+	@echo "  config          Run the interactive setup of the boot attempt configuration"
+	@echo "  reconfig        Re-run the interactive setup of the boot attempt configuration"
+	@echo "                  This will NOT overwrite vm_vars.fd! Run 'make setup' again for that."
+	@echo "  clean-config    Remove the boot attempt configuration file"
 	@echo "  clean           Remove all VM disk images and temporary files"
 	@echo ""
 	@echo "Disk and configuration targets:"
@@ -52,7 +52,7 @@ help:
 	@echo "  DRIVE_CAP     Disk capacity (default: $(DRIVE_CAP))"
 	@echo "  NET_TYPE      Network type: localhost/bridged (default: $(NET_TYPE))"
 	@echo "  QEMU_ARGS     Additional QEMU arguments"
-	@echo "  ISO		   Path to a .iso to be used for OS installation"
+	@echo "  ISO             Path to a .iso to be used for OS installation"
 	@echo ""
 	@echo "Examples:"
 	@echo "  make install-local                  # Install to local disk"
@@ -191,23 +191,7 @@ eficonfig/config: eficonfig/config.in eficonfig/config2.in
 
 	read -p "Connection timeout (default: 3000): " TIMEOUT
 	TIMEOUT=$${TIMEOUT:-3000}
-	sed -i "s/TIMEOUT/$$TIMEOUT/" $@;
-
-# 	while true; do
-# 		echo "1 -> Set NID to NSUUID=$$NSUUID"
-# 		echo "2 -> Set NID to NSNGUID=$$NSNGUID"
-# 		echo "n -> Do not set NID."
-# 		read -p "Set NID? (1/2/n): " NID
-# 		if [ "$$NID" = "1" ]; then
-# 			sed -Ei "/ConnectTimeout:[0-9]+/i\NID:$$NSUUID" $@
-# 			break
-# 		elif [ "$$NID" = "2" ]; then
-# 			sed -Ei "/ConnectTimeout:[0-9]+/i\NID:$$NSNGUID" $@
-# 			break
-# 		elif [ "$$NID" = "n" ]; then
-# 			break
-# 		fi
-# 	done
+	sed -i "s/TIMEOUT/$$TIMEOUT/" $@
 
 	@echo ""
 	@echo "EFI Configuration file created successfully"
@@ -243,6 +227,7 @@ vm_vars.fd: eficonfig/config nvmeof-utils/ovmf_vars_set
 nvmeof-utils/ovmf_vars_set: nvmeof-utils/ovmf_vars_set.c
 	make -C $$(dirname $@)
 
+.ONESHELL: .build/hostid
 .build/hostid: ../defaults.sh
 	source $<
 	mkdir -p .build
@@ -290,4 +275,3 @@ kill:
 		kill $$(pgrep -f "[q]emu-system-x86.*$(VMNAME)") ; \
 	fi
 
-.ONESHELL: .build/hostid
