@@ -16,6 +16,7 @@ help:
 	@echo ""
 	@echo "Main targets:"
 	@echo "  help            Show this help message"
+	@echo "  iso             Download an OS ISO image for this VM"
 	@echo "  setup           Configure NBFT (NVMe Boot Firmware Table) for network boot"
 	@echo "  install-local   Install OS to local boot disk"
 	@echo "  start-local     Start VM from local boot disk"
@@ -67,6 +68,10 @@ install-remote:
 .PHONY: start-remote
 start-remote:
 	bash ./$(SETUP_SCRIPT) -c $(NET_TYPE) start remote -- $(QEMU_ARGS)
+
+.PHONY: iso
+iso:
+	@source ../defaults.sh && export MIRROR_CENTOS MIRROR_FEDORA && python3 ../iso_selector.py
 
 disks/%.qcow2:
 	mkdir -p disks
@@ -271,4 +276,3 @@ kill:
 	fi
 
 .ONESHELL: .build/hostid
-

@@ -152,7 +152,7 @@ def _tui_select():
     def draw(first):
         if not first:
             print(f"\r{term.move_up(total_lines - 1)}", end="")
-        print(f"  {term.cyan_bold}?{term.normal} {term.bold}Select an OS to download{term.normal}{term.clear_eol}")
+        print(f"  {term.cyan_bold}?{term.normal} {term.bold}Select an OS to use{term.normal}{term.clear_eol}")
         for i, (label, _) in enumerate(CHOICES):
             if i == selected:
                 print(f"  {term.cyan_bold}> {label}{term.normal}{term.clear_eol}")
@@ -185,6 +185,7 @@ def _tui_select():
 
 def main():
     script_dir = os.path.dirname(os.path.abspath(__file__))
+    state_dir = os.getcwd()
     iso_dir = os.path.join(script_dir, "ISO")
 
     selection = _tui_select()
@@ -196,7 +197,7 @@ def main():
 
     if resolver is None:
         prev_url = ""
-        durl_path = os.path.join(script_dir, ".durl")
+        durl_path = os.path.join(state_dir, ".durl")
         if os.path.isfile(durl_path):
             with open(durl_path) as f:
                 prev_url = f.read().strip()
@@ -236,9 +237,9 @@ def main():
             print(f"Download failed: {e}", file=sys.stderr)
             sys.exit(1)
 
-    with open(os.path.join(script_dir, ".durl"), "w") as f:
+    with open(os.path.join(state_dir, ".durl"), "w") as f:
         f.write(url + "\n")
-    with open(os.path.join(script_dir, ".diso"), "w") as f:
+    with open(os.path.join(state_dir, ".diso"), "w") as f:
         f.write(iso_name + "\n")
 
     print(f"ISO ready: ISO/{iso_name}")

@@ -7,7 +7,7 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 . $DIR/defaults.sh
 
 # Configuraiton
-MODES="user|devel|virt|net|edk2|iso"
+MODES="user|devel|virt|net|edk2"
 MODE="user"
 
 set -e
@@ -18,7 +18,7 @@ display_help() {
         echo
         echo "  -h            : display this help"
         echo ""
-        echo "  quickstart    : runs user, virt, net, edk2 and also iso if there is no ISO downloaded"
+        echo "  quickstart    : runs user, virt, net, edk2"
         echo "  user          : setup basic user environment (default)"
         echo "  devel         : setup development environment"
         echo "  virt          : install qemu-kvm environment "
@@ -28,7 +28,6 @@ display_help() {
         echo "  net           : configure network environment "
         echo "                : - script prompts for \"bridged\" primary interface."
         echo "                :   Enter \"none\" to skip primary interace reconfiguration."
-        echo "  iso           : download an ISO file of an OS you wish to install on the VMs from a URL"
         echo ""
         echo " Examples: "
         echo "  Install qemu and configure hypervisor networks"
@@ -42,7 +41,8 @@ install_user() {
 
     if [ ! -f .usr ]; then
         sudo dnf install -y vim git wget ethtool net-tools zip unzip NetworkManager \
-            lorax-lmc-novirt pykickstart openssl make python3-pytest python3-jsonschema
+            lorax-lmc-novirt pykickstart openssl make python3-pytest python3-jsonschema \
+            python3 python3-blessed
         touch .usr
     else
         echo " : Nothing to do!"
@@ -214,14 +214,6 @@ install_edk2_zip() {
     popd
 }
 
-install_prebuilt_iso() {
-    if [ ! -f .pkgs2 ]; then
-        sudo dnf -y install vim tar wget net-tools zip unzip python3 python3-blessed
-        touch .pkgs2
-    fi
-    export MIRROR_RHEL MIRROR_CENTOS MIRROR_FEDORA
-    python3 "$DIR/iso_selector.py"
-}
 
 while getopts "h" opt; do
         case "${opt}" in
@@ -253,9 +245,6 @@ case "${MODE}" in
         install_virt
         install_edk2_zip
         install_network
-        if [ ! -f .diso ] ; then
-            install_prebuilt_iso
-        fi
     ;;
     test)
         pushd target-vm
@@ -284,9 +273,6 @@ case "${MODE}" in
         else
             install_edk2_zip
         fi
-    ;;
-    iso)
-        install_prebuilt_iso
     ;;
     *)
     echo "  Invalid argument: $MODE" >&2

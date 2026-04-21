@@ -17,6 +17,7 @@ help:
 	@echo ""
 	@echo "Available targets:"
 	@echo "  help          Show this help message"
+	@echo "  iso           Download an OS ISO image for this VM"
 	@echo "  install       Manually install an OS from an ISO onto a fresh boot disk using QEMU"
 	@echo "  start         Start the VM with an existing boot disk using QEMU"
 	@echo "  rh-start      Automatically install the OS with Kickstart and start the VM (Red Hat distros only)"
@@ -46,7 +47,7 @@ help:
 	@echo ""
 
 .PHONY: rh-start
-rh-start: disks/nvme1.qcow2 boot.iso $(SETUP_SCRIPT)
+rh-start: disks/nvme1.qcow2 $(SETUP_SCRIPT)
 # disks/rh-boot.qcow2 is not an explicit dependency because it consumes
 # .build/rh-boot.qcow2 for its creation. This, however, confuses GNU Make
 # to go rebuild the qcow2 disk unnecessarily.
@@ -63,8 +64,12 @@ start: disks/boot.qcow2 disks/nvme1.qcow2 $(SETUP_SCRIPT)
 	@bash ./$(SETUP_SCRIPT) start $< -i $(ISO) -c $(NET_TYPE) -n $(EXTRA_DRIVES) -- $(QEMU_ARGS)
 
 .PHONY: install
-install: disks/boot.qcow2
-	@bash ./$(SETUP_SCRIPT) install $< -c $(NET_TYPE) -n $(EXTRA_DRIVES) -- $(QEMU_ARGS)
+install: iso disks/boot.qcow2
+	@bash ./$(SETUP_SCRIPT) install disks/boot.qcow2 -c $(NET_TYPE) -n $(EXTRA_DRIVES) -- $(QEMU_ARGS)
+
+.PHONY: iso
+iso:
+	@source ../defaults.sh && export MIRROR_CENTOS MIRROR_FEDORA && python3 ../iso_selector.py
 
 .ONESHELL: .build/tcp.json
 .build/tcp.json: tcp.json.in Makefile ../defaults.sh
@@ -88,9 +93,12 @@ disks/%.qcow2:
 	qemu-img create -f qcow2 $@ $(DRIVE_CAP)
 
 # Simply embed the anaconda kickstart file into the ISO
-boot.iso: anaconda-ks.cfg
+.ONESHELL: boot.iso
+boot.iso: iso anaconda-ks.cfg
 # Look up the prebuilt ISO
-	sudo mkksiso --ks $< "$(ISO)" $@
+	if ! [ -f $@ ] ; then
+		-sudo mkksiso --ks anaconda-ks.cfg "$(ISO)" $@
+	fi
 
 anaconda-ks.cfg: anaconda-ks.cfg.template
 	@while true; do \

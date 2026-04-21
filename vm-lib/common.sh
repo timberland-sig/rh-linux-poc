@@ -93,12 +93,17 @@ check_qemu_command() {
 }
 
 find_iso() {
-    ISOVERSION="$(cat ../.diso)"
+    if [ ! -f $PWD/.diso ]; then
+        echo " Error: no ISO configured for $(basename $PWD)"
+        echo " run \"make iso\" in this directory first"
+        exit 1
+    fi
+    ISOVERSION="$(cat $PWD/.diso)"
     ISO_FILE=$(find ../ -name $ISOVERSION -print)
     if [ -z "$ISO_FILE" ]; then
-	echo " Error: $ISOVERSION not found"
-	echo " run \"setup.sh -m iso\" or \"setup.sh prebuilt\""
-	exit 1
+        echo " Error: $ISOVERSION not found"
+        echo " run \"make iso\" in this directory first"
+        exit 1
     else
         ISO_FILE=$(realpath $ISO_FILE)
         echo "using $ISO_FILE"

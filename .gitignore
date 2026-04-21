@@ -13,6 +13,8 @@ cscope.*
 */mock_build/*
 */.build/*
 */.lorax/*
+*/anaconda-ks.cfg
+*/boot.iso
 */disks/*
 */.qargs
 */.netaddr
