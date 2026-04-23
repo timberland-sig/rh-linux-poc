@@ -188,15 +188,12 @@ account.
 *Note: this only works with Fedora and should be run with caution. When in
 doubt, install and setup qemu yourself, manually.*
 
-Run `./setup.sh iso` - This script will prompt you to enter a URL of an ISO disk image file.
-This file will be downloaded and used for installing an operating system on the virtual machines.
-
 Run `./setup.sh edk2` - This script will download the latest Timberland-SIG release of the EDK2 firmware
 and prepare it for use by the `host-vm`. Use `./setup.sh edk2 -s` or `./setup.sh edk2 --source` to build from source instead.
 
 # Setup your Virtual Machines
 
-If your hypervisor is on a remote system, you can use `make <target> QEMU_ARGS="-vnc :<number>"`
+If your hypervisor is on a remote system, you can use `make <target>`
 argment and connect to the VM console with `vncviewer` on your local machine.
 
 *Note that changing the specfic configuration - in terms of IP and MAC
@@ -234,7 +231,7 @@ and correctly working.
 
 ## The ./netsetup.sh script
 
-During the installation of both VMs the `./vm-lib/netsetup.sh` script will be
+During the installation of both VMs the `./netsetup.sh` script will be
 run. This script will create a VM specific network configuration for that VM.
 It is important to specify the IP address parameter correctly.
 
@@ -269,14 +266,14 @@ make rh-start
 ```
 to start the VM with the pre-installed disk.
 
-**Note**: The automated installation uses the anaconda kickstart configuration produced from in `anaconda-ks.cfg.template`.
+**Note**: The automated installation uses the Anaconda kickstart configuration produced from in `anaconda-ks.cfg.template`.
 You will be asked to provide a `root` password for the `target-vm` at the beginning of the setup.
-If you are not running this as root, you will also be asked for **your** `sudo` afterwards. Do not confuse these!
+If you are not running this as root, you will also be asked for **your** `sudo` password afterwards. Do not confuse these!
 
 If you are running this on a remote machine, the QEMU console window will not appear while the `target-vm` is auto-installing.
 The terminal will be blocked as if it was hanging, but **it is not**. The OS is being installed in the background.
 Both a success and a failure will terminate the command, so **DO NOT TERMINATE** it yourself nor interrupt it (with `Ctrl+C` for example)!!!
-You may, however, run the make target with `QEMU_ARGS='-vnc :0'` and then observe the installation over VNC with `vncviewer <hostname>:0`.
+You may, however, observe the installation over VNC with `vncviewer <hostname>:0`.
 
 #### Method 2 Manual installation
 
@@ -383,9 +380,23 @@ To install the OS on the remote drive, run:
 make install-remote
 ```
 
+A menu with operating system choices shall appear. You may choose between CentOS Stream 10, Fedora 42, Fedora 43,
+the latest available Fedora version, or provide an HTTP(S) link to an ISO file of a distribution of your choice.
+
 ![alt uefi reset](images/uefi_iso_install.png)
 
 Hit `Enter`.
+
+#### Method 1 - Automatic installation (Red Hat family distributions)
+
+By default, a similar Anaconda kickstart file is used, as was used for installing the `target-vm`.
+Observe the installation process - it may fail to install to the NVMe/TCP drive.
+A QEMU window will open for graphical sessions, use VNC if running the POC on a headless machine.
+
+The installer may get stuck at the storage configuration due to the remote NVMe subsystem not being detected.
+The disk may be hidden in the `Add disk` submenu. If it is not, the NVMe/TCP connection did not succeed. Check your configuration.
+
+#### Method 2 - Manual installation
 
 Follow the instructions on the screen and install your OS (not necessarily Fedora) on your `host-vm`.
 
@@ -465,7 +476,7 @@ follow the on-screen instructions.
 ### To restart the `host-vm` after `shutdown -h`
 
 For subsequent booting of the `host-vm` the NBFT/ACPI table
-should not need to be programmed by running `startup.nsh` again. To boot the
+should not need to be programmed by running `make setup` again. To boot the
 `host-vm` after shutdown run `make start-remote`. Connect to the
 `host-vm` console and immediately press the ESC button to stop the countdown.
 In case of boot issues (e.g. the remote drive not showing in the Boot manager),
@@ -483,37 +494,6 @@ To reset the network configuration and ensure test repeatability, run:
 
 This will remove all bridge interfaces and restore the original network configuration. The SSH key created during setup is preserved and must be removed manually if needed.
 
-# For developers
-
-## Build all Timberland-sig artifacts
-
-Run `./setup.sh devel` - This script clones all of the timberland-sig
-repositories, builds all needed artifiacts and rpms, and installs them in your
-personal copr repo. It then to creates a bootable iso image with the
-[lorax](https://weldr.io/lorax/lorax.html) uility. Artifacts and rpms are
-created in the follow directories:
-
-| Directory  | Decription |
-| :-----   | :----      |
-|`edk2`    | Contains the timberland-sig edk2 repository. The built artifacts are contained in: *edk2/edk2/Build/OvmfX64/DEBUG_GCC5/X64*.  The spefic artifacts need to boot with nvme/tcp are moved to: *host-vm/eficonfig/NvmeOfCli.efi*, *host-vm/OVMF_CODE.fd* and *host-vm/vm_vars.fd*. |
-| `lorax_results` | contains the bootable iso generated from the build process. This iso is created using the generated rpm from your `copr.fedorainfracloud.org` project. The specific location of the iso is: *lorax_results/images/boot.iso*`.  This is the default iso used by the *host-vm\vm.sh* and *target-vm\vm.sh* scripts.|
-| `copr.fedorainfracloud.org` | Contains rpms for nvme-cli, libnvme and dracut. (e.g.: see [johnmeneghini's](https://copr.fedorainfracloud.org/coprs/johnmeneghini/timberland-sig/) copr repository. |
-
-## Developer Build
-
-1. Create your user account, enable [sudo](https://developers.redhat.com/blog/2018/08/15/how-to-enable-sudo-on-rhel#:~:text=DR%3A%20Basic%20sudo-,TL%3BDR%3A%20Basic%20sudo,out%20and%20back%20in%20again) access, and configure your github [ssh-key](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/adding-a-new-ssh-key-to-your-github-account).
-2. Set up a [copr](https://docs.pagure.org/copr.copr/user_documentation.html#quick-start) user account and add [.config/copr](https://copr.fedorainfracloud.org/api/) to your user account.
-3. Create a working branch with `git checkout -b MYBRANCH` to keep configuration changes for your test bed.
-4. Edit the `defaults.sh` file and set the `COPR_USER` and `COPR_PROJECT` variables (c.f. `corp-cli whoami` and `corp-cli list`).
-
-Now run the following commands to build and install your NVMe/TCP Boot test environment:
-
-```
-  ./setup_extra.sh -m build fedora-37  # this will build all needed rpms and artifacts and create a fedora-37 bootable iso
-```
-
-The next step is to go to [Setup your Virtual Machines](#setup-your-virtual-machines) and install the `host-vm`.
-
 # Automated Test Runner
 
 The `run_tests.py` script automates NVMe/TCP boot testing by reading test configurations from `tests.json`, setting up network environments, generating EFI boot configurations, and executing boot tests with pytest.
@@ -521,8 +501,8 @@ The `run_tests.py` script automates NVMe/TCP boot testing by reading test config
 ## Requirements
 
 - Python 3.6+
-- `jsonschema` module (optional, for validation): `pip install jsonschema`
-- `pytest` module (required for test execution): `pip install pytest`
+- `jsonschema` module (optional, for validation)
+- `pytest` module (required for test execution)
 
 ## Quick Start
 
@@ -617,5 +597,36 @@ Each bridge interface configuration:
 - **targetVmIp**: IP for target VM (CIDR optional)
 - **hostVmIp**: IP for host VM (optional, CIDR optional)
 - **subnetMask**: Integer (1-31), dotted decimal, or `"default"`
+
+# For developers
+
+## Build all Timberland-sig artifacts
+
+Run `./setup.sh devel` - This script clones all of the timberland-sig
+repositories, builds all needed artifiacts and rpms, and installs them in your
+personal copr repo. It then to creates a bootable iso image with the
+[lorax](https://weldr.io/lorax/lorax.html) uility. Artifacts and rpms are
+created in the follow directories:
+
+| Directory  | Decription |
+| :-----   | :----      |
+|`edk2`    | Contains the timberland-sig edk2 repository. The built artifacts are contained in: *edk2/edk2/Build/OvmfX64/DEBUG_GCC5/X64*.  The spefic artifacts need to boot with nvme/tcp are moved to: *host-vm/eficonfig/NvmeOfCli.efi*, *host-vm/OVMF_CODE.fd* and *host-vm/vm_vars.fd*. |
+| `lorax_results` | contains the bootable iso generated from the build process. This iso is created using the generated rpm from your `copr.fedorainfracloud.org` project. The specific location of the iso is: *lorax_results/images/boot.iso*`.  This is the default iso used by the *host-vm\vm.sh* and *target-vm\vm.sh* scripts.|
+| `copr.fedorainfracloud.org` | Contains rpms for nvme-cli, libnvme and dracut. (e.g.: see [johnmeneghini's](https://copr.fedorainfracloud.org/coprs/johnmeneghini/timberland-sig/) copr repository. |
+
+## Developer Build
+
+1. Create your user account, enable [sudo](https://developers.redhat.com/blog/2018/08/15/how-to-enable-sudo-on-rhel#:~:text=DR%3A%20Basic%20sudo-,TL%3BDR%3A%20Basic%20sudo,out%20and%20back%20in%20again) access, and configure your github [ssh-key](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/adding-a-new-ssh-key-to-your-github-account).
+2. Set up a [copr](https://docs.pagure.org/copr.copr/user_documentation.html#quick-start) user account and add [.config/copr](https://copr.fedorainfracloud.org/api/) to your user account.
+3. Create a working branch with `git checkout -b MYBRANCH` to keep configuration changes for your test bed.
+4. Edit the `defaults.sh` file and set the `COPR_USER` and `COPR_PROJECT` variables (c.f. `corp-cli whoami` and `corp-cli list`).
+
+Now run the following commands to build and install your NVMe/TCP Boot test environment:
+
+```
+  ./setup_extra.sh -m build fedora-37  # this will build all needed rpms and artifacts and create a fedora-37 bootable iso
+```
+
+The next step is to go to [Setup your Virtual Machines](#setup-your-virtual-machines) and install the `host-vm`.
 
 **END**
