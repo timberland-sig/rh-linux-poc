@@ -644,6 +644,33 @@ class VMRunner:
         except:
             return False
 
+    def wait_for_bootlog_entry(self, pattern: str, timeout: int = 120) -> bool:
+        """Follow the bootlog file and wait for a pattern to appear."""
+        bootlog_path = self.host_vm_dir / "bootlog"
+        print(f"Waiting for bootlog entry: {pattern} (timeout: {timeout}s)...")
+        start_time = time.time()
+
+        # Wait for the file to exist
+        while not bootlog_path.exists():
+            if time.time() - start_time >= timeout:
+                print(f"✗ Bootlog file never appeared within {timeout}s")
+                return False
+            time.sleep(1)
+
+        with open(bootlog_path, 'r', errors='replace') as f:
+            while time.time() - start_time < timeout:
+                line = f.readline()
+                if line:
+                    if pattern in line:
+                        elapsed = int(time.time() - start_time)
+                        print(f"✓ Found bootlog entry (took {elapsed}s): {line.rstrip()}")
+                        return True
+                else:
+                    time.sleep(0.5)
+
+        print(f"✗ Bootlog entry not found within {timeout}s")
+        return False
+
     def cleanup(self):
         """Kill the VM using make kill."""
         print("Cleaning up VM...")
@@ -770,9 +797,16 @@ class TestNVMeBoot:
 
             # Start VM
             vm_runner.start_remote()
+            boot_start = time.time()
 
-            # Wait for boot
-            if not vm_runner.wait_for_boot(host_ip, timeout):
+            # Check bootlog for EFI boot success
+            efi_pattern = r"FSOpen: Open '\EFI\BOOT\' Success"
+            if not vm_runner.wait_for_bootlog_entry(efi_pattern, timeout):
+                pytest.fail("EFI boot entry not found in bootlog")
+
+            # Wait for boot with remaining time budget
+            remaining = max(1, timeout - int(time.time() - boot_start))
+            if not vm_runner.wait_for_boot(host_ip, remaining):
                 pytest.fail(f"VM did not boot within {timeout}s")
 
             print(f"✓ Test passed: {test_name}")
