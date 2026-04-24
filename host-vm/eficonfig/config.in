@@ -13,5 +13,6 @@ Gateway:HOSTGW_IP
 TargetIp:TARGET_IP
 NQN:SUBNQN
 ConnectTimeout:TIMEOUT
+ConnectRetryCount:10
 DnsMode:FALSE
 $End
