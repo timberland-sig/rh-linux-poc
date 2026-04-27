@@ -9,6 +9,8 @@ and runs boot tests using pytest.
 
 import json
 import os
+import re
+import shutil
 import subprocess
 import sys
 import time
@@ -35,6 +37,15 @@ DEFAULTS = {
 
 
 SCRIPT_DIR = Path(__file__).parent
+ARTIFACTS_DIR = SCRIPT_DIR / "artifacts"
+
+
+def sanitize_dir_name(name: str) -> str:
+    """Convert a test name to a short, terminal-friendly directory name."""
+    name = name.lower()
+    name = re.sub(r'[^a-z0-9]+', '-', name)
+    name = name.strip('-')
+    return name
 
 
 def validate_schema(config: Dict[str, Any], schema_file: str) -> bool:
@@ -732,8 +743,10 @@ class TestNVMeBoot:
         test_file = os.environ.get('TEST_CONFIG_FILE', 'tests.json')
         schema_file = os.environ.get('TEST_SCHEMA_FILE', 'schemata/tests.json')
         cls.config = load_test_config(test_file, schema_file)
+        ARTIFACTS_DIR.mkdir(exist_ok=True)
         print("\n" + "="*70)
         print("NVMe/TCP Boot Test Suite")
+        print(f"Artifacts directory: {ARTIFACTS_DIR}")
         print("="*70)
 
     def test_boot(self, env_idx: int, test_idx: int):
@@ -812,6 +825,16 @@ class TestNVMeBoot:
             print(f"✓ Test passed: {test_name}")
 
         finally:
+            # Collect bootlog artifact
+            bootlog_src = Path("host-vm") / "bootlog"
+            artifact_dir = ARTIFACTS_DIR / sanitize_dir_name(test_name)
+            artifact_dir.mkdir(parents=True, exist_ok=True)
+            if bootlog_src.exists():
+                shutil.copy2(bootlog_src, artifact_dir / "bootlog")
+                print(f"✓ Bootlog saved to {artifact_dir / 'bootlog'}")
+            else:
+                print(f"Warning: bootlog not found at {bootlog_src}")
+
             # Always cleanup
             vm_runner.cleanup()
 
