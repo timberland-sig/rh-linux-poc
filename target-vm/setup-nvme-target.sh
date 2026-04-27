@@ -43,6 +43,11 @@ cp -b tcp.json /etc/nvmet/config.json
 
 systemctl daemon-reload
 systemctl restart firewalld
-systemctl enable --now nvmet.service
+
+if systemctl is-active nvmet.service ; then
+    systemctl restart nvmet.service
+else
+    systemctl enable --now nvmet.service
+fi
 
 dmesg | grep nvmet
