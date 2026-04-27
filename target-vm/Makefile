@@ -71,6 +71,8 @@ install: iso disks/boot.qcow2
 iso:
 	@source ../defaults.sh && export MIRROR_CENTOS MIRROR_FEDORA && python3 ../iso_selector.py
 
+# This file must be re-built every time because it depends on environment variables
+.PHONY: .build/tcp.json
 .ONESHELL: .build/tcp.json
 .build/tcp.json: tcp.json.in Makefile ../defaults.sh
 	@source ../defaults.sh
