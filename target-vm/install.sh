@@ -18,9 +18,9 @@ create_install_startup() {
 	mkdir .build
 	echo "creating .build/install.sh"
 	NET1_NET="-netdev bridge,br=virbr1,id=net1,helper=$BRIDGE_HELPER"
-	NET1_DEV="-device virtio-net-pci,netdev=net1,mac=$MAC2,addr=5"
+	NET1_DEV="-device e1000e,netdev=net1,mac=$MAC2,addr=5"
 	NET2_NET="-netdev bridge,br=virbr2,id=net2,helper=$BRIDGE_HELPER"
-	NET2_DEV="-device virtio-net-pci,netdev=net2,mac=$MAC3,addr=6"
+	NET2_DEV="-device e1000e,netdev=net2,mac=$MAC3,addr=6"
 	cat << EOF >> .build/install.sh
 #!/bin/bash
 $QEMU -name $VMNAME -M q35 -accel kvm -bios OVMF-pure-efi.fd -cpu host -m 4G -smp 4 $QARGS \\

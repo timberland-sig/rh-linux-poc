@@ -20,9 +20,9 @@ create_install_startup() {
     # Fix me.  These variables need to be moved into vm_lib.sh and made
     # to work with both local and bridged addresses
     NET1_NET="-netdev bridge,br=virbr1,id=net1,helper=$BRIDGE_HELPER"
-    NET1_DEV="-device virtio-net-pci,netdev=net1,mac=$MAC2,addr=5"
+    NET1_DEV="-device e1000e,netdev=net1,mac=$MAC2,addr=5"
     NET2_NET="-netdev bridge,br=virbr2,id=net2,helper=$BRIDGE_HELPER"
-    NET2_DEV="-device virtio-net-pci,netdev=net2,mac=$MAC3,addr=6"
+    NET2_DEV="-device e1000e,netdev=net2,mac=$MAC3,addr=6"
 
     echo "creating .build/install.sh"
     cat << EOF >> .build/install.sh
