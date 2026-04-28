@@ -656,12 +656,12 @@ class VMRunner:
             return False
 
     def wait_for_bootlog_entry(self, pattern: str, timeout: int = 120) -> bool:
-        """Follow the bootlog file and wait for a pattern to appear."""
+        """Follow the bootlog file and wait for a regex pattern to appear."""
         bootlog_path = self.host_vm_dir / "bootlog"
+        regex = re.compile(pattern)
         print(f"Waiting for bootlog entry: {pattern} (timeout: {timeout}s)...")
         start_time = time.time()
 
-        # Wait for the file to exist
         while not bootlog_path.exists():
             if time.time() - start_time >= timeout:
                 print(f"✗ Bootlog file never appeared within {timeout}s")
@@ -671,11 +671,12 @@ class VMRunner:
         with open(bootlog_path, 'r', errors='replace') as f:
             while time.time() - start_time < timeout:
                 line = f.readline()
-                if line:
-                    if pattern in line:
-                        elapsed = int(time.time() - start_time)
-                        print(f"✓ Found bootlog entry (took {elapsed}s): {line.rstrip()}")
-                        return True
+                if line and regex.search(line):
+                    elapsed = int(time.time() - start_time)
+                    print(f"✓ Found bootlog entry (took {elapsed}s): {line.rstrip()}")
+                    return True
+                elif line:
+                    continue
                 else:
                     time.sleep(0.5)
 
@@ -813,7 +814,7 @@ class TestNVMeBoot:
             boot_start = time.time()
 
             # Check bootlog for EFI boot success
-            efi_pattern = r"FSOpen: Open '\EFI\BOOT\' Success"
+            efi_pattern = r"FSOpen: Open '\\?EFI.*' Success"
             if not vm_runner.wait_for_bootlog_entry(efi_pattern, timeout):
                 pytest.fail("EFI boot entry not found in bootlog")
 
