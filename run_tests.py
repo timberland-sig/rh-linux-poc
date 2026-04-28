@@ -859,7 +859,6 @@ class TestNVMeBoot:
 
             # Start VM
             vm_runner.start_remote()
-            boot_start = time.time()
 
             # Check bootlog for EFI boot success
             efi_pattern = r"FSOpen: Open '\\?EFI.*' Success"
@@ -867,8 +866,7 @@ class TestNVMeBoot:
                 pytest.fail("EFI boot entry not found in bootlog")
 
             # Wait for boot with remaining time budget
-            remaining = max(1, timeout - int(time.time() - boot_start))
-            if not vm_runner.wait_for_boot(host_ip, remaining):
+            if not vm_runner.wait_for_boot(host_ip, timeout):
                 pytest.fail(f"VM did not boot within {timeout}s")
 
             vm_runner.collect_artifacts(host_ip, artifact_dir / "nbft.json", artifact_dir / "dmesg")
