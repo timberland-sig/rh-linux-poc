@@ -16,6 +16,7 @@ import sys
 import time
 import socket
 import warnings
+import paramiko
 from pathlib import Path
 from typing import Dict, List, Any, Optional
 import pytest
@@ -683,6 +684,49 @@ class VMRunner:
         print(f"✗ Bootlog entry not found within {timeout}s")
         return False
 
+    def collect_artifacts(self, host_ip: str, nbft_out_file: Path, dmesg_out_file: Path) -> bool:
+        """SSH into the host-vm and collect intersting artifacts"""
+
+        ssh_key = SCRIPT_DIR / ".ssh" / "id_ecdsa"
+        print("Collecting artifacts from host-vm...")
+        client = paramiko.SSHClient()
+        client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        try:
+            client.connect(
+                host_ip,
+                username='root',
+                key_filename=str(ssh_key),
+                timeout=5,
+            )
+
+            self.collect_ssh_artifact("NBFT", "nvme nbft show --output-format=json", client, nbft_out_file)
+            self.collect_ssh_artifact("dmesg", "dmesg", client, dmesg_out_file)
+            return True
+        except Exception as e:
+            print(f"✗ Artifacts collection failed: {e}")
+            return False
+        finally:
+            client.close()
+
+    def collect_ssh_artifact(self, name: str, command: str, ssh_client, output_file: Path) -> None:
+        """SSH into the host-vm and export the output of a command."""
+
+        _, stdout, stderr = ssh_client.exec_command(command, timeout=10)
+        exit_status = stdout.channel.recv_exit_status()
+
+        if exit_status != 0:
+            err = stderr.read().decode().strip()
+            print(f"✗ '{command}' failed (exit code: {exit_status})")
+            if err:
+                print(f"  {err}")
+            return
+
+        output_file.parent.mkdir(parents=True, exist_ok=True)
+        with open(output_file, 'w') as f:
+            f.write(stdout.read().decode())
+
+        print(f"✓ {name} saved to {output_file}")
+
     def cleanup(self):
         """Kill the VM using make kill."""
         print("Cleaning up VM...")
@@ -798,6 +842,10 @@ class TestNVMeBoot:
         efi_gen = EFIConfigGenerator(test, environment)
         host_ip = efi_gen.get_host_ip()
 
+        # Prepare artifacts directory
+        artifact_dir = ARTIFACTS_DIR / sanitize_dir_name(test_name)
+        artifact_dir.mkdir(parents=True, exist_ok=True)
+
         if not host_ip:
             pytest.fail("Could not determine host IP address")
 
@@ -823,13 +871,12 @@ class TestNVMeBoot:
             if not vm_runner.wait_for_boot(host_ip, remaining):
                 pytest.fail(f"VM did not boot within {timeout}s")
 
+            vm_runner.collect_artifacts(host_ip, artifact_dir / "nbft.json", artifact_dir / "dmesg")
             print(f"✓ Test passed: {test_name}")
 
         finally:
-            # Collect bootlog artifact
+            # Collect artifacts
             bootlog_src = Path("host-vm") / "bootlog"
-            artifact_dir = ARTIFACTS_DIR / sanitize_dir_name(test_name)
-            artifact_dir.mkdir(parents=True, exist_ok=True)
             if bootlog_src.exists():
                 shutil.copy2(bootlog_src, artifact_dir / "bootlog")
                 print(f"✓ Bootlog saved to {artifact_dir / 'bootlog'}")
