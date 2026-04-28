@@ -85,7 +85,7 @@ create_boot_disk() {
 
 		echo "creating local disk 1 (boot)"
         rm -f disks/boot.qcow2
-        qemu-img create -f qcow2 disks/boot.qcow2 70G
+        qemu-img create -f qcow2 disks/boot.qcow2 100G
 }
 
 create_local_disk() {
