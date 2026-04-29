@@ -951,7 +951,7 @@ Examples:
                 print(f"    - {env.get('name', 'Unnamed')}: {len(env.get('tests', []))} test(s)")
         else:
             # Run pytest
-            pytest_args = [__file__, '-v', '--tb=short', '-rF'] + pytest_args
+            pytest_args = [__file__, '-v', '--tb=short', '-s', '-rA'] + pytest_args
             sys.exit(pytest.main(pytest_args))
 
     except KeyboardInterrupt:
