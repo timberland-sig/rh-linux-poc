@@ -610,25 +610,27 @@ class VMRunner:
     def wait_for_boot(self, host_ip: str, timeout: int = 120) -> bool:
         """Wait for VM to become responsive via SSH."""
         print(f"Waiting for VM to boot (timeout: {timeout}s)...")
+        vm_pings = False
+        vm_has_ssh = False
         start_time = time.time()
 
         while time.time() - start_time < timeout:
+            time.sleep(2)
+
+            # Try ping
+            if not vm_pings and self._check_ping(host_ip):
+                elapsed = int(time.time() - start_time)
+                print(f"✓ VM responds to ping (took {elapsed}s)")
+                vm_pings = True
+
             # Try SSH connection
-            if self._check_ssh(host_ip):
+            if not vm_has_ssh and self._check_ssh(host_ip):
                 elapsed = int(time.time() - start_time)
                 print(f"✓ VM is responsive via SSH (took {elapsed}s)")
+                vm_has_ssh = True
+
+            if vm_has_ssh and vm_pings:
                 return True
-
-            # Also try ping as fallback
-            if self._check_ping(host_ip):
-                # Wait a bit more for SSH to be ready
-                time.sleep(10)
-                if self._check_ssh(host_ip):
-                    elapsed = int(time.time() - start_time)
-                    print(f"✓ VM is responsive (took {elapsed}s)")
-                    return True
-
-            time.sleep(2)
 
         print(f"✗ VM did not become responsive within {timeout}s")
         return False
