@@ -191,7 +191,7 @@ def main():
     selection = _tui_select()
     if selection is None:
         print("Cancelled.")
-        sys.exit(1)
+        sys.exit(0)
 
     label, resolver = CHOICES[selection]
 
