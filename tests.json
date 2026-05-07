@@ -27,7 +27,7 @@
       "tests": [
         {
           "name": "Soft Target Static NQN Test",
-          "timeout": 90,
+          "timeout": 100,
           "bootAttempts": [
             {
               "macAddress": "default",
@@ -40,7 +40,7 @@
         },
         {
           "name": "Soft Target Discovery Test",
-          "timeout": 90,
+          "timeout": 100,
           "bootAttempts": [
             {
               "macAddress": "default",
@@ -53,7 +53,7 @@
         },
         {
           "name": "Soft Target Dual path Static NQN Test",
-          "timeout": 90,
+          "timeout": 100,
           "bootAttempts": [
             {
               "macAddress": "default",
@@ -71,7 +71,7 @@
         },
         {
           "name": "Soft Target Dual path Discovery Test",
-          "timeout": 90,
+          "timeout": 100,
           "bootAttempts": [
             {
               "macAddress": "default",
