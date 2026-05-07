@@ -637,15 +637,27 @@ class VMRunner:
         return False
 
     def _check_ssh(self, host_ip: str, port: int = 22) -> bool:
-        """Check if SSH port is open."""
+        """Check if SSH connection, authentication, and channel execution succeed."""
+        ssh_key = SCRIPT_DIR / ".ssh" / "id_ecdsa"
+        client = paramiko.SSHClient()
+        client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         try:
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.settimeout(2)
-            result = sock.connect_ex((host_ip, port))
-            sock.close()
-            return result == 0
+            client.connect(
+                host_ip,
+                port=port,
+                username='root',
+                key_filename=str(ssh_key),
+                timeout=5,
+                banner_timeout=5,
+                auth_timeout=5,
+            )
+            _, stdout, _ = client.exec_command("true", timeout=5)
+            stdout.channel.recv_exit_status()
+            return True
         except:
             return False
+        finally:
+            client.close()
 
     def _check_ping(self, host_ip: str) -> bool:
         """Check if host responds to ping."""
