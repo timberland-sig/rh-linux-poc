@@ -17,6 +17,7 @@ import time
 import socket
 import warnings
 import paramiko
+from scp import SCPClient
 from pathlib import Path
 from typing import Dict, List, Any, Optional
 import pytest
@@ -686,7 +687,7 @@ class VMRunner:
         print(f"✗ Bootlog entry not found within {timeout}s")
         return False
 
-    def collect_artifacts(self, host_ip: str, nbft_out_file: Path, dmesg_out_file: Path) -> bool:
+    def collect_artifacts(self, host_ip: str, artifacts_dir: Path) -> bool:
         """SSH into the host-vm and collect intersting artifacts"""
 
         ssh_key = SCRIPT_DIR / ".ssh" / "id_ecdsa"
@@ -701,8 +702,10 @@ class VMRunner:
                 timeout=5,
             )
 
-            self.collect_ssh_artifact("NBFT", "nvme nbft show --output-format=json", client, nbft_out_file)
-            self.collect_ssh_artifact("dmesg", "dmesg", client, dmesg_out_file)
+            self.collect_ssh_artifact("NBFT", "nvme nbft show --output-format=json", client, artifacts_dir / "nbft.json")
+            self.collect_ssh_artifact("dmesg", "dmesg", client, artifacts_dir / "dmesg")
+
+            self.collect_scp_artifact("NBFT raw", "/sys/firmware/acpi/tables/NBFT", client, artifacts_dir / "nbft.raw")
             return True
         except Exception as e:
             print(f"✗ Artifacts collection failed: {e}")
@@ -726,6 +729,16 @@ class VMRunner:
         output_file.parent.mkdir(parents=True, exist_ok=True)
         with open(output_file, 'w') as f:
             f.write(stdout.read().decode())
+
+        print(f"✓ {name} saved to {output_file}")
+
+    def collect_scp_artifact(self, name: str, remote_path: str, ssh_client, output_file: Path) -> None:
+        """SCP a file from the host-vm."""
+
+        output_file.parent.mkdir(parents=True, exist_ok=True)
+        output_file.unlink(missing_ok=True)
+        with SCPClient(ssh_client.get_transport()) as scp:
+            scp.get(remote_path, str(output_file))
 
         print(f"✓ {name} saved to {output_file}")
 
@@ -871,7 +884,7 @@ class TestNVMeBoot:
             if not vm_runner.wait_for_boot(host_ip, timeout):
                 pytest.fail(f"VM did not boot within {timeout}s")
 
-            vm_runner.collect_artifacts(host_ip, artifact_dir / "nbft.json", artifact_dir / "dmesg")
+            vm_runner.collect_artifacts(host_ip, artifact_dir)
             print(f"✓ Test passed: {test_name}")
 
         finally:
