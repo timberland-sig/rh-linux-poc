@@ -525,7 +525,15 @@ This will remove all bridge interfaces and restore the original network configur
 
 # Automated Test Runner
 
-The `run_tests.py` script automates NVMe/TCP boot testing by reading test configurations from `tests.json`, setting up network environments, generating EFI boot configurations, and executing boot tests with pytest.
+The `run_tests.py` script automates NVMe/TCP boot testing by reading test configurations from JSON test specification files,
+setting up network environments, generating EFI boot configurations, and executing boot tests with `pytest`.
+The script first looks for the `tests/` directory. All the environments in all of these files are read and tested.
+This directory is not included in this repository, but it is the
+place where the user is advised to store their custom test configurations (specific to their lab/data center
+setup). The user is also advised to set up a private git repository for these custom test configurations
+and clone it into the `tests/` directory. Since the directory is in `.gitignore`, it is safe to do so.
+
+If this directory does not exist, the `tests.json` file is used as a fallback.
 
 ## Requirements
 
