@@ -18,13 +18,13 @@ display_help() {
         echo
         echo "  -h            : display this help"
         echo ""
-        echo "  quickstart    : runs user, virt, net, edk2"
+        echo "  quickstart    : runs user, virt, net, edk2_zip"
         echo "  user          : setup basic user environment (default)"
         echo "  devel         : setup development environment"
         echo "  virt          : install qemu-kvm environment "
-        echo "  edk2          : download the timberland-sig modified edk2 firmware"
-        echo "                : - install build artifacts in the host-vm directory"
-        echo "                : - use -s or --source to build from source instead of downloading the prebuilt zip"
+        echo "  edk2_zip      : install lastest timberland-sig edk2 release"
+        echo "  edk2          : git clone timberland-sig edk2 repo"
+        echo "                : - build and install artifacts in the host-vm directory"
         echo "  net           : configure network environment "
         echo "                : - script prompts for \"bridged\" primary interface."
         echo "                :   Enter \"none\" to skip primary interace reconfiguration."
@@ -267,12 +267,10 @@ case "${MODE}" in
         install_network $NEWARGS
     ;;
     edk2)
-        # Check for -s or --source flag
-        if [[ "$2" == "-s" || "$2" == "--source" ]]; then
-            install_edk2
-        else
-            install_edk2_zip
-        fi
+	install_edk2
+    ;;
+    edk2_zip)
+	install_edk2_zip
     ;;
     *)
     echo "  Invalid argument: $MODE" >&2
