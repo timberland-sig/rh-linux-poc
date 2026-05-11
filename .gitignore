@@ -32,6 +32,8 @@ cscope.*
 .ssh
 edk2/*
 lorax/*
+tests
+tests/*
 lorax_results/*
 mock_result/*
 mock_repo/*

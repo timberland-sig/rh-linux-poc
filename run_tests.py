@@ -40,6 +40,43 @@ DEFAULTS = {
 
 SCRIPT_DIR = Path(__file__).parent
 ARTIFACTS_DIR = SCRIPT_DIR / "artifacts"
+TESTS_DIR = SCRIPT_DIR / "tests"
+
+
+def resolve_test_files(test_file_arg: Optional[str]) -> List[str]:
+    """Determine which test configuration files to use.
+
+    Priority: -t flag > tests/ directory > tests.json
+    """
+    if test_file_arg is not None:
+        if not os.path.exists(test_file_arg):
+            print(f"Error: Test file not found: {test_file_arg}")
+            sys.exit(1)
+        return [test_file_arg]
+
+    if TESTS_DIR.is_dir():
+        test_files = sorted(TESTS_DIR.glob("*.json"))
+        if not test_files:
+            print(f"Error: No JSON test files found in {TESTS_DIR}")
+            sys.exit(1)
+        return [str(f) for f in test_files]
+
+    default_file = SCRIPT_DIR / "tests.json"
+    if default_file.exists():
+        return [str(default_file)]
+
+    print("Error: No test configuration found.")
+    print("  Provide a test file with -t, create a tests/ directory with JSON files, or create tests.json")
+    sys.exit(1)
+
+
+def load_merged_config(test_files: List[str], schema_file: str) -> Dict[str, Any]:
+    """Load multiple test config files, validate each, and merge their environments."""
+    merged_environments = []
+    for test_file in test_files:
+        config = load_test_config(test_file, schema_file)
+        merged_environments.extend(config.get('environments', []))
+    return {'environments': merged_environments}
 
 
 def sanitize_dir_name(name: str) -> str:
@@ -781,10 +818,10 @@ class VMRunner:
 def pytest_generate_tests(metafunc):
     """Dynamically generate test parameters for each test case."""
     if metafunc.function.__name__ == 'test_boot':
-        test_file = os.environ.get('TEST_CONFIG_FILE', 'tests.json')
+        test_files = json.loads(os.environ.get('TEST_CONFIG_FILES', '[]'))
         schema_file = os.environ.get('TEST_SCHEMA_FILE', 'schemata/tests.json')
 
-        config = load_test_config(test_file, schema_file)
+        config = load_merged_config(test_files, schema_file)
 
         # Generate test cases
         test_cases = []
@@ -812,12 +849,13 @@ class TestNVMeBoot:
     @classmethod
     def setup_class(cls):
         """Load configuration once for all tests."""
-        test_file = os.environ.get('TEST_CONFIG_FILE', 'tests.json')
+        test_files = json.loads(os.environ.get('TEST_CONFIG_FILES', '[]'))
         schema_file = os.environ.get('TEST_SCHEMA_FILE', 'schemata/tests.json')
-        cls.config = load_test_config(test_file, schema_file)
+        cls.config = load_merged_config(test_files, schema_file)
         ARTIFACTS_DIR.mkdir(exist_ok=True)
         print("\n" + "="*70)
         print("NVMe/TCP Boot Test Suite")
+        print(f"Test files: {', '.join(test_files)}")
         print(f"Artifacts directory: {ARTIFACTS_DIR}")
         print("="*70)
 
@@ -935,8 +973,8 @@ Examples:
 
     parser.add_argument(
         '-t', '--test-file',
-        default='tests.json',
-        help='Path to test configuration file (default: tests.json)'
+        default=None,
+        help='Path to a specific test configuration file'
     )
 
     parser.add_argument(
@@ -954,26 +992,24 @@ Examples:
     # Parse known args to separate our args from pytest args
     args, pytest_args = parser.parse_known_args()
 
-    if not os.path.exists(args.test_file):
-        print(f"Error: Test file not found: {args.test_file}")
-        sys.exit(1)
-
     if not os.path.exists(args.schema_file):
         print(f"Error: Schema file not found: {args.schema_file}")
         sys.exit(1)
 
+    test_files = resolve_test_files(args.test_file)
+
     # Set environment variables for pytest to find config
-    os.environ['TEST_CONFIG_FILE'] = args.test_file
+    os.environ['TEST_CONFIG_FILES'] = json.dumps(test_files)
     os.environ['TEST_SCHEMA_FILE'] = args.schema_file
 
     try:
         if args.dry_run:
             print("Dry run mode: validating configuration only\n")
-            config = load_test_config(args.test_file, args.schema_file)
-            print(f"✓ Configuration is valid")
-            print(f"  Environments: {len(config.get('environments', []))}")
-            for env in config.get('environments', []):
-                print(f"    - {env.get('name', 'Unnamed')}: {len(env.get('tests', []))} test(s)")
+            config = load_merged_config(test_files, args.schema_file)
+            total_envs = config.get('environments', [])
+            print(f"✓ Configuration is valid ({len(test_files)} file(s), {len(total_envs)} environment(s))")
+            for env in total_envs:
+                print(f"  - {env.get('name', 'Unnamed')}: {len(env.get('tests', []))} test(s)")
         else:
             # Run pytest
             pytest_args = [__file__, '-v', '--tb=short', '-s', '-rA'] + pytest_args
