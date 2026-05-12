@@ -210,6 +210,10 @@
             }
           ]
         },
+        "targetName": {
+          "type": "string",
+          "description": "Short human-readable name identifying the NVMe/TCP target"
+        },
         "timeout": {
           "oneOf": [
             {

@@ -30,6 +30,7 @@
           "timeout": 100,
           "bootAttempts": [
             {
+              "targetName": "Soft target",
               "macAddress": "default",
               "hostIp": "default",
               "subnetMask": 24,
@@ -43,6 +44,7 @@
           "timeout": 100,
           "bootAttempts": [
             {
+              "targetName": "Soft target",
               "macAddress": "default",
               "hostIp": "default",
               "subnetMask": 24,
@@ -56,12 +58,14 @@
           "timeout": 100,
           "bootAttempts": [
             {
+              "targetName": "Soft target",
               "macAddress": "default",
               "hostIp": "default",
               "targetIp": "default",
               "subsystemNQN": "nqn.2014-08.org.nvmexpress:uuid:0c468c4d-a385-47e0-8299-6e95051277db"
             },
             {
+              "targetName": "Soft target",
               "macAddress": "default",
               "hostIp": "default",
               "targetIp": "default",
@@ -74,12 +78,14 @@
           "timeout": 100,
           "bootAttempts": [
             {
+              "targetName": "Soft target",
               "macAddress": "default",
               "hostIp": "default",
               "targetIp": "default",
               "subsystemNQN": "nqn.2014-08.org.nvmexpress.discovery"
             },
             {
+              "targetName": "Soft target",
               "macAddress": "default",
               "hostIp": "default",
               "targetIp": "default",
