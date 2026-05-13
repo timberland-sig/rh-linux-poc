@@ -78,8 +78,10 @@ set -e
 "
     ;;
     host-vm)
+        make --makefile="$PWD/Makefile" .build/discovery.conf
         scp -i $DIR/../.ssh/id_ecdsa -o StrictHostKeyChecking=no .build/* $DIR/../vm-lib/remote-netsetup.sh scp://${SSH_TARGET}
         ssh -t -i $DIR/../.ssh/id_ecdsa -o StrictHostKeyChecking=no ssh://${SSH_TARGET} "\
+            cp ./discovery.conf /etc/nvme/
 	    . remote-netsetup.sh $HOST_MAC2 $HOST_MAC3 \"$HOST_CIDR2\" \"$HOST_CIDR3\""
     ;;
     *)

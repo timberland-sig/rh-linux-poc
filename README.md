@@ -635,6 +635,39 @@ Each bridge interface configuration:
 - **hostVmIp**: IP for host VM (optional, CIDR optional)
 - **subnetMask**: Integer (1-31), dotted decimal, or `"default"`
 
+## Debugging boot attempts
+
+The `host-vm/gen_discovery_conf.py` script can be used to generate a
+`discovery.conf` file for the `host-vm` from the test configuration files.
+
+```
+$ ./host-vm/gen_discovery_conf.py -h
+usage: gen_discovery_conf.py [-h] [-t TEST_FILE] [-o OUTPUT]
+
+Generate discovery.conf from test configuration
+
+options:
+  -h, --help            show this help message and exit
+  -t, --test-file TEST_FILE
+                        Path to a specific test configuration file
+  -o, --output OUTPUT   Output path (default: host-vm/.build/discovery.conf)
+```
+
+The `host-vm/netsetup.sh` script automatically builds the `.build/discovery.conf`
+file from the `tests/` directory contents (if they exist) or from `tests.json`.
+It then and copies it to the `host-vm`.
+
+To test if `nvme-cli` detects your namespaces as intended, follow these steps:
+
+- `cd host-vm`
+- run `make kill` to kill a running `host-vm` instance (it is is there)
+- `make install-local` and follow the OS installation instructions
+- (optional) set `HOST_CIDR2` and `HOST_CIDR3` environment variables to IPv4
+  addresses of `host-vm` network interfaces
+- `./netsetup.sh [ARGS]` (use appropriate arguments for your setup)
+- SSH into the VM
+- run `nvme discover` and examine the discovry log page
+
 # For developers
 
 ## Build all Timberland-sig artifacts
