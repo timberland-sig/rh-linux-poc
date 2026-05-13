@@ -233,6 +233,9 @@ nvmeof-utils/ovmf_vars_set: nvmeof-utils/ovmf_vars_set.c
 	mkdir -p .build
 	echo "$$HOSTID" > $@
 
+.build/discovery.conf:
+	./gen_discovery_conf.py
+
 # Simply embed the anaconda kickstart file into the ISO
 .ONESHELL: boot.iso
 boot.iso: iso anaconda-ks.cfg ../vm-lib/common.sh
