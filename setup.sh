@@ -158,9 +158,10 @@ install_edk2() {
     if [ ! -d edk2 ]; then
         mkdir -p edk2
         pushd edk2
-        git clone -b timberland_upstream-dev-full git@github.com:timberland-sig/edk2.git
+        git clone -b dev-spdk-integration3 git@github.com:timberland-sig/edk2.git
         pushd edk2
-        git config url."ssh://git@github.com/timberland-sig".insteadOf https://github.com/timberland-sig
+        # The following is not needed with the dev-spdk-integration3 branch.
+        # git config url."ssh://git@github.com/timberland-sig".insteadOf https://github.com/timberland-sig
         git submodule update --init --recursive
         popd
         popd
