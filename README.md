@@ -91,6 +91,35 @@ firmware via the NBFT table.
                                  -----------------------
 ```
 
+Router Config
+
+```
+                                       router-vm
+           host-vm               ----------------------             target-vm
+     ----------------------      |        QEMU        |      -------------------------
+     |     QEMU+UEFI      |      |                    |      |         QEMU          |
+     |      nvme0n1       |      |       router       |      |        nvme0n1        |
+     |                    |      |     dhcp server    |      |                       |
+     |    NVMe/TCP host   |      |                    |      |     NVMe/TCP target   |
+     |                    |      |      enp0s5        |      |                       |
+     |         (dhcp)  enp0s5 <--|-- virbr1(static) --|--> enp0s5 (dhcp)             |
+     |                    |      |                    |      |                       |
+     |                    |      |      enp0s6        |      |                       |
+     |         (dhcp)  enp0s6 <--|-- virbr2(static) --|--> enp0s6 (dhcp)             |
+     |                    |      |                    |      |                       |
+     |                    |      |      enp0s4        |      |                       |
+     |                 enp0s4 <--|-- br0 WAN (dhcp) --|--> enp0s4                    |
+     ----------------------      |                    |      -------------------------
+                                 ----|-----|-----|----
+                                     |     |     |
+                                 ----|-----|-----|----
+                                 |  br0 virbr1 virbr2  |
+                                 |                     |
+                                 |      hypervisor     |
+                                 |                     |
+                                 -----------------------
+
+```
 When connecting to a physical storage array:
 
 ```
