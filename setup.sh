@@ -171,17 +171,17 @@ install_edk2() {
     rm -rf Build
     make -C BaseTools
     source edksetup.sh
-    build -t GCC5 -a X64 -p OvmfPkg/OvmfPkgX64.dsc
+    build -t GCC -a X64 -p OvmfPkg/OvmfPkgX64.dsc
     mkdir -p $DIR/ISO
     rm -f  $DIR/host-vm/OVMF_CODE.fd
     rm -f  $DIR/host-vm/vm_vars.fd
     rm -f  $DIR/host-vm/eficonfig/NvmeOfCli.efi
     rm -f  $DIR/host-vm/eficonfig/VConfig.efi
-    cp -fv Build/OvmfX64/DEBUG_GCC5/FV/OVMF_CODE.fd $DIR/host-vm/OVMF_CODE.fd
-    cp -fv Build/OvmfX64/DEBUG_GCC5/FV/OVMF_VARS.fd $DIR/host-vm/vm_vars.fd
-    cp -fv Build/OvmfX64/DEBUG_GCC5/FV/OVMF_VARS.fd $DIR/ISO/OVMF_VARS.fd
-    cp -fv Build/OvmfX64/DEBUG_GCC5/X64/VConfig.efi $DIR/host-vm/eficonfig/VConfig.efi
-    cp -fv Build/OvmfX64/DEBUG_GCC5/X64/NvmeOfCli.efi $DIR/host-vm/eficonfig/NvmeOfCli.efi
+    cp -fv Build/OvmfX64/DEBUG_GCC/FV/OVMF_CODE.fd $DIR/host-vm/OVMF_CODE.fd
+    cp -fv Build/OvmfX64/DEBUG_GCC/FV/OVMF_VARS.fd $DIR/host-vm/vm_vars.fd
+    cp -fv Build/OvmfX64/DEBUG_GCC/FV/OVMF_VARS.fd $DIR/ISO/OVMF_VARS.fd
+    cp -fv Build/OvmfX64/DEBUG_GCC/X64/VConfig.efi $DIR/host-vm/eficonfig/VConfig.efi
+    cp -fv Build/OvmfX64/DEBUG_GCC/X64/NvmeOfCli.efi $DIR/host-vm/eficonfig/NvmeOfCli.efi
     popd
 }
 
