@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-3.0+
 # Copyright (C) 2023 John Meneghini <jmeneghi@redhat.com> All rights reserved.
+#
+# vim: set tabstop=4 shiftwidth=4 expandtab :
+#
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 #echo "DIR = $DIR"
@@ -158,9 +161,12 @@ install_edk2() {
     if [ ! -d edk2 ]; then
         mkdir -p edk2
         pushd edk2
-        git clone -b dev-spdk-integration3 https://github.com/timberland-sig/edk2.git
+        # Timberland currently has two different release candidate branches to test.
+        # Either one of these branches should work.
+        # git clone -b dev-spdk-integration3 https://github.com/timberland-sig/edk2.git
+        git clone -b rel/timberland_1_0_1 https://github.com/timberland-sig/edk2.git
         pushd edk2
-        # The following is not needed with the dev-spdk-integration3 branch.
+        # The following is not needed with the dev-spdk-integration3 or rel/timberland_1_0_1 branch.
         # git config url."ssh://git@github.com/timberland-sig".insteadOf https://github.com/timberland-sig
         git submodule update --init --recursive
         popd
