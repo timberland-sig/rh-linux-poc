@@ -36,8 +36,8 @@ SN3='2AF557665E8B11C0'
 SN4='5B36AC547362E851'
 
 BRIDGE0_NAME="${BRIDGE0_NAME:-br0}"
-BRIDGE1_NAME="${BRIDGE1_NAME:-virbr1}"
-BRIDGE2_NAME="${BRIDGE2_NAME:-virbr2}"
+BRIDGE1_NAME="${BRIDGE1_NAME:-br1}"
+BRIDGE2_NAME="${BRIDGE2_NAME:-br2}"
 
 # Note that TARGET_MAC1 and HOST_MAC1 are used with DHCP and must be unique to
 # your testbed.  Use the ./gen_macaddr.py script and replace these values

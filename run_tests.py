@@ -167,7 +167,7 @@ class NetworkSetup:
         """Build command line arguments for ./setup.sh net."""
         args = []
 
-        for bridge in ['br0', 'virbr1', 'virbr2']:
+        for bridge in ['br0', 'br1', 'br2']:
             if bridge not in self.network_config:
                 print(f"Warning: {bridge} not found in network config")
                 args.extend(['none', 'dhcp'])
@@ -225,7 +225,7 @@ class NetworkSetup:
         env = os.environ.copy()
 
         # Extract target IPs and subnet masks from network config
-        for bridge_name, bridge_key in [('virbr1', 'virbr1'), ('virbr2', 'virbr2')]:
+        for bridge_name, bridge_key in [('br1', 'br1'), ('br2', 'br2')]:
             if bridge_key not in self.network_config:
                 continue
 
@@ -247,10 +247,10 @@ class NetworkSetup:
             else:
                 target_cidr = target_ip
 
-            # Set TARGET_IP2 for virbr1, TARGET_IP3 for virbr2
-            if bridge_key == 'virbr1':
+            # Set TARGET_IP2 for br1, TARGET_IP3 for br2
+            if bridge_key == 'br1':
                 env['TARGET_CIDR2'] = target_cidr
-            elif bridge_key == 'virbr2':
+            elif bridge_key == 'br2':
                 env['TARGET_CIDR3'] = target_cidr
 
         return env
@@ -387,7 +387,7 @@ class NetworkSetup:
         args = self._build_setup_args()
 
         print("Network configuration:")
-        for i, bridge in enumerate(['br0', 'virbr1', 'virbr2']):
+        for i, bridge in enumerate(['br0', 'br1', 'br2']):
             slave_idx = i * 2
             ip_idx = i * 2 + 1
             print(f"  {bridge}: slave={args[slave_idx]}, ip={args[ip_idx]}")
@@ -440,20 +440,20 @@ class EFIConfigGenerator:
 
         elif field == 'hostIp':
             if attempt_idx == 0:
-                host_ip = self.environment['network']['virbr1'].get('hostVmIp', '')
+                host_ip = self.environment['network']['br1'].get('hostVmIp', '')
                 return host_ip.split('/')[0] if host_ip else DEFAULTS.get('HOST_IP2', '192.168.101.30')
             elif attempt_idx == 1:
-                host_ip = self.environment['network']['virbr2'].get('hostVmIp', '')
+                host_ip = self.environment['network']['br2'].get('hostVmIp', '')
                 return host_ip.split('/')[0] if host_ip else DEFAULTS.get('HOST_IP3', '192.168.110.30')
             else:
                 return DEFAULTS.get('HOST_IP2', '192.168.101.30')
 
         elif field == 'targetIp':
             if attempt_idx == 0:
-                target_ip = self.environment['network']['virbr1'].get('targetVmIp', '')
+                target_ip = self.environment['network']['br1'].get('targetVmIp', '')
                 return target_ip.split('/')[0] if target_ip else DEFAULTS.get('TARGET_IP2', '192.168.101.20')
             elif attempt_idx == 1:
-                target_ip = self.environment['network']['virbr2'].get('targetVmIp', '')
+                target_ip = self.environment['network']['br2'].get('targetVmIp', '')
                 return target_ip.split('/')[0] if target_ip else DEFAULTS.get('TARGET_IP3', '192.168.110.20')
             else:
                 return DEFAULTS.get('TARGET_IP2', '192.168.101.20')
@@ -487,9 +487,9 @@ class EFIConfigGenerator:
                 return str(subnet_mask)
 
         if attempt_idx == 0:
-            network_subnet = self.environment['network']['virbr1'].get('subnetMask', 24)
+            network_subnet = self.environment['network']['br1'].get('subnetMask', 24)
         elif attempt_idx == 1:
-            network_subnet = self.environment['network']['virbr2'].get('subnetMask', 24)
+            network_subnet = self.environment['network']['br2'].get('subnetMask', 24)
         else:
             network_subnet = 24
 

@@ -82,9 +82,9 @@ firmware via the NBFT table.
      |      EFIDISK       |      |                     |      |    target-vm rootfs   |
      |                    |      |                     |      |                       |
      |  NVMe/TCP host     |      |                     |      |     NVMe/TCP target   |
-     |        |        enp0s5 <--| virbr1 LAN (static) |--> enp0s5        |           |
+     |        |        enp0s5 <--|   br1 LAN (static)  |--> enp0s5        |           |
      |        |           |      |                     |      |           |           |
-     |     nvme1n1     enp0s6 <--| virbr2 LAN (static) |--> enp0s6     nvme1n1        |
+     |     nvme1n1     enp0s6 <--|   br2 LAN (static)  |--> enp0s6     nvme1n1        |
      |     rootfs         |      |                     |      |     host-vm rootfs    |
      |                    |      |                     |      |                       |
      ----------------------      |                     |      -------------------------
@@ -102,10 +102,10 @@ Router Config
      |                    |      |     dhcp server    |      |                       |
      |    NVMe/TCP host   |      |                    |      |     NVMe/TCP target   |
      |                    |      |      enp0s5        |      |                       |
-     |         (dhcp)  enp0s5 <--|-- virbr1(static) --|--> enp0s5 (dhcp)             |
+     |         (dhcp)  enp0s5 <--|--  br1 (static)  --|--> enp0s5 (dhcp)             |
      |                    |      |                    |      |                       |
      |                    |      |      enp0s6        |      |                       |
-     |         (dhcp)  enp0s6 <--|-- virbr2(static) --|--> enp0s6 (dhcp)             |
+     |         (dhcp)  enp0s6 <--|--  br2 (static)  --|--> enp0s6 (dhcp)             |
      |                    |      |                    |      |                       |
      |                    |      |      enp0s4        |      |                       |
      |                 enp0s4 <--|-- br0 WAN (dhcp) --|--> enp0s4                    |
@@ -113,7 +113,7 @@ Router Config
                                  ----|-----|-----|----
                                      |     |     |
                                  ----|-----|-----|----
-                                 |  br0 virbr1 virbr2  |
+                                 |  br0   br1   br2    |
                                  |                     |
                                  |      hypervisor     |
                                  |                     |
@@ -131,9 +131,9 @@ When connecting to a physical storage array:
      |      nvme0n1       |      |                         |     |
      |      EFIDISK       |      |                         |     |
      |                    |      |                         |     |
-     |  NVMe/TCP host     |      |        virbr1           |     |
+     |  NVMe/TCP host     |      |        br1              |     |
      |        |        enp0s5 <--|-- LAN --+               |     |
-     |        |           |      |         |      virbr2   |     |
+     |        |           |      |         |       br2     |     |
      |     nvme1n1     enp0s6 <--|-- LAN -----------+      |     |
      |     rootfs         |      |         |        |      |     |
      |                    |      |         |        |      |     |
@@ -198,7 +198,7 @@ During setup, you will be prompted to configure IP addresses for each bridge. Yo
 - press `Enter` to accept the default value.
 
 This enables connecting virtual bridges to physical network interfaces, allowing the `host-vm` to access external NVMe targets on the network. For example, if you have an NVMe storage array reachable via one the network interfaces, you may choose
-to bridge `virbr1` or `virbr2` with that interface and thus obtain the ability to test NVMe/TCP boot from that storage array.
+to bridge `br1` or `br2` with that interface and thus obtain the ability to test NVMe/TCP boot from that storage array.
 
 **CAUTION:** Mistyping the IP addresses is the most common configuration mistake we encounter.
 If you find NVMe/TCP boot not working later, please double-check all IP address configurations.
@@ -206,8 +206,8 @@ If you find NVMe/TCP boot not working later, please double-check all IP address 
 | Network  | Decription |
 | :-----   | :----      |
 | `br0`    | A bridged public gateway network that requires DHCP  |
-| `virbr1` | a virtual bridged network (default: static address `192.168.101.1/24`) |
-| `virbr2` | a virtual bridged network (default: static address `192.168.110.1/24`) |
+| `br1`    | a virtual bridged network (default: static address `192.168.101.1/24`) |
+| `br2`     | a virtual bridged network (default: static address `192.168.110.1/24`) |
 
 Run `./setup.sh virt` - This script will install the needed qemu-kvm packages
 and change the permissions of `/etc/qemu/bridge.conf` and
@@ -577,8 +577,8 @@ The `tests.json` file defines test environments and boot configurations:
       "name": "Environment Name",
       "network": {
         "br0":    { "slave": "none", "hypervisorIp": "dhcp", "targetVmIp": "dhcp" },
-        "virbr1": { "slave": "none", "hypervisorIp": "192.168.101.1/24", "targetVmIp": "192.168.101.20", "subnetMask": 24 },
-        "virbr2": { "slave": "none", "hypervisorIp": "192.168.110.1/24", "targetVmIp": "192.168.110.20", "subnetMask": 24 }
+        "br1": { "slave": "none", "hypervisorIp": "192.168.101.1/24", "targetVmIp": "192.168.101.20", "subnetMask": 24 },
+        "br2": { "slave": "none", "hypervisorIp": "192.168.110.1/24", "targetVmIp": "192.168.110.20", "subnetMask": 24 }
       },
       "tests": [
         {
@@ -617,8 +617,8 @@ Specify `"default"` for any boot attempt field to use values from `defaults.sh`:
 ```json
 {
   "macAddress": "default",    // Uses HOST_MAC2 for attempt 1, HOST_MAC3 for attempt 2
-  "hostIp": "default",        // Uses virbr1.hostVmIp for attempt 1, virbr2.hostVmIp for attempt 2
-  "targetIp": "default",      // Uses virbr1.targetVmIp for attempt 1, virbr2.targetVmIp for attempt 2
+  "hostIp": "default",        // Uses br1.hostVmIp for attempt 1, br2.hostVmIp for attempt 2
+  "targetIp": "default",      // Uses br1.targetVmIp for attempt 1, br2.targetVmIp for attempt 2
   "subsystemNQN": "default",  // Uses SUBNQN from defaults.sh
   "port": "default",          // Uses 4420
   "timeout": "default"        // Uses 3000
