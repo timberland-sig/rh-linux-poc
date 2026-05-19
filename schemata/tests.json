@@ -30,14 +30,14 @@
             "br0": {
               "$ref": "#/$defs/networkInterface"
             },
-            "virbr1": {
+            "br1": {
               "$ref": "#/$defs/networkInterface"
             },
-            "virbr2": {
+            "br2": {
               "$ref": "#/$defs/networkInterface"
             }
           },
-          "required": ["br0", "virbr1", "virbr2"]
+          "required": ["br0", "br1", "br2"]
         },
         "tests": {
           "type": "array",
