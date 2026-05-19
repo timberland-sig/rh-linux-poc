@@ -29,7 +29,7 @@ NET_TYPE ?= "localhost"
 	EOF
 
 		if [ $(NET_TYPE) = "bridged" ] ; then
-			HOST_GW_ADDR="$$(ip -br address show br0 | sed 's/\s\+/:/g' | cut -d ':' -f 3 | cut -d '/' -f 1)"
+			HOST_GW_ADDR="$$(ip -br address show $$BRIDGE0_NAME | sed 's/\s\+/:/g' | cut -d ':' -f 3 | cut -d '/' -f 1)"
 			cat << EOF >> $@
 	$$HOST_GW_ADDR   host-gw
 	EOF

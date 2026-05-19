@@ -150,7 +150,7 @@ case "$NET_CONN" in
         echo "$TARGET_PORT" > .netport
     ;;
     bridged)
-        NET0_NET="-netdev bridge,br=br0,id=net0,helper=$BRIDGE_HELPER"
+        NET0_NET="-netdev bridge,br=$BRIDGE0_NAME,id=net0,helper=$BRIDGE_HELPER"
         NET0_DEV="-device virtio-net-pci,netdev=net0,mac=$TARGET_MAC1,addr=4"
     ;;
     *)
@@ -159,9 +159,9 @@ case "$NET_CONN" in
     ;;
 esac
 
-NET1_NET="-netdev bridge,br=virbr1,id=net1,helper=$BRIDGE_HELPER"
+NET1_NET="-netdev bridge,br=$BRIDGE1_NAME,id=net1,helper=$BRIDGE_HELPER"
 NET1_DEV="-device rtl8139,netdev=net1,mac=$TARGET_MAC2,addr=5"
-NET2_NET="-netdev bridge,br=virbr2,id=net2,helper=$BRIDGE_HELPER"
+NET2_NET="-netdev bridge,br=$BRIDGE2_NAME,id=net2,helper=$BRIDGE_HELPER"
 NET2_DEV="-device rtl8139,netdev=net2,mac=$TARGET_MAC3,addr=6"
 
 # Set boot options based on mode

@@ -240,21 +240,21 @@ Usage: bridge_iface BRIDGE_NAME [SLAVE_INTERFACE] [IP_ADDRESS]
 Configure a network bridge using NetworkManager.
 
 Arguments:
-  BRIDGE_NAME       Name of the bridge interface (e.g., br0, virbr1, virbr2)
+  BRIDGE_NAME       Name of the bridge interface (e.g., $BRIDGE0_NAME, br1, br2)
   SLAVE_INTERFACE   Network interface to bridge (optional)
                     - Use 'none' to create bridge without a slave interface
                     - If not provided, will prompt interactively
   IP_ADDRESS        IPv4 address in CIDR notation or 'dhcp' (optional)
                     - If not provided, will prompt interactively
-                    - Default for virbr1: $HOSTGW_CIDR2
-                    - Default for virbr2: $HOSTGW_CIDR3
+                    - Default for br1: $HOSTGW_CIDR2
+                    - Default for br2: $HOSTGW_CIDR3
                     - Default for others: dhcp
 
 Examples:
-  bridge_iface br0 eth0 192.168.1.1/24
-  bridge_iface virbr1 none dhcp
-  bridge_iface virbr2 enp2s0
-  bridge_iface br0                    # Interactive mode
+  bridge_iface $BRIDGE0_NAME eth0 192.168.1.1/24
+  bridge_iface br1 none dhcp
+  bridge_iface br2 enp2s0
+  bridge_iface $BRIDGE0_NAME                    # Interactive mode
 
 Options:
   -h, --help        Show this help message
@@ -317,9 +317,9 @@ EOF
 
     # Determine default IP address based on bridge name
     case ${br_name} in
-        virbr1)
+        "$BRIDGE1_NAME")
             local ip_addr_default=$HOSTGW_CIDR2;;
-        virbr2)
+        "$BRIDGE2_NAME")
             local ip_addr_default=$HOSTGW_CIDR3;;
         *)
             local ip_addr_default='dhcp';;

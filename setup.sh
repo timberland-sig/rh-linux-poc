@@ -134,18 +134,18 @@ install_network() {
 
     source $DIR/vm-lib/common.sh
 
-    bridge_iface 'br0' "$1" "$2"
+    bridge_iface "$BRIDGE0_NAME" "$1" "$2"
 
-    ip -h -c -o -br address show ${br_name}
+    ip -h -c -o -br address show ${BRIDGE0_NAME}
 
-    if ! nmcli dev show virbr1 &>/dev/null ; then
-	    bridge_iface 'virbr1' "$3" "$4"
-        ip -h -c -o -br address show virbr1
+    if ! nmcli dev show "$BRIDGE1_NAME" &>/dev/null ; then
+	    bridge_iface "$BRIDGE1_NAME" "$3" "$4"
+        ip -h -c -o -br address show "$BRIDGE1_NAME"
     fi
 
-    if ! nmcli dev show virbr2 &>/dev/null ; then
-	    bridge_iface 'virbr2' "$5" "$6"
-        ip -h -c -o -br address show virbr2
+    if ! nmcli dev show "$BRIDGE2_NAME" &>/dev/null ; then
+	    bridge_iface "$BRIDGE2_NAME" "$5" "$6"
+        ip -h -c -o -br address show "$BRIDGE2_NAME"
     fi
 
     echo "Network interfaces configured!"

@@ -30,7 +30,7 @@ Options:
 
 Network connection types:
   localhost  - User-mode networking with SSH port forwarding
-  bridged    - Bridged networking on br0
+  bridged    - Bridged networking on $BRIDGE0_NAME
 
 Examples:
   $0 nbft-setup                                 # Configure NBFT for network boot
@@ -150,7 +150,7 @@ case "$NET_CONN" in
         NET0_DEV="-device virtio-net-pci,netdev=net0,addr=4"
     ;;
     bridged)
-        NET0_NET="-netdev bridge,br=br0,id=net0,helper=$BRIDGE_HELPER"
+        NET0_NET="-netdev bridge,br=$BRIDGE0_NAME,id=net0,helper=$BRIDGE_HELPER"
         NET0_DEV="-device virtio-net-pci,netdev=net0,mac=$HOST_MAC1,addr=4"
     ;;
 esac
@@ -194,12 +194,12 @@ else
     echo "using a remote drive"
 fi
 
-if nmcli dev | grep 'virbr1' &>/dev/null ; then
-	NET1_NET="-netdev bridge,br=virbr1,id=net1,helper=$BRIDGE_HELPER"
+if nmcli dev | grep "$BRIDGE1_NAME" &>/dev/null ; then
+	NET1_NET="-netdev bridge,br=$BRIDGE1_NAME,id=net1,helper=$BRIDGE_HELPER"
 	NET1_DEV="-device rtl8139,netdev=net1,mac=$HOST_MAC2,addr=5"
 fi
-if nmcli dev | grep 'virbr2' &>/dev/null ; then
-	NET2_NET="-netdev bridge,br=virbr2,id=net2,helper=$BRIDGE_HELPER"
+if nmcli dev | grep "$BRIDGE2_NAME" &>/dev/null ; then
+	NET2_NET="-netdev bridge,br=$BRIDGE2_NAME,id=net2,helper=$BRIDGE_HELPER"
 	NET2_DEV="-device rtl8139,netdev=net2,mac=$HOST_MAC3,addr=6"
 fi
 
