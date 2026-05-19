@@ -87,9 +87,9 @@ revert_network() {
     echo " : Reverting bridged network environment"
 
     # Revert the bridges in reverse order of creation
-    revert_bridge_iface 'virbr2'
-    revert_bridge_iface 'virbr1'
-    revert_bridge_iface 'br0'
+    revert_bridge_iface "$BRIDGE2_NAME"
+    revert_bridge_iface "$BRIDGE1_NAME"
+    revert_bridge_iface "$BRIDGE0_NAME"
 
     echo ""
     echo "Network configuration reverted!"
