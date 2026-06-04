@@ -24,18 +24,17 @@ show-help() {
     echo "                          If not provided, find_iso function will locate an ISO automatically"
     echo "  -n, --extra-drives N    Number of additional NVMe drives to create (default: 0)"
     echo "                          The $VM_NAME always gets 2 base NVMe drives (boot and NBFT)"
-    echo "  -c, --conn-type TYPE    Network connection type: 'localhost' or 'bridged' (default: localhost)"
     echo "  -F, --foreground        Run QEMU in foreground instead of backgrounding (default: background)"
     echo ""
     echo "Examples:"
-    echo "  $0 install disks/boot.qcow2                              # Install with localhost networking"
-    echo "  $0 -i custom.iso install disks/boot.qcow2                # Install using custom.iso"
-    echo "  $0 -n 1 start disks/boot.qcow2                           # Start with 1 extra drive"
-    echo "  $0 -c bridged install disks/boot.qcow2                   # Install with bridged networking"
-    echo "  $0 -F start disks/boot.qcow2                             # Start in foreground"
-    echo "  $0 -n 3 -c localhost start disks/boot.qcow2              # Start with 3 extra drives"
-    echo "  $0 install disks/boot.qcow2 -- -vnc :0                   # Install with a VNC connection"
-    echo "  $0 -n 2 -i custom.iso -c bridged install disks/boot.qcow2 # Multiple options combined"
+    echo "  $0 install disks/boot.qcow2                      # Install with localhost networking"
+    echo "  $0 -i custom.iso install disks/boot.qcow2        # Install using custom.iso"
+    echo "  $0 -n 1 start disks/boot.qcow2                   # Start with 1 extra drive"
+    echo "  $0 install disks/boot.qcow2                      # Install with bridged networking"
+    echo "  $0 -F start disks/boot.qcow2                     # Start in foreground"
+    echo "  $0 -n 3 start disks/boot.qcow2                   # Start with 3 extra drives"
+    echo "  $0 install disks/boot.qcow2 -- -vnc :0           # Install with a VNC connection"
+    echo "  $0 -n 2 -i custom.iso install disks/boot.qcow2   # Multiple options combined"
 }
 
 HOST=`hostname`
@@ -45,11 +44,10 @@ BRIDGE_HELPER=none
 QARGS=""
 ISO_FILE=""
 N_EXTRA_DRIVES=0
-NET_CONN="localhost"
 RUN_FOREGROUND=false
 
 # Parse options using getopt
-PARSED=$(getopt --options hi:n:c:F --longoptions help,iso:,extra-drives:,conn-type:,foreground --name "$0" -- "$@")
+PARSED=$(getopt --options hi:n:F --longoptions help,iso:,extra-drives:,foreground --name "$0" -- "$@")
 if [ $? -ne 0 ]; then
     echo "Error: Failed to parse arguments"
     echo "Use -h or --help for usage information"
@@ -71,10 +69,6 @@ while true; do
             ;;
         -n|--extra-drives)
             N_EXTRA_DRIVES="$2"
-            shift 2
-            ;;
-        -c|--conn-type)
-            NET_CONN="$2"
             shift 2
             ;;
         -F|--foreground)
@@ -110,12 +104,6 @@ if [[ "$MODE" != "install" && "$MODE" != "start" ]]; then
     exit 1
 fi
 
-# Validate NET_CONN
-if [[ "$NET_CONN" != "localhost" && "$NET_CONN" != "bridged" ]]; then
-    echo "Error: --conn-type must be 'localhost' or 'bridged'"
-    exit 1
-fi
-
 # Remaining arguments are QARGS
 check_qargs
 QARGS="$QARGS $@"
@@ -142,22 +130,15 @@ else
     echo "using $BOOT_DISK"
 fi
 
-case "$NET_CONN" in
-    localhost)
-        # NET0_NET="-netdev user,id=net0,net=$NET_CIDR,hostfwd=tcp::$NET_PORT-:22"
+# Detect a bridged setup
+if [ -n "$(get_bridge_slaves ${BRIDGE0_NAME})" ] ; then
+        NET0_NET="-netdev bridge,br=$BRIDGE0_NAME,id=net0,helper=$BRIDGE_HELPER"
+        NET0_DEV="-device virtio-net-pci,netdev=net0,mac=$TARGET_MAC1,addr=4"
+else
         NET0_NET="-netdev user,id=net0,hostfwd=tcp::$TARGET_PORT-:22"
         NET0_DEV="-device e1000,netdev=net0,addr=4"
         echo "$TARGET_PORT" > .netport
-    ;;
-    bridged)
-        NET0_NET="-netdev bridge,br=$BRIDGE0_NAME,id=net0,helper=$BRIDGE_HELPER"
-        NET0_DEV="-device virtio-net-pci,netdev=net0,mac=$TARGET_MAC1,addr=4"
-    ;;
-    *)
-        echo " Error: invalid argument $NET_CONN"
-        exit 1
-    ;;
-esac
+fi
 
 NET1_NET="-netdev bridge,br=$BRIDGE1_NAME,id=net1,helper=$BRIDGE_HELPER"
 NET1_DEV="-device rtl8139,netdev=net1,mac=$TARGET_MAC2,addr=5"

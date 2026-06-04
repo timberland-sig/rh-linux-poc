@@ -4,6 +4,7 @@
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 . $DIR/defaults.sh
+. $DIR/vm-lib/common.sh
 
 # Configuration
 MODES="net"
@@ -41,7 +42,7 @@ revert_bridge_iface() {
     if nmcli dev show ${br_name} &>/dev/null ; then
         # Find all devices connected to this bridge
 	#              find slaves of br_name     | get name    | trim leading whitespace
-        local slaves=$(ip -o link show master ${br_name} | cut -d: -f2 | sed -e 's/^ *//')
+        local slaves=$(get_bridge_slaves "${br_name}")
 	echo "slaves=$slaves"
 
         # Find the hypervisor-bridge connection

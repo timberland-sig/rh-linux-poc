@@ -4,7 +4,6 @@
 
 VMNAME := $(shell basename $$PWD)
 DRIVE_CAP ?= 70G
-NET_TYPE ?= "localhost"
 QEMU_ARGS ?= ""
 METHOD ?= auto
 INPUT_ISO ?= $(shell source ../vm-lib/common.sh &>/dev/null && find_iso &>/dev/null && echo $$ISO_FILE)
@@ -52,7 +51,6 @@ help:
 	@echo ""
 	@echo "Configuration variables:"
 	@echo "  DRIVE_CAP     Disk capacity (default: $(DRIVE_CAP))"
-	@echo "  NET_TYPE      Network type: localhost/bridged (default: $(NET_TYPE))"
 	@echo "  QEMU_ARGS     Additional QEMU arguments"
 	@echo "  ISO             Path to a .iso to be used for OS installation"
 	@echo ""
@@ -62,7 +60,6 @@ help:
 	@echo "  make install-remote                 # Install to remote NVMe/TCP disk"
 	@echo "  make start-remote                   # Boot from remote NVMe/TCP disk"
 	@echo "  make DRIVE_CAP=100G install-local   # Install with 100GB disk"
-	@echo "  make NET_TYPE=bridged start-local   # Start with bridged networking"
 	@echo ""
 
 .PHONY: setup
@@ -70,19 +67,19 @@ setup: vm_vars.fd .build/hostid
 
 .PHONY: start-local
 start-local: disks/boot.qcow2 $(SETUP_SCRIPT)
-	bash ./$(SETUP_SCRIPT) -c $(NET_TYPE) start local -- $(QEMU_ARGS)
+	bash ./$(SETUP_SCRIPT) start local -- $(QEMU_ARGS)
 
 .PHONY: install-local
 install-local: iso disks/boot.qcow2 $(ISO)
-	bash ./$(SETUP_SCRIPT) -c $(NET_TYPE) -i $(ISO) install local -- $(QEMU_ARGS)
+	bash ./$(SETUP_SCRIPT) -i $(ISO) install local -- $(QEMU_ARGS)
 
 .PHONY: install-remote
 install-remote: iso $(ISO)
-	bash ./$(SETUP_SCRIPT) -c $(NET_TYPE) -i $(ISO) install remote -- $(QEMU_ARGS)
+	bash ./$(SETUP_SCRIPT) -i $(ISO) install remote -- $(QEMU_ARGS)
 
 .PHONY: start-remote
 start-remote:
-	bash ./$(SETUP_SCRIPT) -c $(NET_TYPE) start remote -- $(QEMU_ARGS)
+	bash ./$(SETUP_SCRIPT) start remote -- $(QEMU_ARGS)
 
 .PHONY: enter
 .ONESHELL: enter

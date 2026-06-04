@@ -354,3 +354,8 @@ EOF
         sudo nmcli dev reapply ${br_conn}
     fi
 }
+
+get_bridge_slaves() {
+        local br_name="$1"
+        ip -o link show master "$br_name" | cut -d: -f2 | sed -e 's/^ *//'
+}
