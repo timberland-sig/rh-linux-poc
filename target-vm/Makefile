@@ -21,6 +21,8 @@ help:
 	@echo "  install       Manually install an OS from an ISO onto a fresh boot disk using QEMU"
 	@echo "  start         Start the VM with an existing boot disk using QEMU"
 	@echo "  rh-start      Automatically install the OS with Kickstart and start the VM (Red Hat distros only)"
+	@echo "  enter         Open an SSH connection to the VM in the current terminal window."
+	@echo "                ./netsetup.sh MUST be run first! The login is passwordless."
 	@echo "  kill          Kill all $(VMNAME) instances"
 	@echo "  clean         Remove VM boot disk images and temporary files"
 	@echo "  wipe          Delete ALL disk images (including host-vm data and OS)"
@@ -66,6 +68,24 @@ start: disks/boot.qcow2 disks/nvme1.qcow2 $(SETUP_SCRIPT)
 .PHONY: install
 install: iso disks/boot.qcow2
 	@bash ./$(SETUP_SCRIPT) install disks/boot.qcow2 -c $(NET_TYPE) -n $(EXTRA_DRIVES) -- $(QEMU_ARGS)
+
+.PHONY: enter
+.ONESHELL: enter
+.SILENT: enter
+enter:
+	source ../defaults.sh
+
+	if [ ! -f .ip ] ; then
+		echo "./.ip lock file not found!" >&2
+		echo "Run ./netsetup.sh" >&2
+		exit 1
+	fi
+
+	ip_addr="$$(cat $$PWD/.ip)"
+	if [ "$$ip_addr" = "localhost" ] ; then
+		ip_addr=$${ip_addr}:$${TARGET_PORT}
+	fi
+	ssh -i $$(realpath $$PWD/../.ssh/id_ecdsa) ssh://root@$${ip_addr}
 
 .PHONY: iso
 iso:
@@ -127,6 +147,7 @@ clean:
 	-rm -rf .build
 	-rm -f anaconda-ks.cfg
 	-rm -f .net*
+	-rm -f .ip
 
 .PHONY: is-running
 is-running:

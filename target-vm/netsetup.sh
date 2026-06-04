@@ -50,4 +50,5 @@ if [ "$NEW_SUBNQN" -eq 1 ]; then
     echo -e "${YELLOW}Generated new subsystem NQN: $SUBNQN${NC}"
 fi
 
+echo "$TARGET_IP1" > .ip
 $DIR/../vm-lib/netsetup.sh "$TARGET_IP1"

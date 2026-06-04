@@ -35,6 +35,8 @@ help:
 	@echo "  start-local     Start VM from local boot disk"
 	@echo "  install-remote  Install OS to remote NVMe/TCP disk"
 	@echo "  start-remote    Start VM from remote NVMe/TCP disk"
+	@echo "  enter           Open an SSH connection to the VM in the current terminal window."
+	@echo "                  ./netsetup.sh MUST be run first! The login is passwordless."
 	@echo "  kill            Kill all $(VMNAME) instances"
 	@echo "  config          Run the interactive setup of the boot attempt configuration"
 	@echo "  reconfig        Re-run the interactive setup of the boot attempt configuration"
@@ -81,6 +83,24 @@ install-remote: iso $(ISO)
 .PHONY: start-remote
 start-remote:
 	bash ./$(SETUP_SCRIPT) -c $(NET_TYPE) start remote -- $(QEMU_ARGS)
+
+.PHONY: enter
+.ONESHELL: enter
+.SILENT: enter
+enter:
+	source ../defaults.sh
+
+	if [ ! -f .ip ] ; then
+		echo "./.ip lock file not found!" >&2
+		echo "Run ./netsetup.sh" >&2
+		exit 1
+	fi
+
+	ip_addr="$$(cat $$PWD/.ip)"
+	if [ "$$ip_addr" = "localhost" ] ; then
+		ip_addr=$${ip_addr}:$${HOST_PORT}
+	fi
+	ssh -i $$(realpath $$PWD/../.ssh/id_ecdsa) ssh://root@$${ip_addr}
 
 .PHONY: iso
 iso:
@@ -263,6 +283,7 @@ clean: clean-config
 	-rm -f *.log
 	-rm -rf .build
 	-rm -f .net*
+	-rm -f .ip
 	-rm -f anaconda-ks.cfg
 	-rm -f efidisk
 	-rm -f bootlog
