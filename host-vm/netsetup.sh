@@ -48,4 +48,5 @@ if [ "$GEN_NQN" -eq 1 ]; then
     echo -e "${YELLOW}Host ID: $HOSTID${NC}"
 fi
 
+echo "$HOST_IP1" > .ip
 $DIR/../vm-lib/netsetup.sh "$HOST_IP1"
