@@ -308,7 +308,7 @@ class NetworkSetup:
             capture_output=True,
             text=True,
         )
-        if result.returncode != 0:
+        if result.stdout.strip() != 'YES':
             print("✗ QEMU process is not running")
             raise RuntimeError("Target-vm QEMU process failed to start")
         print("✓ Target-vm started")
@@ -596,6 +596,16 @@ class VMRunner:
             print(f"✗ make setup error: {e}")
             return False
 
+    def is_running(self) -> bool:
+        """Check if the QEMU process is still running."""
+        result = subprocess.run(
+            ['make', 'is-running'],
+            cwd=self.host_vm_dir,
+            capture_output=True,
+            text=True,
+        )
+        return result.stdout.strip() == 'YES'
+
     def start_remote(self, vnc_display: Optional[int] = None) -> bool:
         """Start the VM with make start-remote (runs in background)."""
         print("Starting VM with make start-remote...")
@@ -631,14 +641,7 @@ class VMRunner:
             print("✗ Make not found or host-vm directory missing")
             return False
 
-        # Verify QEMU process is actually running
-        check = subprocess.run(
-            ['make', 'is-running'],
-            cwd=self.host_vm_dir,
-            capture_output=True,
-            text=True,
-        )
-        if check.returncode != 0:
+        if not self.is_running():
             print("✗ QEMU process is not running")
             return False
 
@@ -654,6 +657,10 @@ class VMRunner:
 
         while time.time() - start_time < timeout:
             time.sleep(2)
+
+            if not self.is_running():
+                print("✗ QEMU process died while waiting for boot")
+                return False
 
             # Try ping
             if not vm_pings and self._check_ping(host_ip):
@@ -731,6 +738,9 @@ class VMRunner:
                 elif line:
                     continue
                 else:
+                    if not self.is_running():
+                        print("✗ QEMU process died while waiting for bootlog entry")
+                        return False
                     time.sleep(0.5)
 
         print(f"✗ Bootlog entry not found within {timeout}s")
