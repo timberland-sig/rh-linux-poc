@@ -10,13 +10,25 @@ show-help() {
 	echo "Target IP addresses can be set via environment variables:"
 	echo "  TARGET_IP2"
 	echo "  TARGET_IP3"
+	echo ""
+	echo "IP addresses from defaults.sh are used by default."
 	exit 0
 }
 
 [[ "$1" == "-h" || "$1" == "--help" ]] && usage
 
 DIR="$(dirname -- "$(realpath -- "$0")")"
-. $DIR/../defaults.sh
+source $DIR/../defaults.sh
+source $DIR/../vm-lib/common.sh
+
+if [ -z "$TARGET_IP2" ] ; then
+	split_cidr "$TARGET_CIDR2" TARGET_IP2 MASK
+fi
+if [ -z "$TARGET_IP3" ] ; then
+	split_cidr "$TARGET_CIDR3" TARGET_IP3 MASK
+fi
+echo ": using $TARGET_IP2"
+echo ":   and $TARGET_IP3"
 
 sudo modprobe nvme_fabrics
 sudo modprobe nvme_tcp
