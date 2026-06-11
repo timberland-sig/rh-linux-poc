@@ -54,11 +54,8 @@ install_user() {
     git submodule update --init host-vm/nvmeof-utils
 }
 
-install_devel() {
-
-    echo " : Installing developer environment"
-
-    if [ ! -f .devel ]; then
+install_devel_pkgs() {
+    if [ ! -f .edk2pkgs ]; then
         sudo dnf group install -y development-tools
         sudo dnf install -y asciidoc audit-libs-devel binutils-devel elfutils-devel java-devel kabi-dw libcap-devel \
             libcap-ng-devel libmnl-devel llvm ncurses-devel newt-devel nss-tools numactl-devel pciutils-devel perl perl-generators \
@@ -67,6 +64,16 @@ install_devel() {
             json-c-devel json-c json-c-doc clang openssl kmod-devel python3-sphinx python3-sphinx_rtd_theme swig \
             systemd-devel mock lorax tar gpg pciutils copr-cli nvme-cli nasm
         sudo usermod -a -G mock $USER
+        touch .edk2pkgs
+    fi
+}
+
+install_devel() {
+
+    if [ ! -f .devel ]; then
+        echo " : Installing developer environment"
+
+        install_devel_pkgs
 
         if [ ! -f ~/.gitconfig ]; then
             echo " : You must setup ~/.gitconfig"
@@ -156,8 +163,43 @@ install_virt() {
     sudo chmod 4755 /usr/libexec/qemu-bridge-helper
 }
 
+clean_edk2() {
+    pushd $DIR
+    if [ ! -d ISO ]; then
+        mkdir -p ISO
+    else
+        rm -f  ISO/OVMF_CODE.fd
+        rm -f  ISO/OVMF_VARS.fd
+        rm -f  ISO/NvmeOfCli.efi
+        rm -f  ISO/VConfig.efi
+    fi
+    popd
+}
+
+install_edk2_to_host() {
+    pushd $DIR
+
+    if [ ! -f ISO/OVMF_CODE.fd ]; then
+        echo "file ISO/OVMF_CODE.fd not found!"
+        exit 1
+    fi
+
+    rm -f  host-vm/OVMF_CODE.fd
+    rm -f  host-vm/vm_vars.fd
+    rm -f  host-vm/eficonfig/NvmeOfCli.efi
+    rm -f  host-vm/eficonfig/VConfig.efi
+    cp -fv ISO/OVMF_CODE.fd host-vm/OVMF_CODE.fd
+    cp -fv ISO/OVMF_VARS.fd host-vm/vm_vars.fd
+    cp -fv ISO/NvmeOfCli.efi host-vm/eficonfig/NvmeOfCli.efi
+    cp -fv ISO/VConfig.efi host-vm/eficonfig/VConfig.efi
+    popd
+}
+
 install_edk2() {
     pushd $DIR
+
+    install_devel_pkgs
+
     if [ ! -d edk2 ]; then
         mkdir -p edk2
         pushd edk2
@@ -178,46 +220,40 @@ install_edk2() {
     make -C BaseTools
     source edksetup.sh
     build -t GCC -a X64 -p OvmfPkg/OvmfPkgX64.dsc
-    mkdir -p $DIR/ISO
-    rm -f  $DIR/host-vm/OVMF_CODE.fd
-    rm -f  $DIR/host-vm/vm_vars.fd
-    rm -f  $DIR/host-vm/eficonfig/NvmeOfCli.efi
-    rm -f  $DIR/host-vm/eficonfig/VConfig.efi
-    cp -fv Build/OvmfX64/DEBUG_GCC/FV/OVMF_CODE.fd $DIR/host-vm/OVMF_CODE.fd
-    cp -fv Build/OvmfX64/DEBUG_GCC/FV/OVMF_VARS.fd $DIR/host-vm/vm_vars.fd
+
+    clean_edk2
+
+    rm -f  $DIR/ISO/$OVMF_ZIP
+
+    cp -fv Build/OvmfX64/DEBUG_GCC/FV/OVMF_CODE.fd $DIR/ISO/OVMF_CODE.fd
     cp -fv Build/OvmfX64/DEBUG_GCC/FV/OVMF_VARS.fd $DIR/ISO/OVMF_VARS.fd
-    cp -fv Build/OvmfX64/DEBUG_GCC/X64/VConfig.efi $DIR/host-vm/eficonfig/VConfig.efi
-    cp -fv Build/OvmfX64/DEBUG_GCC/X64/NvmeOfCli.efi $DIR/host-vm/eficonfig/NvmeOfCli.efi
+    cp -fv Build/OvmfX64/DEBUG_GCC/X64/VConfig.efi $DIR/ISO/VConfig.efi
+    cp -fv Build/OvmfX64/DEBUG_GCC/X64/NvmeOfCli.efi $DIR/ISO/NvmeOfCli.efi
+
+    install_edk2_to_host
+
     popd
 }
 
 install_edk2_zip() {
     pushd $DIR
 
-    if [ ! -d ISO ]; then
-        mkdir -p ISO
-    fi
+    clean_edk2
 
     if [ ! -f ISO/$OVMF_ZIP ]; then
         pushd ISO
         wget --no-check-certificate  $OVMF_URL/$OVMF_ZIP
-        unzip $OVMF_ZIP
         popd
     fi
 
     if [ ! -f ISO/OVMF_CODE.fd ]; then
-        echo "file ISO/OVMF_CODE.fd not found!"
-        exit 1
+        pushd ISO
+        unzip $OVMF_ZIP
+        popd
     fi
 
-    rm -f  host-vm/OVMF_CODE.fd
-    rm -f  host-vm/vm_vars.fd
-    rm -f  host-vm/eficonfig/NvmeOfCli.efi
-    rm -f  host-vm/eficonfig/VConfig.efi
-    cp -fv ISO/OVMF_CODE.fd host-vm/OVMF_CODE.fd
-    cp -fv ISO/OVMF_VARS.fd host-vm/vm_vars.fd
-    cp -fv ISO/NvmeOfCli.efi host-vm/eficonfig/NvmeOfCli.efi
-    cp -fv ISO/VConfig.efi host-vm/eficonfig/VConfig.efi
+    install_edk2_to_host
+
     popd
 }
 
