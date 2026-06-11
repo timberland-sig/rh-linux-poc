@@ -269,7 +269,7 @@ clean: clean-config
 
 .PHONY: is-running
 is-running:
-	@pgrep -f "[q]emu-system-x86.*$(VMNAME)" > /dev/null && echo "YES" || { echo "NO"; exit 1; }
+	@pgrep -f "[q]emu-system-x86.*$(VMNAME)" > /dev/null && echo "YES" || echo "NO"
 
 # We put q in [] to prevent 'kill' from killing its parent shell process
 .PHONY: kill
