@@ -17,9 +17,8 @@ help:
 	@echo "Available targets:"
 	@echo "  help          Show this help message"
 	@echo "  iso           Download an OS ISO image for this VM"
-	@echo "  install       Manually install an OS from an ISO onto a fresh boot disk using QEMU"
-	@echo "  start         Start the VM with an existing boot disk using QEMU"
-	@echo "  rh-start      Automatically install the OS with Kickstart and start the VM (Red Hat distros only)"
+	@echo "  start         Start the VM using QEMU. If the boot disk doesn't exist, install first"
+	@echo "  auto-start    Automatically install the OS with Kickstart and start the VM (Red Hat distros only)"
 	@echo "  enter         Open an SSH connection to the VM in the current terminal window."
 	@echo "                ./netsetup.sh MUST be run first! The login is passwordless."
 	@echo "  kill          Kill all $(VMNAME) instances"
@@ -39,28 +38,28 @@ help:
 	@echo "  ISO           Path to a .iso to be used for OS installation"
 	@echo ""
 	@echo "Examples:"
-	@echo "  make install                    # Manually install an OS on a fresh disk"
-	@echo "  make start                      # Start the VM with an existing disk"
-	@echo "  make rh-start                   # Start the VM with the auto-installed disk (Red Hat)"
-	@echo "  make DRIVE_CAP=100G install     # Install with 100GB disks"
+	@echo "  make start                      # Start the VM (installs if no boot disk)"
+	@echo "  make auto-start                 # Start the VM with the auto-installed disk (Red Hat)"
+	@echo "  make DRIVE_CAP=100G start       # Start with 100GB disks"
 	@echo ""
 
-.PHONY: rh-start
-rh-start: disks/nvme1.qcow2 $(SETUP_SCRIPT)
+.PHONY: auto-start
+auto-start: disks/nvme1.qcow2 $(SETUP_SCRIPT)
 # disks/rh-boot.qcow2 is not an explicit dependency because it consumes
 # .build/rh-boot.qcow2 for its creation. This, however, confuses GNU Make
 # to go rebuild the qcow2 disk unnecessarily.
-	[ -f disks/rh-boot.qcow2 ] || make rh-install
+	[ -f disks/rh-boot.qcow2 ] || make auto-install
 	@bash ./$(SETUP_SCRIPT) start disks/rh-boot.qcow2 -n $(EXTRA_DRIVES) -- $(QEMU_ARGS)
 
-.PHONY: rh-install
-rh-install: disks/rh-boot.qcow2 boot.iso $(SETUP_SCRIPT)
+.PHONY: auto-install
+auto-install: disks/rh-boot.qcow2 boot.iso $(SETUP_SCRIPT)
 	@source ../vm-lib/colors.sh && echo -e "$${RED}The VM is installing in the background. Do not interrupt!$${NC}"
 	@bash ./$(SETUP_SCRIPT) install $< -F -i boot.iso -- $(QEMU_ARGS)
 
 .PHONY: start
-start: disks/boot.qcow2 disks/nvme1.qcow2 $(SETUP_SCRIPT)
-	@bash ./$(SETUP_SCRIPT) start $< -i $(ISO) -n $(EXTRA_DRIVES) -- $(QEMU_ARGS)
+start: disks/nvme1.qcow2 $(SETUP_SCRIPT)
+	[ -f disks/boot.qcow2 ] || make install
+	@bash ./$(SETUP_SCRIPT) start disks/boot.qcow2 -i $(ISO) -n $(EXTRA_DRIVES) -- $(QEMU_ARGS)
 
 .PHONY: install
 install: iso disks/boot.qcow2

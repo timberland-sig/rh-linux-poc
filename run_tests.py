@@ -203,7 +203,7 @@ class NetworkSetup:
         if not disk_path.exists():
             print(f"✗ Target VM disk not found: {disk_path}")
             print("  Please set up the target-vm first by running:")
-            print("    cd target-vm && make rh-install")
+            print("    cd target-vm && make auto-install")
             return False
 
         try:
@@ -211,7 +211,7 @@ class NetworkSetup:
             if disk_size == 0:
                 print(f"✗ Target VM disk is empty: {disk_path}")
                 print("  Please set up the target-vm first by running:")
-                print("    cd target-vm && make rh-install")
+                print("    cd target-vm && make auto-install")
                 return False
 
             print(f"✓ Target VM disk found: {disk_path} ({disk_size / (1024**3):.2f} GB)")
@@ -268,14 +268,14 @@ class NetworkSetup:
         # Prepare environment with TARGET_CIDR variables
         env = self._get_target_cidr_env()
 
-        # Start target-vm with make rh-start
+        # Start target-vm with make auto-start
         # Use Popen + wait() instead of subprocess.run() with capture_output,
         # because the backgrounded QEMU process inherits the pipes and prevents
         # communicate() from returning even after make itself exits.
-        print("Starting target-vm with 'make rh-start'...")
+        print("Starting target-vm with 'make auto-start'...")
         try:
             proc = subprocess.Popen(
-                ['make', 'rh-start'],
+                ['make', 'auto-start'],
                 cwd=self.target_vm_dir,
                 env=env,
                 stdin=subprocess.DEVNULL,
@@ -295,7 +295,7 @@ class NetworkSetup:
         except subprocess.TimeoutExpired:
             proc.kill()
             proc.wait()
-            print("✗ 'make rh-start' timed out")
+            print("✗ 'make auto-start' timed out")
             raise RuntimeError("Target-vm startup timed out")
         except FileNotFoundError:
             print(f"✗ Make not found or target-vm directory missing")

@@ -291,7 +291,7 @@ case "${MODE}" in
     ;;
     test)
         pushd target-vm
-        make rh-start QEMU_ARGS="-vnc :0"
+        make auto-start QEMU_ARGS="-vnc :0"
         popd
         pushd host-vm
         make setup QEMU_ARGS="-vnc :1"

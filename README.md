@@ -291,7 +291,7 @@ If the OS on your downloaded ISO belongs to the Red Hat family, you can install 
 Run `make help` to see all available options, then run:
 
 ```
-make rh-start
+make auto-start
 ```
 to start the VM with the pre-installed disk.
 
@@ -308,11 +308,11 @@ You may, however, observe the installation over VNC with `vncviewer <hostname>:0
 
 For any other distribution or if you prefer manual installation:
 
-- Run `make install` to start a manual installation from an ISO
+- Run `make start` to start a manual installation from an ISO
 - Connect to the VM console and complete the OS installation
 - **Important**: Create a root account with SSH access during installation
 - After installation, **reboot**, login as the `root` user and **shutdown** the `target-vm`.
-- Run `make start` to continue the setup.
+- Run `make start` again to continue the setup.
 
 Run `make help` to see all available targets and configuration options.
 
