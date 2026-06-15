@@ -34,7 +34,7 @@ part / --fstype="xfs" --grow --size=10000 --label="ROOT"
 
 # Network
 network --hostname host-vm
-# network --device=link --bootproto=dhcp --activate
+network --device=link --bootproto=dhcp --activate
 
 # System timezone
 timezone Europe/Prague --utc
