@@ -5,6 +5,8 @@
 VMNAME := $(shell basename $$PWD)
 DRIVE_CAP ?= 70G
 QEMU_ARGS ?= ""
+VNC_DISPLAY ?=
+export VNC_DISPLAY
 METHOD ?= auto
 INPUT_ISO ?= $(shell source ../vm-lib/common.sh &>/dev/null && find_iso &>/dev/null && echo $$ISO_FILE)
 
@@ -20,6 +22,12 @@ else
 endif
 
 SETUP_SCRIPT := vm.sh
+
+ifneq ($(VNC_DISPLAY),)
+    _DISPLAY_ARGS := --vnc
+else
+    _DISPLAY_ARGS :=
+endif
 
 .ONESHELL: help
 .PHONY: help
@@ -51,6 +59,7 @@ help:
 	@echo ""
 	@echo "Configuration variables:"
 	@echo "  DRIVE_CAP     Disk capacity (default: $(DRIVE_CAP))"
+	@echo "  VNC_DISPLAY   VNC display number (forces VNC mode, e.g., VNC_DISPLAY=1)"
 	@echo "  QEMU_ARGS     Additional QEMU arguments"
 	@echo "  ISO             Path to a .iso to be used for OS installation"
 	@echo ""
@@ -60,6 +69,7 @@ help:
 	@echo "  make install-remote                 # Install to remote NVMe/TCP disk"
 	@echo "  make start-remote                   # Boot from remote NVMe/TCP disk"
 	@echo "  make DRIVE_CAP=100G install-local   # Install with 100GB disk"
+	@echo "  make VNC_DISPLAY=1 start-remote     # Start with VNC on display :1"
 	@echo ""
 
 .PHONY: setup
@@ -67,19 +77,19 @@ setup: vm_vars.fd .build/hostid
 
 .PHONY: start-local
 start-local: disks/boot.qcow2 $(SETUP_SCRIPT)
-	bash ./$(SETUP_SCRIPT) start local -- $(QEMU_ARGS)
+	bash ./$(SETUP_SCRIPT) $(_DISPLAY_ARGS) start local -- $(QEMU_ARGS)
 
 .PHONY: install-local
 install-local: iso disks/boot.qcow2 $(ISO)
-	bash ./$(SETUP_SCRIPT) -i $(ISO) install local -- $(QEMU_ARGS)
+	bash ./$(SETUP_SCRIPT) -i $(ISO) $(_DISPLAY_ARGS) install local -- $(QEMU_ARGS)
 
 .PHONY: install-remote
 install-remote: iso $(ISO)
-	bash ./$(SETUP_SCRIPT) -i $(ISO) install remote -- $(QEMU_ARGS)
+	bash ./$(SETUP_SCRIPT) -i $(ISO) $(_DISPLAY_ARGS) install remote -- $(QEMU_ARGS)
 
 .PHONY: start-remote
 start-remote:
-	bash ./$(SETUP_SCRIPT) start remote -- $(QEMU_ARGS)
+	bash ./$(SETUP_SCRIPT) $(_DISPLAY_ARGS) start remote -- $(QEMU_ARGS)
 
 .PHONY: enter
 .ONESHELL: enter
