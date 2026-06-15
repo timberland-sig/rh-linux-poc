@@ -225,6 +225,65 @@ generate_serial_number() {
     hexdump -vn8 -e'4/4 "%08X" 1 "\n"' /dev/urandom
 }
 
+resolve_display_mode() {
+    local _cli_mode=""
+    local _project_root
+    _project_root="$(dirname -- "$(dirname -- "$(realpath -- "${BASH_SOURCE[0]}")")")"
+    local _state_file="$_project_root/.display_mode"
+
+    DISPLAY_MODE=""
+
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            --vnc)
+                _cli_mode="vnc"
+                shift
+                ;;
+            --graphical)
+                _cli_mode="graphical"
+                shift
+                ;;
+            *)
+                shift
+                ;;
+        esac
+    done
+
+    if [ -n "$_cli_mode" ]; then
+        DISPLAY_MODE="$_cli_mode"
+        return 0
+    fi
+
+    if [ -f "$_state_file" ]; then
+        DISPLAY_MODE="$(cat "$_state_file")"
+        return 0
+    fi
+
+    if [ -t 0 ]; then
+        echo "No display mode configured. Select display mode:"
+        echo "  1) VNC"
+        echo "  2) Graphical"
+        while true; do
+            read -r -p "Choice [1]: " _answer
+            case "$_answer" in
+                ""|1)
+                    DISPLAY_MODE="vnc"
+                    echo "vnc" > "$_state_file"
+                    break
+                    ;;
+                2)
+                    DISPLAY_MODE="graphical"
+                    echo "graphical" > "$_state_file"
+                    break
+                    ;;
+            esac
+        done
+        return 0
+    fi
+
+    DISPLAY_MODE="vnc"
+}
+
 bridge_iface() {
     # Parse arguments and check for help
     local br_name=""

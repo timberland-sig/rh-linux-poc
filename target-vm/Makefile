@@ -6,9 +6,17 @@ VMNAME := $(shell basename $$PWD)
 DRIVE_CAP ?= 70G
 EXTRA_DRIVES ?= 0
 QEMU_ARGS ?= ""
+VNC_DISPLAY ?=
+export VNC_DISPLAY
 ISO ?= $(shell source ../vm-lib/common.sh &>/dev/null && find_iso &>/dev/null && echo $$ISO_FILE)
 
 SETUP_SCRIPT := vm.sh
+
+ifneq ($(VNC_DISPLAY),)
+    _DISPLAY_ARGS := --vnc
+else
+    _DISPLAY_ARGS :=
+endif
 
 .PHONY: help
 help:
@@ -34,6 +42,7 @@ help:
 	@echo "Configuration variables:"
 	@echo "  DRIVE_CAP     Disk capacity (default: $(DRIVE_CAP))"
 	@echo "  EXTRA_DRIVES  Number of extra NVMe drives (default: $(EXTRA_DRIVES))"
+	@echo "  VNC_DISPLAY   VNC display number (forces VNC mode, e.g., VNC_DISPLAY=0)"
 	@echo "  QEMU_ARGS     Additional QEMU arguments"
 	@echo "  ISO           Path to a .iso to be used for OS installation"
 	@echo ""
@@ -41,6 +50,7 @@ help:
 	@echo "  make start                      # Start the VM (installs if no boot disk)"
 	@echo "  make auto-start                 # Start the VM with the auto-installed disk (Red Hat)"
 	@echo "  make DRIVE_CAP=100G start       # Start with 100GB disks"
+	@echo "  make VNC_DISPLAY=0 start        # Start with VNC on display :0"
 	@echo ""
 
 .PHONY: auto-start
@@ -49,7 +59,7 @@ auto-start: disks/nvme1.qcow2 $(SETUP_SCRIPT)
 # .build/rh-boot.qcow2 for its creation. This, however, confuses GNU Make
 # to go rebuild the qcow2 disk unnecessarily.
 	[ -f disks/rh-boot.qcow2 ] || make auto-install
-	@bash ./$(SETUP_SCRIPT) start disks/rh-boot.qcow2 -n $(EXTRA_DRIVES) -- $(QEMU_ARGS)
+	@bash ./$(SETUP_SCRIPT) start disks/rh-boot.qcow2 $(_DISPLAY_ARGS) -n $(EXTRA_DRIVES) -- $(QEMU_ARGS)
 
 .PHONY: auto-install
 auto-install: disks/rh-boot.qcow2 boot.iso $(SETUP_SCRIPT)
@@ -59,11 +69,11 @@ auto-install: disks/rh-boot.qcow2 boot.iso $(SETUP_SCRIPT)
 .PHONY: start
 start: disks/nvme1.qcow2 $(SETUP_SCRIPT)
 	[ -f disks/boot.qcow2 ] || make install
-	@bash ./$(SETUP_SCRIPT) start disks/boot.qcow2 -i $(ISO) -n $(EXTRA_DRIVES) -- $(QEMU_ARGS)
+	@bash ./$(SETUP_SCRIPT) start disks/boot.qcow2 $(_DISPLAY_ARGS) -i $(ISO) -n $(EXTRA_DRIVES) -- $(QEMU_ARGS)
 
 .PHONY: install
 install: iso disks/boot.qcow2
-	@bash ./$(SETUP_SCRIPT) install disks/boot.qcow2 -n $(EXTRA_DRIVES) -- $(QEMU_ARGS)
+	@bash ./$(SETUP_SCRIPT) install disks/boot.qcow2 $(_DISPLAY_ARGS) -n $(EXTRA_DRIVES) -- $(QEMU_ARGS)
 
 .PHONY: enter
 .ONESHELL: enter
