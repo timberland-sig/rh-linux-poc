@@ -28,6 +28,7 @@ cscope.*
 .durl
 .diso
 .devel
+.display_mode
 .usr
 .macaddr
 .ssh

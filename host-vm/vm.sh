@@ -26,13 +26,16 @@ Arguments:
 Options:
   -h, --help              Show this help message and exit
   -i, --iso PATH          Path to the ISO file to use
+  --vnc[=DISPLAY]         Use VNC for VM display (optional display number, default: :1)
+  --graphical             Use graphical display (X11/Wayland)
 
 Examples:
   $0 nbft-setup                   # Configure NBFT for network boot
   $0 install local                # Install to local disk
   $0 start local                  # Start from local disk
-  $0 start remote -- -nographic   # Start from remote disk with extra QEMU args
-  $0 start remote -- -vnc :0      # Start with VNC connection
+  $0 --vnc start remote                         # Start with VNC on display :1
+  $0 --vnc=:2 start remote                      # Start with VNC on display :2
+  $0 --graphical start local                    # Start with graphical display
 EOF
     return
 }
@@ -43,9 +46,10 @@ QEMU=none
 BRIDGE_HELPER=none
 ISO_FILE=""
 QARGS=""
+_DISPLAY_ARGS=()
 
 # Parse options using getopt
-PARSED=$(getopt --options hi: --longoptions help,iso: --name "$0" -- "$@")
+PARSED=$(getopt --options hi: --longoptions help,iso:,conn-type:,vnc::,graphical --name "$0" -- "$@")
 if [ $? -ne 0 ]; then
     echo "Error: Failed to parse arguments"
     echo "Use -h or --help for usage information"
@@ -64,6 +68,17 @@ while true; do
         -i|--iso)
             ISO_FILE="$2"
             shift 2
+            ;;
+        --vnc)
+            _DISPLAY_ARGS=(--vnc)
+            if [ -n "$2" ]; then
+                VNC_DISPLAY="${2#:}"
+            fi
+            shift 2
+            ;;
+        --graphical)
+            _DISPLAY_ARGS=(--graphical)
+            shift
             ;;
         --)
             shift
@@ -131,7 +146,7 @@ if [ -n "$(get_bridge_slaves ${BRIDGE0_NAME})" ] ; then
         NET0_DEV="-device virtio-net-pci,netdev=net0,mac=$HOST_MAC1,addr=4"
 else
         NET0_NET="-netdev user,id=net0,hostfwd=tcp::$HOST_PORT-:22"
-        NET0_DEV="-device virtio-net-pci,netdev=net0,addr=4"
+        NET0_DEV="-device e1000e,netdev=net0,addr=4"
 fi
 
 # Only find ISO for 'install' mode
@@ -190,26 +205,21 @@ if [ "$OS_LOCATION" = "local" ] ; then
     VM_VARS_FLASH=""
 fi
 
-# Check if VNC is enabled in QARGS
-VNC_DISPLAY=""
-QARGS_ARRAY=($QARGS)
-VNC_IN_QARGS=false
-for ((i=0; i<${#QARGS_ARRAY[@]}; i++)); do
-    if [[ "${QARGS_ARRAY[$i]}" == "-vnc" ]]; then
-        VNC_IN_QARGS=true
-        VNC_ARG="${QARGS_ARRAY[$((i+1))]}"
-        # Extract display number from formats like ":0", "127.0.0.1:0", etc.
-        if [[ "$VNC_ARG" =~ :([0-9]+)$ ]]; then
-            VNC_DISPLAY="${BASH_REMATCH[1]}"
-        fi
+# Check if -vnc was already specified via QARGS pass-through
+_vnc_in_qargs=false
+for _qarg in $QARGS; do
+    if [ "$_qarg" = "-vnc" ]; then
+        _vnc_in_qargs=true
         break
     fi
 done
 
-# Auto-enable VNC if no graphical interface is available
-if [[ -z "$DISPLAY" && "$VNC_IN_QARGS" == "false" ]]; then
-    QARGS="$QARGS -vnc :1"
-    VNC_DISPLAY="1"
+if ! $_vnc_in_qargs; then
+    resolve_display_mode "${_DISPLAY_ARGS[@]}"
+    if [ "$DISPLAY_MODE" = "vnc" ]; then
+        VNC_DISPLAY="${VNC_DISPLAY:-1}"
+        QARGS="$QARGS -vnc :${VNC_DISPLAY}"
+    fi
 fi
 
 mkdir -p $PWD/.build

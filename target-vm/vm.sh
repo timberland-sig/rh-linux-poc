@@ -25,6 +25,8 @@ show-help() {
     echo "  -n, --extra-drives N    Number of additional NVMe drives to create (default: 0)"
     echo "                          The $VM_NAME always gets 2 base NVMe drives (boot and NBFT)"
     echo "  -F, --foreground        Run QEMU in foreground instead of backgrounding (default: background)"
+    echo "  --vnc[=DISPLAY]         Use VNC for VM display (optional display number, default: :0)"
+    echo "  --graphical             Use graphical display (X11/Wayland)"
     echo ""
     echo "Examples:"
     echo "  $0 install disks/boot.qcow2                      # Install with localhost networking"
@@ -33,8 +35,10 @@ show-help() {
     echo "  $0 install disks/boot.qcow2                      # Install with bridged networking"
     echo "  $0 -F start disks/boot.qcow2                     # Start in foreground"
     echo "  $0 -n 3 start disks/boot.qcow2                   # Start with 3 extra drives"
-    echo "  $0 install disks/boot.qcow2 -- -vnc :0           # Install with a VNC connection"
     echo "  $0 -n 2 -i custom.iso install disks/boot.qcow2   # Multiple options combined"
+    echo "  $0 --vnc start disks/boot.qcow2                  # Start with VNC on display :0"
+    echo "  $0 --vnc=:2 start disks/boot.qcow2               # Start with VNC on display :2"
+    echo "  $0 --graphical install disks/boot.qcow2          # Install with graphical display"
 }
 
 HOST=`hostname`
@@ -45,9 +49,10 @@ QARGS=""
 ISO_FILE=""
 N_EXTRA_DRIVES=0
 RUN_FOREGROUND=false
+_DISPLAY_ARGS=()
 
 # Parse options using getopt
-PARSED=$(getopt --options hi:n:F --longoptions help,iso:,extra-drives:,foreground --name "$0" -- "$@")
+PARSED=$(getopt --options hi:n:F --longoptions help,iso:,extra-drives:,foreground,vnc::,graphical --name "$0" -- "$@")
 if [ $? -ne 0 ]; then
     echo "Error: Failed to parse arguments"
     echo "Use -h or --help for usage information"
@@ -74,6 +79,17 @@ while true; do
         -F|--foreground)
             RUN_FOREGROUND=true
             shift 1
+            ;;
+        --vnc)
+            _DISPLAY_ARGS=(--vnc)
+            if [ -n "$2" ]; then
+                VNC_DISPLAY="${2#:}"
+            fi
+            shift 2
+            ;;
+        --graphical)
+            _DISPLAY_ARGS=(--graphical)
+            shift
             ;;
         --)
             shift
@@ -176,26 +192,21 @@ for ((i=1; i<=N_EXTRA_DRIVES; i++)); do
     EXTRA_NVMES+=("-device nvme,drive=NVME${NVME_ID},bus=pcie.0,addr=0x$(printf '%x' $ADDR),max_ioqpairs=4,physical_block_size=4096,logical_block_size=4096,use-intel-id=on,serial=$(generate_serial_number) -drive file=$(realpath $EXTRA_DISK),if=none,id=NVME${NVME_ID}")
 done
 
-# Check if VNC is enabled in QARGS
-VNC_DISPLAY=""
-QARGS_ARRAY=($QARGS)
-VNC_IN_QARGS=false
-for ((i=0; i<${#QARGS_ARRAY[@]}; i++)); do
-    if [[ "${QARGS_ARRAY[$i]}" == "-vnc" ]]; then
-        VNC_IN_QARGS=true
-        VNC_ARG="${QARGS_ARRAY[$((i+1))]}"
-        # Extract display number from formats like ":0", "127.0.0.1:0", etc.
-        if [[ "$VNC_ARG" =~ :([0-9]+)$ ]]; then
-            VNC_DISPLAY="${BASH_REMATCH[1]}"
-        fi
+# Check if -vnc was already specified via QARGS pass-through
+_vnc_in_qargs=false
+for _qarg in $QARGS; do
+    if [ "$_qarg" = "-vnc" ]; then
+        _vnc_in_qargs=true
         break
     fi
 done
 
-# Auto-enable VNC if no graphical interface is available
-if [[ -z "$DISPLAY" && "$VNC_IN_QARGS" == "false" ]]; then
-    QARGS="$QARGS -vnc :0"
-    VNC_DISPLAY="0"
+if ! $_vnc_in_qargs; then
+    resolve_display_mode "${_DISPLAY_ARGS[@]}"
+    if [ "$DISPLAY_MODE" = "vnc" ]; then
+        VNC_DISPLAY="${VNC_DISPLAY:-0}"
+        QARGS="$QARGS -vnc :${VNC_DISPLAY}"
+    fi
 fi
 
 mkdir -p $PWD/.build
