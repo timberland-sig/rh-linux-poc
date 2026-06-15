@@ -54,16 +54,17 @@ help:
 	@echo ""
 
 .PHONY: auto-start
+.ONESHELL: auto-start
 auto-start: disks/nvme1.qcow2 $(SETUP_SCRIPT)
 # disks/rh-boot.qcow2 is not an explicit dependency because it consumes
 # .build/rh-boot.qcow2 for its creation. This, however, confuses GNU Make
 # to go rebuild the qcow2 disk unnecessarily.
-	[ -f disks/rh-boot.qcow2 ] || make auto-install
+	[ -f disks/rh-boot.qcow2 ] || make auto-install || exit 1
 	@bash ./$(SETUP_SCRIPT) start disks/rh-boot.qcow2 $(_DISPLAY_ARGS) -n $(EXTRA_DRIVES) -- $(QEMU_ARGS)
 
 .PHONY: auto-install
 auto-install: disks/rh-boot.qcow2 boot.iso $(SETUP_SCRIPT)
-	@source ../vm-lib/colors.sh && echo -e "$${RED}The VM is installing in the background. Do not interrupt!$${NC}"
+	@source ../vm-lib/colors.sh && echo -e "$${RED}The VM is installing. Do not interrupt!$${NC}"
 	@bash ./$(SETUP_SCRIPT) install $< -F -i boot.iso -- $(QEMU_ARGS)
 
 .PHONY: start
@@ -125,7 +126,7 @@ disks/%.qcow2:
 boot.iso: iso anaconda-ks.cfg
 # Look up the prebuilt ISO
 	if ! [ -f $@ ] ; then
-		-sudo mkksiso --ks anaconda-ks.cfg "$(ISO)" $@
+		-sudo mkksiso --ks anaconda-ks.cfg -c "console=ttyS0,115200n8 inst.text" "$(ISO)" $@
 	fi
 
 anaconda-ks.cfg: anaconda-ks.cfg.template
