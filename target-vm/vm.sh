@@ -192,20 +192,25 @@ for ((i=1; i<=N_EXTRA_DRIVES; i++)); do
     EXTRA_NVMES+=("-device nvme,drive=NVME${NVME_ID},bus=pcie.0,addr=0x$(printf '%x' $ADDR),max_ioqpairs=4,physical_block_size=4096,logical_block_size=4096,use-intel-id=on,serial=$(generate_serial_number) -drive file=$(realpath $EXTRA_DISK),if=none,id=NVME${NVME_ID}")
 done
 
-# Check if -vnc was already specified via QARGS pass-through
-_vnc_in_qargs=false
-for _qarg in $QARGS; do
-    if [ "$_qarg" = "-vnc" ]; then
-        _vnc_in_qargs=true
-        break
-    fi
-done
+DISPLAY_ARGS=""
+if [[ "$MODE" == "install" && "$RUN_FOREGROUND" == "true" ]]; then
+    DISPLAY_ARGS="-serial stdio -display none"
+else
+    # Check if -vnc was already specified via QARGS pass-through
+    _vnc_in_qargs=false
+    for _qarg in $QARGS; do
+        if [ "$_qarg" = "-vnc" ]; then
+            _vnc_in_qargs=true
+            break
+        fi
+    done
 
-if ! $_vnc_in_qargs; then
-    resolve_display_mode "${_DISPLAY_ARGS[@]}"
-    if [ "$DISPLAY_MODE" = "vnc" ]; then
-        VNC_DISPLAY="${VNC_DISPLAY:-0}"
-        QARGS="$QARGS -vnc :${VNC_DISPLAY}"
+    if ! $_vnc_in_qargs; then
+        resolve_display_mode "${_DISPLAY_ARGS[@]}"
+        if [ "$DISPLAY_MODE" = "vnc" ]; then
+            VNC_DISPLAY="${VNC_DISPLAY:-0}"
+            DISPLAY_ARGS="-vnc :${VNC_DISPLAY}"
+        fi
     fi
 fi
 
@@ -223,7 +228,8 @@ $NET0_DEV \
 $NET1_NET \
 $NET1_DEV \
 $NET2_NET \
-$NET2_DEV
+$NET2_DEV \
+$DISPLAY_ARGS
 EOF
 
 chmod +x .build/start-vm.sh
