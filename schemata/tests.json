@@ -30,14 +30,25 @@
             "br0": {
               "$ref": "#/$defs/networkInterface"
             },
-            "virbr1": {
+            "br1": {
               "$ref": "#/$defs/networkInterface"
             },
-            "virbr2": {
+            "br2": {
               "$ref": "#/$defs/networkInterface"
             }
           },
-          "required": ["br0", "virbr1", "virbr2"]
+          "required": ["br0", "br1", "br2"]
+        },
+        "displayMode": {
+          "type": "string",
+          "enum": ["vnc", "graphical"],
+          "description": "Display mode: 'vnc' for headless, 'graphical' for X11/Wayland"
+        },
+        "vncDisplay": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 99,
+          "description": "VNC display number (default: 0 for target-vm, 1 for host-vm)"
         },
         "tests": {
           "type": "array",

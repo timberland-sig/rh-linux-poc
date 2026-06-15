@@ -24,18 +24,21 @@ show-help() {
     echo "                          If not provided, find_iso function will locate an ISO automatically"
     echo "  -n, --extra-drives N    Number of additional NVMe drives to create (default: 0)"
     echo "                          The $VM_NAME always gets 2 base NVMe drives (boot and NBFT)"
-    echo "  -c, --conn-type TYPE    Network connection type: 'localhost' or 'bridged' (default: localhost)"
     echo "  -F, --foreground        Run QEMU in foreground instead of backgrounding (default: background)"
+    echo "  --vnc[=DISPLAY]         Use VNC for VM display (optional display number, default: :0)"
+    echo "  --graphical             Use graphical display (X11/Wayland)"
     echo ""
     echo "Examples:"
-    echo "  $0 install disks/boot.qcow2                              # Install with localhost networking"
-    echo "  $0 -i custom.iso install disks/boot.qcow2                # Install using custom.iso"
-    echo "  $0 -n 1 start disks/boot.qcow2                           # Start with 1 extra drive"
-    echo "  $0 -c bridged install disks/boot.qcow2                   # Install with bridged networking"
-    echo "  $0 -F start disks/boot.qcow2                             # Start in foreground"
-    echo "  $0 -n 3 -c localhost start disks/boot.qcow2              # Start with 3 extra drives"
-    echo "  $0 install disks/boot.qcow2 -- -vnc :0                   # Install with a VNC connection"
-    echo "  $0 -n 2 -i custom.iso -c bridged install disks/boot.qcow2 # Multiple options combined"
+    echo "  $0 install disks/boot.qcow2                      # Install with localhost networking"
+    echo "  $0 -i custom.iso install disks/boot.qcow2        # Install using custom.iso"
+    echo "  $0 -n 1 start disks/boot.qcow2                   # Start with 1 extra drive"
+    echo "  $0 install disks/boot.qcow2                      # Install with bridged networking"
+    echo "  $0 -F start disks/boot.qcow2                     # Start in foreground"
+    echo "  $0 -n 3 start disks/boot.qcow2                   # Start with 3 extra drives"
+    echo "  $0 -n 2 -i custom.iso install disks/boot.qcow2   # Multiple options combined"
+    echo "  $0 --vnc start disks/boot.qcow2                  # Start with VNC on display :0"
+    echo "  $0 --vnc=:2 start disks/boot.qcow2               # Start with VNC on display :2"
+    echo "  $0 --graphical install disks/boot.qcow2          # Install with graphical display"
 }
 
 HOST=`hostname`
@@ -45,11 +48,11 @@ BRIDGE_HELPER=none
 QARGS=""
 ISO_FILE=""
 N_EXTRA_DRIVES=0
-NET_CONN="localhost"
 RUN_FOREGROUND=false
+_DISPLAY_ARGS=()
 
 # Parse options using getopt
-PARSED=$(getopt --options hi:n:c:F --longoptions help,iso:,extra-drives:,conn-type:,foreground --name "$0" -- "$@")
+PARSED=$(getopt --options hi:n:F --longoptions help,iso:,extra-drives:,foreground,vnc::,graphical --name "$0" -- "$@")
 if [ $? -ne 0 ]; then
     echo "Error: Failed to parse arguments"
     echo "Use -h or --help for usage information"
@@ -73,13 +76,20 @@ while true; do
             N_EXTRA_DRIVES="$2"
             shift 2
             ;;
-        -c|--conn-type)
-            NET_CONN="$2"
-            shift 2
-            ;;
         -F|--foreground)
             RUN_FOREGROUND=true
             shift 1
+            ;;
+        --vnc)
+            _DISPLAY_ARGS=(--vnc)
+            if [ -n "$2" ]; then
+                VNC_DISPLAY="${2#:}"
+            fi
+            shift 2
+            ;;
+        --graphical)
+            _DISPLAY_ARGS=(--graphical)
+            shift
             ;;
         --)
             shift
@@ -110,12 +120,6 @@ if [[ "$MODE" != "install" && "$MODE" != "start" ]]; then
     exit 1
 fi
 
-# Validate NET_CONN
-if [[ "$NET_CONN" != "localhost" && "$NET_CONN" != "bridged" ]]; then
-    echo "Error: --conn-type must be 'localhost' or 'bridged'"
-    exit 1
-fi
-
 # Remaining arguments are QARGS
 check_qargs
 QARGS="$QARGS $@"
@@ -142,26 +146,19 @@ else
     echo "using $BOOT_DISK"
 fi
 
-case "$NET_CONN" in
-    localhost)
-        # NET0_NET="-netdev user,id=net0,net=$NET_CIDR,hostfwd=tcp::$NET_PORT-:22"
+# Detect a bridged setup
+if [ -n "$(get_bridge_slaves ${BRIDGE0_NAME})" ] ; then
+        NET0_NET="-netdev bridge,br=$BRIDGE0_NAME,id=net0,helper=$BRIDGE_HELPER"
+        NET0_DEV="-device virtio-net-pci,netdev=net0,mac=$TARGET_MAC1,addr=4"
+else
         NET0_NET="-netdev user,id=net0,hostfwd=tcp::$TARGET_PORT-:22"
         NET0_DEV="-device e1000,netdev=net0,addr=4"
         echo "$TARGET_PORT" > .netport
-    ;;
-    bridged)
-        NET0_NET="-netdev bridge,br=br0,id=net0,helper=$BRIDGE_HELPER"
-        NET0_DEV="-device virtio-net-pci,netdev=net0,mac=$TARGET_MAC1,addr=4"
-    ;;
-    *)
-        echo " Error: invalid argument $NET_CONN"
-        exit 1
-    ;;
-esac
+fi
 
-NET1_NET="-netdev bridge,br=virbr1,id=net1,helper=$BRIDGE_HELPER"
+NET1_NET="-netdev bridge,br=$BRIDGE1_NAME,id=net1,helper=$BRIDGE_HELPER"
 NET1_DEV="-device rtl8139,netdev=net1,mac=$TARGET_MAC2,addr=5"
-NET2_NET="-netdev bridge,br=virbr2,id=net2,helper=$BRIDGE_HELPER"
+NET2_NET="-netdev bridge,br=$BRIDGE2_NAME,id=net2,helper=$BRIDGE_HELPER"
 NET2_DEV="-device rtl8139,netdev=net2,mac=$TARGET_MAC3,addr=6"
 
 # Set boot options based on mode
@@ -195,26 +192,26 @@ for ((i=1; i<=N_EXTRA_DRIVES; i++)); do
     EXTRA_NVMES+=("-device nvme,drive=NVME${NVME_ID},bus=pcie.0,addr=0x$(printf '%x' $ADDR),max_ioqpairs=4,physical_block_size=4096,logical_block_size=4096,use-intel-id=on,serial=$(generate_serial_number) -drive file=$(realpath $EXTRA_DISK),if=none,id=NVME${NVME_ID}")
 done
 
-# Check if VNC is enabled in QARGS
-VNC_DISPLAY=""
-QARGS_ARRAY=($QARGS)
-VNC_IN_QARGS=false
-for ((i=0; i<${#QARGS_ARRAY[@]}; i++)); do
-    if [[ "${QARGS_ARRAY[$i]}" == "-vnc" ]]; then
-        VNC_IN_QARGS=true
-        VNC_ARG="${QARGS_ARRAY[$((i+1))]}"
-        # Extract display number from formats like ":0", "127.0.0.1:0", etc.
-        if [[ "$VNC_ARG" =~ :([0-9]+)$ ]]; then
-            VNC_DISPLAY="${BASH_REMATCH[1]}"
+DISPLAY_ARGS=""
+if [[ "$MODE" == "install" && "$RUN_FOREGROUND" == "true" ]]; then
+    DISPLAY_ARGS="-serial stdio -display none"
+else
+    # Check if -vnc was already specified via QARGS pass-through
+    _vnc_in_qargs=false
+    for _qarg in $QARGS; do
+        if [ "$_qarg" = "-vnc" ]; then
+            _vnc_in_qargs=true
+            break
         fi
-        break
-    fi
-done
+    done
 
-# Auto-enable VNC if no graphical interface is available
-if [[ -z "$DISPLAY" && "$VNC_IN_QARGS" == "false" ]]; then
-    QARGS="$QARGS -vnc :0"
-    VNC_DISPLAY="0"
+    if ! $_vnc_in_qargs; then
+        resolve_display_mode "${_DISPLAY_ARGS[@]}"
+        if [ "$DISPLAY_MODE" = "vnc" ]; then
+            VNC_DISPLAY="${VNC_DISPLAY:-0}"
+            DISPLAY_ARGS="-vnc :${VNC_DISPLAY}"
+        fi
+    fi
 fi
 
 mkdir -p $PWD/.build
@@ -231,7 +228,8 @@ $NET0_DEV \
 $NET1_NET \
 $NET1_DEV \
 $NET2_NET \
-$NET2_DEV
+$NET2_DEV \
+$DISPLAY_ARGS
 EOF
 
 chmod +x .build/start-vm.sh

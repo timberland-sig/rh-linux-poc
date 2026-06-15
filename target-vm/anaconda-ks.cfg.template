@@ -27,7 +27,7 @@ firstboot --enable
 
 # Generated using Blivet version 3.12.1
 # Partition clearing information
-bootloader --location=mbr
+bootloader --location=mbr --append="console=ttyS0,115200n8"
 clearpart --none --initlabel
 # Create a simple partition layout
 part /boot/efi --fstype="efi" --size=600 --fsoptions="umask=0077,shortname=winnt" --label="EFI"

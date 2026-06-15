@@ -225,6 +225,65 @@ generate_serial_number() {
     hexdump -vn8 -e'4/4 "%08X" 1 "\n"' /dev/urandom
 }
 
+resolve_display_mode() {
+    local _cli_mode=""
+    local _project_root
+    _project_root="$(dirname -- "$(dirname -- "$(realpath -- "${BASH_SOURCE[0]}")")")"
+    local _state_file="$_project_root/.display_mode"
+
+    DISPLAY_MODE=""
+
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            --vnc)
+                _cli_mode="vnc"
+                shift
+                ;;
+            --graphical)
+                _cli_mode="graphical"
+                shift
+                ;;
+            *)
+                shift
+                ;;
+        esac
+    done
+
+    if [ -n "$_cli_mode" ]; then
+        DISPLAY_MODE="$_cli_mode"
+        return 0
+    fi
+
+    if [ -f "$_state_file" ]; then
+        DISPLAY_MODE="$(cat "$_state_file")"
+        return 0
+    fi
+
+    if [ -t 0 ]; then
+        echo "No display mode configured. Select display mode:"
+        echo "  1) VNC"
+        echo "  2) Graphical"
+        while true; do
+            read -r -p "Choice [1]: " _answer
+            case "$_answer" in
+                ""|1)
+                    DISPLAY_MODE="vnc"
+                    echo "vnc" > "$_state_file"
+                    break
+                    ;;
+                2)
+                    DISPLAY_MODE="graphical"
+                    echo "graphical" > "$_state_file"
+                    break
+                    ;;
+            esac
+        done
+        return 0
+    fi
+
+    DISPLAY_MODE="vnc"
+}
+
 bridge_iface() {
     # Parse arguments and check for help
     local br_name=""
@@ -240,21 +299,21 @@ Usage: bridge_iface BRIDGE_NAME [SLAVE_INTERFACE] [IP_ADDRESS]
 Configure a network bridge using NetworkManager.
 
 Arguments:
-  BRIDGE_NAME       Name of the bridge interface (e.g., br0, virbr1, virbr2)
+  BRIDGE_NAME       Name of the bridge interface (e.g., $BRIDGE0_NAME, br1, br2)
   SLAVE_INTERFACE   Network interface to bridge (optional)
                     - Use 'none' to create bridge without a slave interface
                     - If not provided, will prompt interactively
   IP_ADDRESS        IPv4 address in CIDR notation or 'dhcp' (optional)
                     - If not provided, will prompt interactively
-                    - Default for virbr1: $HOSTGW_CIDR2
-                    - Default for virbr2: $HOSTGW_CIDR3
+                    - Default for br1: $HOSTGW_CIDR2
+                    - Default for br2: $HOSTGW_CIDR3
                     - Default for others: dhcp
 
 Examples:
-  bridge_iface br0 eth0 192.168.1.1/24
-  bridge_iface virbr1 none dhcp
-  bridge_iface virbr2 enp2s0
-  bridge_iface br0                    # Interactive mode
+  bridge_iface $BRIDGE0_NAME eth0 192.168.1.1/24
+  bridge_iface br1 none dhcp
+  bridge_iface br2 enp2s0
+  bridge_iface $BRIDGE0_NAME                    # Interactive mode
 
 Options:
   -h, --help        Show this help message
@@ -317,9 +376,9 @@ EOF
 
     # Determine default IP address based on bridge name
     case ${br_name} in
-        virbr1)
+        "$BRIDGE1_NAME")
             local ip_addr_default=$HOSTGW_CIDR2;;
-        virbr2)
+        "$BRIDGE2_NAME")
             local ip_addr_default=$HOSTGW_CIDR3;;
         *)
             local ip_addr_default='dhcp';;
@@ -353,4 +412,9 @@ EOF
         sudo nmcli conn modify ${br_conn} ipv4.method manual ipv6.method shared ipv4.addresses ${ip_addr}
         sudo nmcli dev reapply ${br_conn}
     fi
+}
+
+get_bridge_slaves() {
+        local br_name="$1"
+        ip -o link show master "$br_name" | cut -d: -f2 | sed -e 's/^ *//'
 }

@@ -1,0 +1,50 @@
+name: Syntax Check
+
+on:
+  pull_request:
+
+jobs:
+  shellcheck:
+    name: ShellCheck (Bash)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run ShellCheck
+        run: |
+          git ls-files '*.sh' \
+            ':!:libnvme_rpm/libnvme' \
+            ':!:nvme_rpm/nvme-cli' \
+            ':!:dracut_rpm/dracut' \
+            ':!:host-vm/nvmeof-utils' \
+          | xargs shellcheck
+
+  python:
+    name: Python syntax
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+      - name: Check Python syntax
+        run: |
+          git ls-files '*.py' \
+            ':!:libnvme_rpm/libnvme' \
+            ':!:nvme_rpm/nvme-cli' \
+            ':!:dracut_rpm/dracut' \
+            ':!:host-vm/nvmeof-utils' \
+          | xargs python -m py_compile
+
+  json:
+    name: JSON syntax
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate JSON
+        run: |
+          git ls-files '*.json' \
+            ':!:libnvme_rpm/libnvme' \
+            ':!:nvme_rpm/nvme-cli' \
+            ':!:dracut_rpm/dracut' \
+            ':!:host-vm/nvmeof-utils' \
+          | xargs -I{} python3 -c "import json, sys; json.load(open(sys.argv[1]))" {}

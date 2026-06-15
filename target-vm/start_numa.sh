@@ -21,9 +21,9 @@
 	-boot menu=on -vnc :1 -uuid a53caec2-eb2d-4bca-819e-f2bbfb10e1fa \
 	-netdev user,id=net0,net=10.0.2.15/24,hostfwd=tcp::5556-:22 \
 	-device e1000,netdev=net0 \
-	-netdev bridge,br=virbr1,id=net1,helper=/usr/libexec/qemu-bridge-helper \
+	-netdev bridge,br=$BRIDGE1_NAME,id=net1,helper=/usr/libexec/qemu-bridge-helper \
 	-device virtio-net-pci,netdev=net1,mac=EA:EB:D3:56:89:56 \
-	-netdev bridge,br=virbr2,id=net2,helper=/usr/libexec/qemu-bridge-helper \
+	-netdev bridge,br=$BRIDGE2_NAME,id=net2,helper=/usr/libexec/qemu-bridge-helper \
 	-device virtio-net-pci,netdev=net2,mac=EA:EB:D3:57:89:57 \
 	-device nvme,drive=NVME1,max_ioqpairs=4,physical_block_size=4096,logical_block_size=4096,use-intel-id=on,serial=7E1250DCD4B0A268,bootindex=1 \
 	-drive file=/home/test/rh-linux-poc/target-vm/disks/boot.qcow2,if=none,id=NVME1 \

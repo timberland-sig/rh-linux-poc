@@ -41,6 +41,36 @@ DEFAULTS = {
 SCRIPT_DIR = Path(__file__).parent
 ARTIFACTS_DIR = SCRIPT_DIR / "artifacts"
 TESTS_DIR = SCRIPT_DIR / "tests"
+DISPLAY_MODE_FILE = SCRIPT_DIR / ".display_mode"
+
+
+def resolve_display_mode(
+    cli_vnc: Optional[int] = None,
+    cli_graphical: bool = False,
+    env_config: Optional[Dict[str, Any]] = None,
+) -> tuple:
+    """Resolve display mode from CLI flags, JSON config, state file, or default.
+
+    Returns (mode, vnc_display) where mode is 'vnc' or 'graphical',
+    and vnc_display is an int or None.
+    """
+    if cli_graphical:
+        return ('graphical', None)
+    if cli_vnc is not None:
+        return ('vnc', cli_vnc if cli_vnc >= 0 else None)
+
+    if env_config is not None:
+        mode = env_config.get('displayMode')
+        if mode:
+            vnc_display = env_config.get('vncDisplay')
+            return (mode, vnc_display)
+
+    if DISPLAY_MODE_FILE.exists():
+        mode = DISPLAY_MODE_FILE.read_text().strip()
+        if mode in ('vnc', 'graphical'):
+            return (mode, None)
+
+    return ('vnc', None)
 
 
 def resolve_test_files(test_file_arg: Optional[str]) -> List[str]:
@@ -116,12 +146,12 @@ def load_test_config(test_file: str, schema_file: str) -> Dict[str, Any]:
     return config
 
 
-def prepare_environment(environment: Dict[str, Any]):
+def prepare_environment(environment: Dict[str, Any], display_mode: str = 'vnc', vnc_display: Optional[int] = None):
     """Setup network and target-vm for an environment."""
     network_setup = NetworkSetup(environment['network'], SCRIPT_DIR)
 
     network_setup.setup()
-    network_setup.setup_target_vm()
+    network_setup.setup_target_vm(display_mode=display_mode, vnc_display=vnc_display)
 
 
 def generate_test_config(test: Dict[str, Any], environment: Dict[str, Any]):
@@ -167,7 +197,7 @@ class NetworkSetup:
         """Build command line arguments for ./setup.sh net."""
         args = []
 
-        for bridge in ['br0', 'virbr1', 'virbr2']:
+        for bridge in ['br0', 'br1', 'br2']:
             if bridge not in self.network_config:
                 print(f"Warning: {bridge} not found in network config")
                 args.extend(['none', 'dhcp'])
@@ -203,7 +233,7 @@ class NetworkSetup:
         if not disk_path.exists():
             print(f"✗ Target VM disk not found: {disk_path}")
             print("  Please set up the target-vm first by running:")
-            print("    cd target-vm && make rh-install")
+            print("    cd target-vm && make auto-install")
             return False
 
         try:
@@ -211,7 +241,7 @@ class NetworkSetup:
             if disk_size == 0:
                 print(f"✗ Target VM disk is empty: {disk_path}")
                 print("  Please set up the target-vm first by running:")
-                print("    cd target-vm && make rh-install")
+                print("    cd target-vm && make auto-install")
                 return False
 
             print(f"✓ Target VM disk found: {disk_path} ({disk_size / (1024**3):.2f} GB)")
@@ -225,7 +255,7 @@ class NetworkSetup:
         env = os.environ.copy()
 
         # Extract target IPs and subnet masks from network config
-        for bridge_name, bridge_key in [('virbr1', 'virbr1'), ('virbr2', 'virbr2')]:
+        for bridge_name, bridge_key in [('br1', 'br1'), ('br2', 'br2')]:
             if bridge_key not in self.network_config:
                 continue
 
@@ -247,15 +277,15 @@ class NetworkSetup:
             else:
                 target_cidr = target_ip
 
-            # Set TARGET_IP2 for virbr1, TARGET_IP3 for virbr2
-            if bridge_key == 'virbr1':
+            # Set TARGET_IP2 for br1, TARGET_IP3 for br2
+            if bridge_key == 'br1':
                 env['TARGET_CIDR2'] = target_cidr
-            elif bridge_key == 'virbr2':
+            elif bridge_key == 'br2':
                 env['TARGET_CIDR3'] = target_cidr
 
         return env
 
-    def setup_target_vm(self):
+    def setup_target_vm(self, display_mode: str = 'vnc', vnc_display: Optional[int] = None):
         """Setup and start the target-vm."""
         print("\n" + "="*70)
         print("Setting up target-vm")
@@ -268,14 +298,19 @@ class NetworkSetup:
         # Prepare environment with TARGET_CIDR variables
         env = self._get_target_cidr_env()
 
-        # Start target-vm with make rh-start
+        # Build make command with display mode
+        cmd = ['make', 'auto-start']
+        if display_mode == 'vnc':
+            cmd.append(f'VNC_DISPLAY={vnc_display if vnc_display is not None else 0}')
+
+        # Start target-vm with make auto-start
         # Use Popen + wait() instead of subprocess.run() with capture_output,
         # because the backgrounded QEMU process inherits the pipes and prevents
         # communicate() from returning even after make itself exits.
-        print("Starting target-vm with 'make rh-start'...")
+        print(f"Starting target-vm with '{' '.join(cmd)}'...")
         try:
             proc = subprocess.Popen(
-                ['make', 'rh-start'],
+                cmd,
                 cwd=self.target_vm_dir,
                 env=env,
                 stdin=subprocess.DEVNULL,
@@ -295,7 +330,7 @@ class NetworkSetup:
         except subprocess.TimeoutExpired:
             proc.kill()
             proc.wait()
-            print("✗ 'make rh-start' timed out")
+            print("✗ 'make auto-start' timed out")
             raise RuntimeError("Target-vm startup timed out")
         except FileNotFoundError:
             print(f"✗ Make not found or target-vm directory missing")
@@ -308,7 +343,7 @@ class NetworkSetup:
             capture_output=True,
             text=True,
         )
-        if result.returncode != 0:
+        if result.stdout.strip() != 'YES':
             print("✗ QEMU process is not running")
             raise RuntimeError("Target-vm QEMU process failed to start")
         print("✓ Target-vm started")
@@ -387,7 +422,7 @@ class NetworkSetup:
         args = self._build_setup_args()
 
         print("Network configuration:")
-        for i, bridge in enumerate(['br0', 'virbr1', 'virbr2']):
+        for i, bridge in enumerate(['br0', 'br1', 'br2']):
             slave_idx = i * 2
             ip_idx = i * 2 + 1
             print(f"  {bridge}: slave={args[slave_idx]}, ip={args[ip_idx]}")
@@ -440,20 +475,20 @@ class EFIConfigGenerator:
 
         elif field == 'hostIp':
             if attempt_idx == 0:
-                host_ip = self.environment['network']['virbr1'].get('hostVmIp', '')
+                host_ip = self.environment['network']['br1'].get('hostVmIp', '')
                 return host_ip.split('/')[0] if host_ip else DEFAULTS.get('HOST_IP2', '192.168.101.30')
             elif attempt_idx == 1:
-                host_ip = self.environment['network']['virbr2'].get('hostVmIp', '')
+                host_ip = self.environment['network']['br2'].get('hostVmIp', '')
                 return host_ip.split('/')[0] if host_ip else DEFAULTS.get('HOST_IP3', '192.168.110.30')
             else:
                 return DEFAULTS.get('HOST_IP2', '192.168.101.30')
 
         elif field == 'targetIp':
             if attempt_idx == 0:
-                target_ip = self.environment['network']['virbr1'].get('targetVmIp', '')
+                target_ip = self.environment['network']['br1'].get('targetVmIp', '')
                 return target_ip.split('/')[0] if target_ip else DEFAULTS.get('TARGET_IP2', '192.168.101.20')
             elif attempt_idx == 1:
-                target_ip = self.environment['network']['virbr2'].get('targetVmIp', '')
+                target_ip = self.environment['network']['br2'].get('targetVmIp', '')
                 return target_ip.split('/')[0] if target_ip else DEFAULTS.get('TARGET_IP3', '192.168.110.20')
             else:
                 return DEFAULTS.get('TARGET_IP2', '192.168.101.20')
@@ -487,9 +522,9 @@ class EFIConfigGenerator:
                 return str(subnet_mask)
 
         if attempt_idx == 0:
-            network_subnet = self.environment['network']['virbr1'].get('subnetMask', 24)
+            network_subnet = self.environment['network']['br1'].get('subnetMask', 24)
         elif attempt_idx == 1:
-            network_subnet = self.environment['network']['virbr2'].get('subnetMask', 24)
+            network_subnet = self.environment['network']['br2'].get('subnetMask', 24)
         else:
             network_subnet = 24
 
@@ -596,13 +631,23 @@ class VMRunner:
             print(f"✗ make setup error: {e}")
             return False
 
-    def start_remote(self, vnc_display: Optional[int] = None) -> bool:
+    def is_running(self) -> bool:
+        """Check if the QEMU process is still running."""
+        result = subprocess.run(
+            ['make', 'is-running'],
+            cwd=self.host_vm_dir,
+            capture_output=True,
+            text=True,
+        )
+        return result.stdout.strip() == 'YES'
+
+    def start_remote(self, display_mode: str = 'vnc', vnc_display: Optional[int] = None) -> bool:
         """Start the VM with make start-remote (runs in background)."""
         print("Starting VM with make start-remote...")
 
         cmd = ['make', 'start-remote']
-        if vnc_display is not None:
-            cmd.append(f'QEMU_ARGS=-vnc :{vnc_display}')
+        if display_mode == 'vnc':
+            cmd.append(f'VNC_DISPLAY={vnc_display if vnc_display is not None else 1}')
 
         try:
             proc = subprocess.Popen(
@@ -631,14 +676,7 @@ class VMRunner:
             print("✗ Make not found or host-vm directory missing")
             return False
 
-        # Verify QEMU process is actually running
-        check = subprocess.run(
-            ['make', 'is-running'],
-            cwd=self.host_vm_dir,
-            capture_output=True,
-            text=True,
-        )
-        if check.returncode != 0:
+        if not self.is_running():
             print("✗ QEMU process is not running")
             return False
 
@@ -654,6 +692,10 @@ class VMRunner:
 
         while time.time() - start_time < timeout:
             time.sleep(2)
+
+            if not self.is_running():
+                print("✗ QEMU process died while waiting for boot")
+                return False
 
             # Try ping
             if not vm_pings and self._check_ping(host_ip):
@@ -731,6 +773,9 @@ class VMRunner:
                 elif line:
                     continue
                 else:
+                    if not self.is_running():
+                        print("✗ QEMU process died while waiting for bootlog entry")
+                        return False
                     time.sleep(0.5)
 
         print(f"✗ Bootlog entry not found within {timeout}s")
@@ -852,6 +897,8 @@ class TestNVMeBoot:
         test_files = json.loads(os.environ.get('TEST_CONFIG_FILES', '[]'))
         schema_file = os.environ.get('TEST_SCHEMA_FILE', 'schemata/tests.json')
         cls.config = load_merged_config(test_files, schema_file)
+        cls.cli_vnc = json.loads(os.environ.get('TEST_CLI_VNC', 'null'))
+        cls.cli_graphical = os.environ.get('TEST_CLI_GRAPHICAL', '') == '1'
         ARTIFACTS_DIR.mkdir(exist_ok=True)
         print("\n" + "="*70)
         print("NVMe/TCP Boot Test Suite")
@@ -868,6 +915,12 @@ class TestNVMeBoot:
         environment = environments[env_idx]
         env_name = environment.get('name', f'Environment {env_idx}')
 
+        display_mode, vnc_display = resolve_display_mode(
+            cli_vnc=self.__class__.cli_vnc,
+            cli_graphical=self.__class__.cli_graphical,
+            env_config=environment,
+        )
+
         # Setup network once per environment
         if env_idx not in self.__class__.setup_environments:
             print(f"\n{'='*70}")
@@ -879,7 +932,7 @@ class TestNVMeBoot:
                 network_setup.teardown()
 
                 # Setup the new environment
-                prepare_environment(environment)
+                prepare_environment(environment, display_mode=display_mode, vnc_display=vnc_display)
                 self.__class__.setup_environments.add(env_idx)
             except RuntimeError as e:
                 pytest.fail(f"SETUP FAILED: {e}")
@@ -923,7 +976,7 @@ class TestNVMeBoot:
                 pytest.fail("VM setup failed")
 
             # Start VM
-            vm_runner.start_remote()
+            vm_runner.start_remote(display_mode=display_mode, vnc_display=vnc_display)
 
             # Check bootlog for EFI boot success
             efi_pattern = r"FSOpen: Open '\\?EFI.*' Success"
@@ -989,6 +1042,22 @@ Examples:
         help='Validate configuration only, do not execute tests'
     )
 
+    display_group = parser.add_mutually_exclusive_group()
+    display_group.add_argument(
+        '--vnc',
+        nargs='?',
+        type=int,
+        const=-1,
+        default=None,
+        metavar='DISPLAY',
+        help='Use VNC for VM display (optional display number, default: 0 for target, 1 for host)'
+    )
+    display_group.add_argument(
+        '--graphical',
+        action='store_true',
+        help='Use graphical display (X11/Wayland)'
+    )
+
     # Parse known args to separate our args from pytest args
     args, pytest_args = parser.parse_known_args()
 
@@ -1001,6 +1070,8 @@ Examples:
     # Set environment variables for pytest to find config
     os.environ['TEST_CONFIG_FILES'] = json.dumps(test_files)
     os.environ['TEST_SCHEMA_FILE'] = args.schema_file
+    os.environ['TEST_CLI_VNC'] = json.dumps(args.vnc)
+    os.environ['TEST_CLI_GRAPHICAL'] = '1' if args.graphical else ''
 
     try:
         if args.dry_run:

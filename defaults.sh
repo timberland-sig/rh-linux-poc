@@ -35,6 +35,10 @@ SN2='97A28D5D3ECDE7F2'
 SN3='2AF557665E8B11C0'
 SN4='5B36AC547362E851'
 
+BRIDGE0_NAME="${BRIDGE0_NAME:-br0}"
+BRIDGE1_NAME="${BRIDGE1_NAME:-br1}"
+BRIDGE2_NAME="${BRIDGE2_NAME:-br2}"
+
 # Note that TARGET_MAC1 and HOST_MAC1 are used with DHCP and must be unique to
 # your testbed.  Use the ./gen_macaddr.py script and replace these values
 # for your testbed.
@@ -46,7 +50,7 @@ TARGET_MAC1="${TARGET_MAC1:-00:16:3E:36:38:90}"
 HOST_MAC1="${HOST_MAC1:-00:16:3E:3E:3A:3E}"
 
 # The Following MAC and IP addresses are static and only used on the private
-# virbr1 and virbr2 networks.  These can all be safely left and unchanged.
+# $BRIDGE1_NAME and $BRIDGE2_NAME networks.  These can all be safely left and unchanged.
 
 TARGET_PORT="${TARGET_PORT:-5555}"
 HOST_PORT="${HOST_PORT:-5556}"
