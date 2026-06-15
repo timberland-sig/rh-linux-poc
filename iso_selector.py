@@ -58,14 +58,15 @@ def _download(url, dest, update_interval=0.5):
 def _fetch_links(url):
     req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
     with urllib.request.urlopen(req, timeout=30) as resp:
+        effective_url = resp.url
         body = resp.read().decode("utf-8", errors="replace")
     parser = _LinkParser()
     parser.feed(body)
-    return parser.links
+    return parser.links, effective_url
 
 
 def _find_dvd_iso(base_url):
-    links = _fetch_links(base_url)
+    links, effective_url = _fetch_links(base_url)
     candidates = []
     for link in links:
         if not link.endswith(".iso"):
@@ -82,7 +83,7 @@ def _find_dvd_iso(base_url):
     best = candidates[-1]
     if best.startswith("http"):
         return best
-    return base_url.rstrip("/") + "/" + best
+    return effective_url.rstrip("/") + "/" + best
 
 
 def _resolve_from_urls(urls):
@@ -113,7 +114,7 @@ def _fedora_iso_urls(base, version):
 
 
 def _fedora_latest_version(base):
-    links = _fetch_links(f"{base}releases/")
+    links, _ = _fetch_links(f"{base}releases/")
     versions = []
     for link in links:
         m = re.match(r"^(\d+)/?$", link)
