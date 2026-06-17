@@ -7,6 +7,8 @@ set -e
 DIR="$(dirname -- "$(realpath -- "$0")")"
 VMNAME=$(basename $PWD)
 
+. $DIR/../defaults.sh
+. $DIR/../vm-lib/common.sh
 . $DIR/../vm-lib/colors.sh
 
 show-help() {
@@ -40,7 +42,18 @@ for arg in "$@"; do
         *) HOST_IP1="$arg"; break ;;
     esac
 done
-HOST_IP1="${HOST_IP1:-localhost}"
+
+if [ -z "$HOST_IP1" ]; then
+    if [ -n "$(get_bridge_slaves ${BRIDGE0_NAME})" ]; then
+        read -rp "Enter the IP address of $VMNAME on $BRIDGE0_NAME: " HOST_IP1
+        if [ -z "$HOST_IP1" ]; then
+            echo -e "${RED}Error: IP address is required in bridged mode${NC}" >&2
+            exit 1
+        fi
+    else
+        HOST_IP1="localhost"
+    fi
+fi
 
 if [ "$GEN_NQN" -eq 1 ]; then
     export HOSTNQN="nqn.2014-08.org.nvmexpress:uuid:$(uuidgen)"
