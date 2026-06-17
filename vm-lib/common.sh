@@ -343,7 +343,7 @@ EOF
 
     # Interactive prompt for network device if not provided
     if [ -z "$netdev" ]; then
-        nmcli dev status
+        ip -br addr show
         echo ""
         read -r -p "Enter name of the network interface to bridge with ${br_name} or \"none\" to skip configuration: " netdev
 
