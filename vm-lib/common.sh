@@ -353,6 +353,9 @@ EOF
         fi
     fi
 
+    # Capture existing IP before the interface is brought down
+    local _existing_ip=""
+
     # Create bridge based on whether it's none or bridged
     if [[ "$netdev" == *"none"* ]]; then
         echo " : local - skipping bridged network setup"
@@ -366,6 +369,13 @@ EOF
         # ip link set $netdev promisc on
 
         local MAC=$(nmcli -t -f general.hwaddr -e yes dev show $netdev | sed 's/^GENERAL.HWADDR://')
+        local _ip_method
+        _ip_method=$(nmcli -t -f ipv4.method con show "$(nmcli -t -f GENERAL.CONNECTION dev show "$netdev" | cut -d: -f2)" 2>/dev/null)
+        if [[ "$_ip_method" == *"manual"* ]]; then
+            _existing_ip=$(ip -4 -o addr show dev "$netdev" 2>/dev/null | awk '{print $4}' | head -1)
+	elif [[ "$_ip_method" == *"auto"* ]]; then
+            _existing_ip="dhcp"
+        fi
         local br_conn="${br_name}"
         sudo nmcli dev down $netdev || true
         sudo nmcli con add type bridge ifname ${br_name} con-name ${br_name} autoconnect yes stp off ethernet.cloned-mac-address $MAC
@@ -374,15 +384,19 @@ EOF
         sudo nmcli con up bridge-slave-${netdev}
     fi
 
-    # Determine default IP address based on bridge name
-    case ${br_name} in
-        "$BRIDGE1_NAME")
-            local ip_addr_default=$HOSTGW_CIDR2;;
-        "$BRIDGE2_NAME")
-            local ip_addr_default=$HOSTGW_CIDR3;;
-        *)
-            local ip_addr_default='dhcp';;
-    esac
+    # Determine default IP address: prefer the slave NIC's existing IP
+    if [ -n "$_existing_ip" ]; then
+        local ip_addr_default="$_existing_ip"
+    else
+        case ${br_name} in
+            "$BRIDGE1_NAME")
+                local ip_addr_default=$HOSTGW_CIDR2;;
+            "$BRIDGE2_NAME")
+                local ip_addr_default=$HOSTGW_CIDR3;;
+            *)
+                local ip_addr_default='dhcp';;
+        esac
+    fi
 
     # Interactive prompt for IP address if not provided
     if [ -z "$ip_addr" ]; then

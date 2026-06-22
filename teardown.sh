@@ -54,7 +54,7 @@ revert_bridge_iface() {
 		local slave_conns=($(nmcli -t -f NAME,DEVICE,SLAVE con show | grep ":${slave}:bridge$" | cut -d: -f1))
 		# Check all connections
 		while IFS= read -r conn ; do
-			if ! [ ${slave} = $(nmcli -g connection.interface-name con show "$conn") ] ; then
+			if ! [ "${slave}" = "$(nmcli -g connection.interface-name con show "$conn")" ] ; then
 				continue
 			elif ! printf '%s\0' "${slave_conns[@]}" | grep -F -x -z -- "$conn" &>/dev/null ; then
 				# Switch to the old non-bridged connection
