@@ -139,8 +139,8 @@ def _resolve_fedora(version=None):
 CHOICES = [
     ("CentOS Stream 10",          lambda: _resolve_direct("MIRROR_CENTOS")),
     ("Fedora (latest)",            lambda: _resolve_fedora()),
+    ("Fedora 44",                  lambda: _resolve_fedora(44)),
     ("Fedora 43",                  lambda: _resolve_fedora(43)),
-    ("Fedora 42",                  lambda: _resolve_fedora(42)),
     ("Custom ISO download link",   None),
 ]
 
