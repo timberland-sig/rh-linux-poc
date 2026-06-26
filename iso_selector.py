@@ -4,12 +4,21 @@
 import html.parser
 import os
 import re
+import socket
 import sys
 import time
 import urllib.error
 import urllib.request
 
 from blessed import Terminal
+
+# Force IPv4 to avoid slow IPv6 fallback (Python lacks Happy Eyeballs)
+_orig_getaddrinfo = socket.getaddrinfo
+def _getaddrinfo_ipv4only(*args, **kwargs):
+    args = list(args)
+    args[2] = socket.AF_INET
+    return _orig_getaddrinfo(*args, **kwargs)
+socket.getaddrinfo = _getaddrinfo_ipv4only
 
 
 class _LinkParser(html.parser.HTMLParser):
@@ -117,10 +126,11 @@ def _fedora_latest_version(base):
     links, _ = _fetch_links(f"{base}releases/")
     versions = []
     for link in links:
-        m = re.match(r"^(\d+)/?$", link)
+        m = re.match(r"^(?:\./)?(\d+)/?$", link)
         if m:
             versions.append(int(m.group(1)))
     if len(versions) == 0:
+        print(links)
         raise RuntimeError(f"No Fedora releases found at {base}releases/")
     return max(versions)
 
