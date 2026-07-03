@@ -450,3 +450,33 @@ get_bridge_slaves() {
         ip -o link show master "$br_name" | cut -d: -f2 | sed -e 's/^ *//'
         return 0
 }
+
+# NOTE: caller must set `target_ip` before calling this function.
+run_ssh() {
+    local vmname="$1"
+    shift
+
+    local ssh_port
+    case "$vmname" in
+        target-vm)
+            ssh_port=$TARGET_PORT
+            ;;
+        host-vm)
+            ssh_port=$HOST_PORT
+            ;;
+        *)
+            echo "VM named $vmname is not recognized!" >&2
+            return 1
+            ;;
+    esac
+
+    local _project_root
+    _project_root="$(dirname -- "$(dirname -- "$(realpath -- "${BASH_SOURCE[0]}")")")"
+
+    local ssh_target="root@${target_ip}"
+    if [ "$target_ip" = "localhost" ]; then
+        ssh_target="${ssh_target}:${ssh_port}"
+    fi
+
+    ssh -t -i "${_project_root}/.ssh/id_ecdsa" -o StrictHostKeyChecking=no "ssh://${ssh_target}" "$@"
+}
