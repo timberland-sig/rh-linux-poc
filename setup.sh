@@ -10,7 +10,7 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 . $DIR/defaults.sh
 
 # Configuraiton
-MODES="user|devel|virt|net|edk2"
+MODES="user|devel|virt|edk2|edk2_zip|net|router"
 MODE="user"
 
 set -e
