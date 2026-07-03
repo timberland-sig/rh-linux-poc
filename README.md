@@ -48,9 +48,6 @@ It will essentially run the following commands to download and install the *preb
 ./setup.sh virt   # this will install QEMU (only on Fedora) - only has to be ran once
 ./setup.sh edk2   # this will download and install the Timberland-sig artifacts - only has to be ran once
 ./setup.sh net    # this will modify your hypervisor network - run this only once
-./setup.sh iso    # this will ask for a URL to an ISO file with an OS installer
-                  # ↳ may be ran again if you want to try a different distro
-                  # ↳ the quickstart only runs this if no ISO was downloaded in this clone of the repository
 ```
 
 After running the quickstart, you can optionally use:
@@ -173,6 +170,11 @@ Directories and files are explained here:
 | `vm-lib` | `remote-netsetup.sh` | Script that runs on the VMs to configure their network interfaces. |
 | `host-vm` | - |Contains the scripts and files needed to create and run your QEMU host virtual machine. |
 | `target-vm` | - | Contains the scripts and files needed to create and run your QEMU target virtual machine. |
+| `router` | - | Contains the scripts and configuration files needed to provision and manage the router VM (an Incus system container). Provides firewall, DHCP, and routing services between the `target-vm` and `host-vm`. |
+| `router` | `addresses.sh` | Defines IP addresses, subnets, and interface names for all router-side networks. Sourced by `router/netsetup.sh`, `target-vm/netsetup.sh`, and `host-vm/netsetup.sh`. Also writes computed `TARGET_CIDR*` / `HOST_CIDR*` values back to the root `.env` file. |
+| `router` | `netsetup.sh` | Configures the router VM's network interfaces via NetworkManager, loads the nftables firewall ruleset, and deploys the Kea DHCPv4 server configuration inside the Incus container. |
+| `router` | `Makefile` | Build targets for managing the router Incus container. |
+| `router` | `.env.example` | Template listing all configurable router variables (interface names, IPs, subnets) with their defaults. Copy to `.env` to override. |
 
 Proposed changes and patches should be sent to the repsective repositories at:
 https://github.com/timberland-sig
@@ -682,6 +684,94 @@ To test if `nvme-cli` detects your namespaces as intended, follow these steps:
 - `./netsetup.sh [ARGS]` (use appropriate arguments for your setup)
 - SSH into the VM
 - run `nvme discover` and examine the discovry log page
+
+# Virtual router
+
+As can be seen at the beginning of this document, this POC also supports
+a setup with a **router VM** placed between the `target-vm` and `host-vm`.
+This `router-vm` is provisioned as an Incus system container running Fedora Linux.
+
+The services that it provides out of the box are:
+- firewall (`nftables`)
+- DHCP server (`kea`)
+- static routing tables
+
+To activate the router, you first need to tear down the currently provisioned
+virtual machines using:
+
+```
+make -C target-vm kill
+make -C host-vm   kill
+```
+
+Alternatively, the `teardown.sh` script may be used. However, **BEWARE** that
+this will **wipe the virtual drives** as well (along with the OS):
+```
+./teardown.sh vm
+```
+
+## Provisioning the `router-vm`
+
+Once the setup has been cleaned up, run:
+```
+./setup.sh router
+```
+
+_Note that the script shall install the `incus` container engine, which requires the provision
+of SubUIDs and SubGIDs. The user is expected to resolve any errors that occur manually._
+
+## Provisioning the VMs
+
+Once the `router-vm` is running, the `target-vm` and `host-vm` may be started too.
+Their startup sctipts will automatically detect that the router is running
+and hook up to the proper virtual bridges. Their `netsetup.sh` scripts must be run again:
+
+```
+./netsetup.sh <IP_ADDR>
+```
+
+The IP addresses of the VMs on their management interface can be set
+in the `router-vm/.env` file. This file does not exists by default, but can be created
+by copying the `router-vm/.env.example` file into `router-vm/.env`.
+
+```shell
+# Router VM network configuration
+# Copy to .env and modify as needed.
+
+# Target-side subnets (192.168.2x)
+
+# This is the name of the interface as it shows inside the container.
+# Usualy, this does not need to be changed.
+TARGET1_IFACE=eth3
+
+# This is the subnet that machines reachable over the said interface will belong into.
+TARGET1_NET=192.168.20.0/24
+
+# This IP address is what the router-vm gets on the said interface.
+TARGET1_IP=192.168.20.1
+
+TARGET2_IFACE=eth4
+TARGET2_IP=192.168.21.1
+TARGET2_NET=192.168.21.0/24
+```
+
+The `router-vm/.env.example` file contains the default values for the IP addresses.
+The QEMU VMs always recieve an IPv4 address with the last of the 4 bytes set to `2`.
+For example, the `target-vm` shall have the the address `192.168.20.2` on its
+management interface.
+
+The root `.env.example` file also contains the `DNS_SERVERS` variable.
+It is a comma-separated list of IPv4 addresses of DNS servers the VMs are
+going to use. You may need to override this if your network administrator
+blocks access to public DNS servers (this is the case in some corporate settings).
+
+The VMs _are_ reachable via these addresses from the hypervisor directly,
+because the hyervisor machine recieves IPv4 addresses from the DHCP server
+on these interfaces as well. This behaviour can be easily disabled in `NetworkManager`
+on the hypervisor, but is useful for debugging and general setup.
+
+In case of the `target-vm`, re-running `netsetup.sh` is crucial since the
+NVMe/TCP soft target must be re-configured with new addresses.
 
 # For developers
 
