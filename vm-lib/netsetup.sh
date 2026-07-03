@@ -71,7 +71,7 @@ case "$VMNAME" in
     target-vm)
         make --makefile="$PWD/Makefile" .build/tcp.json
         scp -i $DIR/../.ssh/id_ecdsa -o StrictHostKeyChecking=no .build/{tcp.json,hosts.txt} $PWD/setup-nvme-target.sh $PWD/nvmet-mods.conf $DIR/../vm-lib/remote-netsetup.sh scp://${SSH_TARGET}
-        ssh -t -i $DIR/../.ssh/id_ecdsa -o StrictHostKeyChecking=no ssh://${SSH_TARGET} "
+        run_ssh $VMNAME "
 set -e
 . remote-netsetup.sh $TARGET_MAC2 $TARGET_MAC3 \"$TARGET_CIDR2\" \"$TARGET_CIDR3\"
 . setup-nvme-target.sh \"$NVME_NS_PATH\"
@@ -80,7 +80,7 @@ set -e
     host-vm)
         make --makefile="$PWD/Makefile" .build/discovery.conf
         scp -i $DIR/../.ssh/id_ecdsa -o StrictHostKeyChecking=no .build/* $DIR/../vm-lib/remote-netsetup.sh scp://${SSH_TARGET}
-        ssh -t -i $DIR/../.ssh/id_ecdsa -o StrictHostKeyChecking=no ssh://${SSH_TARGET} "\
+        run_ssh $VMNAME "\
             cp ./discovery.conf /etc/nvme/
 	    . remote-netsetup.sh $HOST_MAC2 $HOST_MAC3 \"$HOST_CIDR2\" \"$HOST_CIDR3\""
     ;;
