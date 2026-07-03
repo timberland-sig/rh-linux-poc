@@ -29,9 +29,15 @@ display_help() {
 }
 
 shutdown_vms() {
-	local DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 	make -C $DIR/target-vm kill
 	make -C $DIR/host-vm kill
+}
+
+wipe_vms() {
+	make -C $DIR/target-vm clean
+	# 'clean' only deletes temporary files for the 'target-vm'
+	make -C $DIR/target-vm wipe
+	make -C $DIR/host-vm clean
 }
 
 revert_bridge_iface() {
@@ -131,6 +137,10 @@ if [ -z "${MODE}" ]; then
 fi
 
 case "${MODE}" in
+    vm)
+		shutdown_vms
+		wipe_vms
+    ;;
     net)
 		shutdown_vms
 		revert_network
