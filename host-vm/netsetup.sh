@@ -44,7 +44,7 @@ for arg in "$@"; do
 done
 
 if [ -z "$HOST_IP1" ]; then
-    if [ -n "$(get_bridge_slaves ${BRIDGE0_NAME})" ]; then
+    if [ -n "$(get_bridge_slaves ${BRIDGE0_NAME} 2>/dev/null)" ]; then
         read -rp "Enter the IP address of $VMNAME on $BRIDGE0_NAME: " HOST_IP1
         if [ -z "$HOST_IP1" ]; then
             echo -e "${RED}Error: IP address is required in bridged mode${NC}" >&2

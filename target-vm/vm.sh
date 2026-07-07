@@ -147,7 +147,7 @@ else
 fi
 
 # Detect a bridged setup
-if [ -n "$(get_bridge_slaves ${BRIDGE0_NAME})" ] ; then
+if [ -n "$(get_bridge_slaves ${BRIDGE0_NAME} 2>/dev/null)" ] ; then
         NET0_NET="-netdev bridge,br=$BRIDGE0_NAME,id=net0,helper=$BRIDGE_HELPER"
         NET0_DEV="-device virtio-net-pci,netdev=net0,mac=$TARGET_MAC1,addr=4"
 else
