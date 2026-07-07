@@ -7,7 +7,7 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 . $DIR/vm-lib/common.sh
 
 # Configuration
-MODES="net"
+MODES="net|router"
 MODE=""
 
 set -e
@@ -22,9 +22,15 @@ display_help() {
         echo "                : - removes bridge interfaces and NetworkManager connections"
         echo "                : - restores original network interface configurations"
         echo ""
+        echo "  router        : tear down the virtual router environment"
+        echo "                : - stops the router-vm container and deletes it"
+        echo "                : - removes virtual bridge interfaces (virbr_target*, virbr_host*)"
+        echo ""
         echo " Examples: "
         echo "  Revert network configuration"
         echo "       ./${0##*/} net "
+        echo "  Tear down virtual router"
+        echo "       ./${0##*/} router "
         exit 1
 }
 
@@ -166,6 +172,10 @@ case "${MODE}" in
     vm)
 		shutdown_vms
 		wipe_vms
+    ;;
+    router)
+		shutdown_vms
+		revert_router
     ;;
     net)
 		shutdown_vms
