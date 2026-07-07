@@ -285,16 +285,17 @@ resolve_display_mode() {
 }
 
 bridge_iface() {
-    # Parse arguments and check for help
     local br_name=""
     local netdev=""
     local ip_addr=""
+    local _optional=false
 
-    # Check if help is requested
-    for arg in "$@"; do
-        if [[ "$arg" == "-h" || "$arg" == "--help" ]]; then
-            cat <<EOF
-Usage: bridge_iface BRIDGE_NAME [SLAVE_INTERFACE] [IP_ADDRESS]
+    # Parse flags
+    while [[ "${1:-}" == -* ]]; do
+        case "$1" in
+            -h|--help)
+                cat <<EOF
+Usage: bridge_iface [--optional] BRIDGE_NAME [SLAVE_INTERFACE] [IP_ADDRESS]
 
 Configure a network bridge using NetworkManager.
 
@@ -309,19 +310,31 @@ Arguments:
                     - Default for br2: $HOSTGW_CIDR3
                     - Default for others: dhcp
 
+Options:
+  --optional        Skip bridge creation entirely when the slave interface
+                    is 'none' (instead of creating a bridge without a slave)
+  -h, --help        Show this help message
+
 Examples:
   bridge_iface $BRIDGE0_NAME eth0 192.168.1.1/24
+  bridge_iface --optional $BRIDGE0_NAME eth0     # skip if user says 'none'
   bridge_iface br1 none dhcp
   bridge_iface br2 enp2s0
-  bridge_iface $BRIDGE0_NAME                    # Interactive mode
-
-Options:
-  -h, --help        Show this help message
+  bridge_iface $BRIDGE0_NAME                     # Interactive mode
 
 Note: If the bridge already exists, this function will skip configuration.
 EOF
-            return 0
-        fi
+                return 0
+                ;;
+            --optional)
+                _optional=true
+                shift
+                ;;
+            *)
+                echo "Unknown option: $1" >&2
+                return 1
+                ;;
+        esac
     done
 
     # Parse positional arguments
@@ -358,6 +371,10 @@ EOF
 
     # Create bridge based on whether it's none or bridged
     if [[ "$netdev" == *"none"* ]]; then
+        if $_optional; then
+            echo " : ${br_name} - skipping optional bridge (no device specified)"
+            return 0
+        fi
         echo " : local - skipping bridged network setup"
         sudo nmcli conn add type bridge ifname ${br_name} con-name ${br_name} stp yes autoconnect yes
         local br_conn=${br_name}
@@ -431,4 +448,5 @@ EOF
 get_bridge_slaves() {
         local br_name="$1"
         ip -o link show master "$br_name" | cut -d: -f2 | sed -e 's/^ *//'
+        return 0
 }

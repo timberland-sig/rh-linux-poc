@@ -141,7 +141,7 @@ QARGS="$@"
 check_qemu_command
 
 # Setup network configuration based on the effective network setup
-if [ -n "$(get_bridge_slaves ${BRIDGE0_NAME})" ] ; then
+if [ -n "$(get_bridge_slaves ${BRIDGE0_NAME} 2>/dev/null)" ] ; then
         NET0_NET="-netdev bridge,br=$BRIDGE0_NAME,id=net0,helper=$BRIDGE_HELPER"
         NET0_DEV="-device e1000e,netdev=net0,mac=$HOST_MAC1,addr=4"
 else

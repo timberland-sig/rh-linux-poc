@@ -134,9 +134,9 @@ install_network() {
 
     source $DIR/vm-lib/common.sh
 
-    bridge_iface "$BRIDGE0_NAME" "$1" "$2"
+    bridge_iface --optional "$BRIDGE0_NAME" "$1" "$2"
 
-    ip -h -c -o -br address show ${BRIDGE0_NAME}
+    ip -h -c -o -br address show ${BRIDGE0_NAME} 2>/dev/null || true
 
     if ! nmcli dev show "$BRIDGE1_NAME" &>/dev/null ; then
 	    bridge_iface "$BRIDGE1_NAME" "$3" "$4"
