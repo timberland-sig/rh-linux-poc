@@ -224,21 +224,21 @@ fi
 
 mkdir -p $PWD/.build
 cat > .build/start-vm.sh << EOF
-$QEMU -name $VMNAME -M q35 -accel kvm -cpu host -m 4G -smp 4 $QARGS \
--uuid $HOST_SYS_UUID \
-$BOOT_OPTIONS \
-$CDROM \
-$BOOT_DISK \
--debugcon file:bootlog -global isa-debugcon.iobase=0x402 \
--device virtio-rng \
--drive if=pflash,format=raw,readonly=on,file=OVMF_CODE.fd \
-$VM_VARS_FLASH \
-$EFI_DISK \
-$NET0_NET \
-$NET0_DEV \
-$NET1_NET \
-$NET1_DEV \
-$NET2_NET \
+$QEMU -name $VMNAME -M q35 -accel kvm -cpu host -m 4G -smp 4 $QARGS \\
+-uuid $HOST_SYS_UUID \\
+$BOOT_OPTIONS \\
+$CDROM \\
+$BOOT_DISK \\
+-debugcon file:bootlog -global isa-debugcon.iobase=0x402 \\
+-device virtio-rng \\
+-drive if=pflash,format=raw,readonly=on,file=OVMF_CODE.fd \\
+$VM_VARS_FLASH \\
+$EFI_DISK \\
+$NET0_NET \\
+$NET0_DEV \\
+$NET1_NET \\
+$NET1_DEV \\
+$NET2_NET \\
 $NET2_DEV &
 
 disown %1

@@ -216,19 +216,19 @@ fi
 
 mkdir -p $PWD/.build
 cat - > .build/start-vm.sh << EOF
-$QEMU -name $VMNAME -M q35 -accel kvm -bios OVMF-pure-efi.fd -cpu host -m 4G -smp 4 $QARGS \
--uuid $TARGET_SYS_UUID \
-$BOOT_OPTIONS \
--device nvme,drive=NVME1,addr=0x07,max_ioqpairs=4,physical_block_size=4096,use-intel-id=on,serial="$SN0" \
--drive file=$BOOT_DISK,if=none,id=NVME1 \
-$NBFT_DRIVE_OPTIONS \
-${EXTRA_NVMES[@]} \
-$NET0_NET \
-$NET0_DEV \
-$NET1_NET \
-$NET1_DEV \
-$NET2_NET \
-$NET2_DEV \
+$QEMU -name $VMNAME -M q35 -accel kvm -bios OVMF-pure-efi.fd -cpu host -m 4G -smp 4 $QARGS \\
+-uuid $TARGET_SYS_UUID \\
+$BOOT_OPTIONS \\
+-device nvme,drive=NVME1,addr=0x07,max_ioqpairs=4,physical_block_size=4096,use-intel-id=on,serial="$SN0" \\
+-drive file=$BOOT_DISK,if=none,id=NVME1 \\
+$NBFT_DRIVE_OPTIONS \\
+${EXTRA_NVMES[@]} \\
+$NET0_NET \\
+$NET0_DEV \\
+$NET1_NET \\
+$NET1_DEV \\
+$NET2_NET \\
+$NET2_DEV \\
 $DISPLAY_ARGS
 EOF
 
