@@ -152,7 +152,7 @@ if [ -n "$(get_bridge_slaves ${BRIDGE0_NAME} 2>/dev/null)" ] ; then
         NET0_DEV="-device virtio-net-pci,netdev=net0,mac=$TARGET_MAC1,addr=4"
 else
         NET0_NET="-netdev user,id=net0,hostfwd=tcp::$TARGET_PORT-:22"
-        NET0_DEV="-device e1000,netdev=net0,addr=4"
+        NET0_DEV="-device e1000e,netdev=net0,addr=4"
         echo "$TARGET_PORT" > .netport
 fi
 
