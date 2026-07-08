@@ -28,6 +28,7 @@ help:
 	@echo "  start         Start the VM using QEMU. If the boot disk doesn't exist, install first"
 	@echo "  auto-start    Automatically install the OS with Kickstart and start the VM (Red Hat distros only)"
 	@echo "  enter         Open an SSH connection to the VM in the current terminal window."
+	@echo "  xterm         Open an SSH connection to the VM in an xterm window."
 	@echo "                ./netsetup.sh MUST be run first! The login is passwordless."
 	@echo "  kill          Kill all $(VMNAME) instances"
 	@echo "  clean         Remove VM boot disk images and temporary files"
@@ -88,7 +89,28 @@ enter:
 	if [ "$$ip_addr" = "localhost" ] ; then
 		ip_addr=$${ip_addr}:$${TARGET_PORT}
 	fi
+	@echo "ssh -i $$(realpath $$PWD/../.ssh/id_ecdsa) ssh://root@$${ip_addr}"
 	ssh -i $$(realpath $$PWD/../.ssh/id_ecdsa) ssh://root@$${ip_addr}
+
+.PHONY: xterm
+.ONESHELL: xterm
+.SILENT: xterm
+xterm:
+	source ../defaults.sh
+
+	if [ ! -f .ip ] ; then
+		echo "./.ip lock file not found!" >&2
+		echo "Run ./netsetup.sh" >&2
+		exit 1
+	fi
+
+	ip_addr="$$(cat $$PWD/.ip)"
+	if [ "$$ip_addr" = "localhost" ] ; then
+		ip_addr=$${ip_addr}:$${TARGET_PORT}
+	fi
+	@echo "xterm -e ssh -Y -A -i $$(realpath $$PWD/../.ssh/id_ecdsa) ssh://root@$${ip_addr}"
+	xterm -T target-vm -n target-vm -sl 2048 -sb -e ssh -Y -A -i $$(realpath $$PWD/../.ssh/id_ecdsa) ssh://root@$${ip_addr} &
+
 
 .PHONY: iso
 iso:
