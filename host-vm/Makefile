@@ -43,6 +43,7 @@ help:
 	@echo "  install-remote  Install OS to remote NVMe/TCP disk"
 	@echo "  start-remote    Start VM from remote NVMe/TCP disk"
 	@echo "  enter           Open an SSH connection to the VM in the current terminal window."
+	@echo "  xterm           Open an SSH connection to the VM in an xterm window."
 	@echo "                  ./netsetup.sh MUST be run first! The login is passwordless."
 	@echo "  kill            Kill all $(VMNAME) instances"
 	@echo "  config          Run the interactive setup of the boot attempt configuration"
@@ -107,7 +108,29 @@ enter:
 	if [ "$$ip_addr" = "localhost" ] ; then
 		ip_addr=$${ip_addr}:$${HOST_PORT}
 	fi
+	@echo "ssh -i $$(realpath $$PWD/../.ssh/id_ecdsa) ssh://root@$${ip_addr}"
 	ssh -i $$(realpath $$PWD/../.ssh/id_ecdsa) ssh://root@$${ip_addr}
+
+.PHONY: xterm
+.ONESHELL: xterm
+.SILENT: xterm
+xterm:
+	source ../defaults.sh
+
+	if [ ! -f .ip ] ; then
+		echo "./.ip lock file not found!" >&2
+		echo "Run ./netsetup.sh" >&2
+		exit 1
+	fi
+
+	ip_addr="$$(cat $$PWD/.ip)"
+	if [ "$$ip_addr" = "localhost" ] ; then
+		ip_addr=$${ip_addr}:$${HOST_PORT}
+	fi
+
+	@echo "xterm -e ssh -Y -A -i $$(realpath $$PWD/../.ssh/id_ecdsa) ssh://root@$${ip_addr}"
+	xterm -T host-vm -n host-vm -sl 2048 -sb -e ssh -Y -A -i $$(realpath $$PWD/../.ssh/id_ecdsa) ssh://root@$${ip_addr} &
+
 
 .PHONY: iso
 iso:
