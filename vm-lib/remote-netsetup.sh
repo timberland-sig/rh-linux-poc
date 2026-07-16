@@ -44,6 +44,19 @@ setup_iface() {
 
 	if [ -z "$ip_config" ]; then
 		echo "Skipping interface $iface: no IP configuration provided"
+	fi
+
+	# If an nbft connection owns this device, leave it alone entirely
+	local nbft_match
+	nbft_match=$(nmcli -t -g UUID,NAME con show 2>/dev/null | while IFS=: read -r uuid name; do
+		case "$name" in nbft*) ;; *) continue ;; esac
+		ifname=$(nmcli -g connection.interface-name con show "$uuid" 2>/dev/null) || continue
+		if [ "$ifname" = "$iface" ]; then
+			echo "yes"
+			break
+		fi
+	done)
+	if [ "$nbft_match" = "yes" ]; then
 		return
 	fi
 
