@@ -60,7 +60,7 @@ auto-start: disks/nvme1.qcow2 $(SETUP_SCRIPT)
 	@bash ./$(SETUP_SCRIPT) start disks/boot.qcow2 $(_DISPLAY_ARGS) -n $(EXTRA_DRIVES) -- $(QEMU_ARGS)
 
 .PHONY: auto-install
-auto-install: disks/boot.qcow2 boot.iso $(SETUP_SCRIPT)
+auto-install: disks/boot.qcow2 iso boot.iso $(SETUP_SCRIPT)
 	@source ../vm-lib/colors.sh && echo -e "$${RED}The VM is installing. Do not interrupt!$${NC}"
 	@bash ./$(SETUP_SCRIPT) install $< -F -i boot.iso -- $(QEMU_ARGS)
 
@@ -113,7 +113,14 @@ xterm:
 
 
 .PHONY: iso
+.ONESHELL: iso
 iso:
+	@old=$$(cat .diso 2>/dev/null); old_mtime=$$(stat -c %Y .diso 2>/dev/null)
+	source ../defaults.sh && export MIRROR_CENTOS MIRROR_FEDORA && python3 ../iso_selector.py
+	new=$$(cat .diso 2>/dev/null)
+	if [ "$$old" = "$$new" ] && [ -n "$$old_mtime" ]; then touch -d @$$old_mtime .diso; fi
+
+.diso:
 	@source ../defaults.sh && export MIRROR_CENTOS MIRROR_FEDORA && python3 ../iso_selector.py
 
 # This file must be re-built every time because it depends on environment variables
@@ -140,12 +147,9 @@ disks/%.qcow2:
 	qemu-img create -f qcow2 $@ $(DRIVE_CAP)
 
 # Simply embed the anaconda kickstart file into the ISO
-.ONESHELL: boot.iso
-boot.iso: iso anaconda-ks.cfg
-# Look up the prebuilt ISO
-	if ! [ -f $@ ] ; then
-		-sudo mkksiso --ks anaconda-ks.cfg -c "console=ttyS0,115200n8 inst.text" "$(ISO)" $@
-	fi
+boot.iso: .diso anaconda-ks.cfg
+	rm -f $@
+	sudo mkksiso --ks anaconda-ks.cfg -c "console=ttyS0,115200n8 inst.text" "$(ISO)" $@
 
 anaconda-ks.cfg: anaconda-ks.cfg.template
 	@while true; do \
@@ -162,6 +166,7 @@ anaconda-ks.cfg: anaconda-ks.cfg.template
 .PHONY: wipe
 wipe:
 	-rm -f disks/*.qcow2
+	-rm -f .diso .durl  # Necessary to force a re-run of ISO selector
 	-rm -f .net  # Necessary to force a re-run of netsetup when re-installing the OS
 
 .PHONY: clean
@@ -172,6 +177,7 @@ clean:
 	-rm -rf .build
 	-rm -f anaconda-ks.cfg
 	-rm -f .net*
+	-rm -f .diso .durl
 	-rm -f .ip
 
 .PHONY: is-running

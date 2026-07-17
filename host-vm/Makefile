@@ -138,7 +138,14 @@ xterm:
 
 
 .PHONY: iso
+.ONESHELL: iso
 iso:
+	@old=$$(cat .diso 2>/dev/null); old_mtime=$$(stat -c %Y .diso 2>/dev/null)
+	source ../defaults.sh && export MIRROR_CENTOS MIRROR_FEDORA && python3 ../iso_selector.py
+	new=$$(cat .diso 2>/dev/null)
+	if [ "$$old" = "$$new" ] && [ -n "$$old_mtime" ]; then touch -d @$$old_mtime .diso; fi
+
+.diso:
 	@source ../defaults.sh && export MIRROR_CENTOS MIRROR_FEDORA && python3 ../iso_selector.py
 
 disks/%.qcow2:
@@ -294,11 +301,9 @@ nvmeof-utils/ovmf_vars_set: nvmeof-utils/ovmf_vars_set.c
 	./gen_discovery_conf.py
 
 # Simply embed the anaconda kickstart file into the ISO
-.ONESHELL: boot.iso
-boot.iso: iso anaconda-ks.cfg ../vm-lib/common.sh
-	if ! [ -f $@ ] ; then
-		sudo mkksiso --ks anaconda-ks.cfg $(INPUT_ISO) $@
-	fi
+boot.iso: .diso anaconda-ks.cfg ../vm-lib/common.sh
+	rm -f $@
+	sudo mkksiso --ks anaconda-ks.cfg $(INPUT_ISO) $@
 
 anaconda-ks.cfg: anaconda-ks.cfg.template
 	@read -p "Enter a root password for the host-vm: " -s PASSWORD; echo; sed -e "s|<ROOT_PASSWD>|$$(openssl passwd -1 -stdin <<< $$PASSWORD)|" $< > $@
