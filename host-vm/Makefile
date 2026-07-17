@@ -40,7 +40,8 @@ help:
 	@echo "  setup           Configure NBFT (NVMe Boot Firmware Table) for network boot"
 	@echo "  install-local   Install OS to local boot disk"
 	@echo "  start-local     Start VM from local boot disk"
-	@echo "  install-remote  Install OS to remote NVMe/TCP disk"
+	@echo "  install-remote  Install OS to remote NVMe/TCP disk w/out efidisk"
+	@echo "  install-efidisk Install OS to remote NVMe/TCP disk with efidisk"
 	@echo "  start-remote    Start VM from remote NVMe/TCP disk"
 	@echo "  enter           Open an SSH connection to the VM in the current terminal window."
 	@echo "  xterm           Open an SSH connection to the VM in an xterm window."
@@ -87,6 +88,10 @@ install-local: iso disks/boot.qcow2 $(ISO)
 .PHONY: install-remote
 install-remote: iso $(ISO)
 	bash ./$(SETUP_SCRIPT) -i $(ISO) $(_DISPLAY_ARGS) install remote -- $(QEMU_ARGS)
+
+.PHONY: install-efidisk
+install-efidisk: iso $(ISO) efidisk
+	bash ./$(SETUP_SCRIPT) nbft-setup $(_DISPLAY_ARGS)
 
 .PHONY: start-remote
 start-remote:
@@ -247,9 +252,10 @@ eficonfig/config: eficonfig/config.in eficonfig/config2.in
 	@echo "EFI Configuration file created successfully"
 	@echo ""
 
-# This will likely be deprecated
-efidisk: efidisk.in eficonfig/startup.nsh eficonfig/VConfig.efi eficonfig/NvmeOfCli.efi eficonfig/config
+efidisk: efidisk.in eficonfig/startup.nsh eficonfig/VConfig.efi eficonfig/NvmeOfCli.efi eficonfig/config .build/hostid
 	-[ -d efi ] && rmdir efi
+	@echo "efidisk: copy vm_vars.fd"
+	cp -f ../ISO/OVMF_VARS.fd vm_vars.fd
 # This ensures the target execution can be interrupted
 	set -e
 	cp -v efidisk.in efidisk
@@ -271,7 +277,8 @@ efidisk: efidisk.in eficonfig/startup.nsh eficonfig/VConfig.efi eficonfig/NvmeOf
 
 .PHONY: vm_vars.fd
 vm_vars.fd: eficonfig/config nvmeof-utils/ovmf_vars_set
-	cp ../ISO/OVMF_VARS.fd $@
+	@echo "vm_vars.fd: copy vm_vars.fd"
+	cp -f ../ISO/OVMF_VARS.fd $@
 	./nvmeof-utils/ovmf_vars_set $@ $<
 
 nvmeof-utils/ovmf_vars_set: nvmeof-utils/ovmf_vars_set.c
