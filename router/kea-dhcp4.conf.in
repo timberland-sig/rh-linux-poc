@@ -1,0 +1,200 @@
+{
+
+"Dhcp4": {
+    "interfaces-config": {
+        "interfaces": [ ${INTERFACES} ]
+    },
+
+    "control-socket": {
+        "socket-type": "unix",
+        "socket-name": "kea4-ctrl-socket"
+    },
+
+    "lease-database": {
+        "type": "memfile",
+        "lfc-interval": 3600
+    },
+
+    "expired-leases-processing": {
+        "reclaim-timer-wait-time": 10,
+        "flush-reclaimed-timer-wait-time": 25,
+        "hold-reclaimed-time": 3600,
+        "max-reclaim-leases": 100,
+        "max-reclaim-time": 250,
+        "unwarned-reclaim-cycles": 5
+    },
+
+    "renew-timer": 900,
+    "rebind-timer": 1800,
+    "valid-lifetime": 3600,
+
+    "option-data": [
+        {
+            "name": "default-ip-ttl",
+            "data": "0xf0"
+        },
+        {
+            "name": "domain-name-servers",
+            "data": "${DNS_SERVERS}"
+        }
+    ],
+
+    "client-classes": [
+        {
+            "name": "voip",
+            "test": "substring(option[60].hex,0,6) == 'Aastra'",
+            "next-server": "192.0.2.254",
+            "server-hostname": "hal9000",
+            "boot-file-name": "/dev/null"
+        }
+    ],
+
+    "subnet4": [
+        {
+            "id": 1,
+            "subnet": "${TARGET1_NET}",
+            "pools": [ { "pool": "${TARGET1_POOL}" } ],
+            "interface": "${TARGET1_IFACE}",
+            "option-data": [
+                {
+                    "name": "routers",
+                    "data": "${TARGET1_IP}"
+                }
+            ],
+            "reservations": [
+                {
+                    "hw-address": "${TARGET_MAC1}",
+                    "ip-address": "${TARGET1_RESIP}"
+                }
+            ]
+        },
+        {
+            "id": 2,
+            "subnet": "${TARGET2_NET}",
+            "pools": [ { "pool": "${TARGET2_POOL}" } ],
+            "interface": "${TARGET2_IFACE}",
+            "option-data": [
+                {
+                    "name": "routers",
+                    "data": "${TARGET2_IP}"
+                },
+                // Classless Static Routes (Option 121)
+                {
+                    "name": "classless-static-route",
+                    "code": 121,
+                    "data": "${HOST2_NET} - ${TARGET2_IP}, ${BRIDGE1_NET} - ${TARGET2_IP}"
+                }
+            ],
+            "reservations": [
+                {
+                    "hw-address": "${TARGET_MAC2}",
+                    "ip-address": "${TARGET2_RESIP}"
+                }
+            ]
+        },
+        {
+            "id": 3,
+            "subnet": "${TARGET3_NET}",
+            "pools": [ { "pool": "${TARGET3_POOL}" } ],
+            "interface": "${TARGET3_IFACE}",
+            "option-data": [
+                {
+                    "name": "routers",
+                    "data": "${TARGET3_IP}"
+                },
+                // Classless Static Routes (Option 121)
+                {
+                    "name": "classless-static-route",
+                    "code": 121,
+                    "data": "${HOST3_NET} - ${TARGET3_IP}, ${BRIDGE2_NET} - ${TARGET3_IP}"
+                }
+            ],
+            "reservations": [
+                {
+                    "hw-address": "${TARGET_MAC3}",
+                    "ip-address": "${TARGET3_RESIP}"
+                }
+            ]
+        },
+        {
+            "id": 4,
+            "subnet": "${HOST1_NET}",
+            "pools": [ { "pool": "${HOST1_POOL}" } ],
+            "interface": "${HOST1_IFACE}",
+            "option-data": [
+                {
+                    "name": "routers",
+                    "data": "${HOST1_IP}"
+                }
+            ],
+            "reservations": [
+                {
+                    "hw-address": "${HOST_MAC1}",
+                    "ip-address": "${HOST1_RESIP}"
+                }
+            ]
+        },
+        {
+            "id": 5,
+            "subnet": "${HOST2_NET}",
+            "pools": [ { "pool": "${HOST2_POOL}" } ],
+            "interface": "${HOST2_IFACE}",
+            "option-data": [
+                {
+                    "name": "routers",
+                    "data": "${HOST2_IP}"
+                },
+                // Classless Static Routes (Option 121)
+                {
+                    "name": "classless-static-route",
+                    "code": 121,
+                    "data": "${TARGET2_NET} - ${HOST2_IP}, ${BRIDGE1_NET} - ${HOST2_IP}"
+                }
+            ],
+            "reservations": [
+                {
+                    "hw-address": "${HOST_MAC2}",
+                    "ip-address": "${HOST2_RESIP}"
+                }
+            ]
+        },
+        {
+            "id": 6,
+            "subnet": "${HOST3_NET}",
+            "pools": [ { "pool": "${HOST3_POOL}" } ],
+            "interface": "${HOST3_IFACE}",
+            "option-data": [
+                {
+                    "name": "routers",
+                    "data": "${HOST3_IP}"
+                },
+                // Classless Static Routes (Option 121)
+                {
+                    "name": "classless-static-route",
+                    "code": 121,
+                    "data": "${TARGET3_NET} - ${HOST3_IP}, ${BRIDGE2_NET} - ${HOST3_IP}"
+                }
+            ],
+            "reservations": [
+                {
+                    "hw-address": "${HOST_MAC3}",
+                    "ip-address": "${HOST3_RESIP}"
+                }
+            ]
+        }
+    ],
+
+    "loggers": [
+        {
+            "name": "kea-dhcp4",
+            "output-options": [
+                {
+                    "output": "syslog"
+                }
+            ],
+            "severity": "INFO",
+            "debuglevel": 0
+        }
+    ]
+}
+}

@@ -7,9 +7,14 @@ set -e
 DIR="$(dirname -- "$(realpath -- "$0")")"
 VMNAME=$(basename $PWD)
 
-. $DIR/../defaults.sh
 . $DIR/../vm-lib/common.sh
 . $DIR/../vm-lib/colors.sh
+
+if has_router; then
+    . $DIR/../router/addresses.sh
+fi
+
+. $DIR/../defaults.sh
 
 show-help() {
     echo ""

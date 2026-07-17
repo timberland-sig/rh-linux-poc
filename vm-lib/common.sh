@@ -451,6 +451,13 @@ get_bridge_slaves() {
         return 0
 }
 
+has_router() {
+        DIR="$(dirname -- "$(realpath -- "$BASH_SOURCE[0]")")"
+
+	command -v incus && \
+		[ "$(incus info router-vm | grep '^Status:' | cut -d' ' -f2)" = 'RUNNING' ]
+}
+
 # NOTE: caller must set `target_ip` before calling this function.
 run_ssh() {
     local vmname="$1"
