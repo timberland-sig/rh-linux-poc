@@ -49,6 +49,25 @@ for _role in TARGET HOST; do
 		export "${_role}_CIDR${_n}=${_base}.2/${_mask}"
 	done
 done
+
+_update_env() {
+	local file="$1" var="$2" val="$3"
+	if grep -q "^${var}=" "$file" 2>/dev/null; then
+		sed -i "s|^${var}=.*|${var}=\"${val}\"|" "$file"
+	else
+		echo "${var}=\"${val}\"" >> "$file"
+	fi
+}
+
+_env_file="$DIR/../.env"
+for _role in TARGET HOST; do
+	for _n in 1 2 3; do
+		_cidr_var="${_role}_CIDR${_n}"
+		_update_env "$_env_file" "$_cidr_var" "${!_cidr_var}"
+	done
+done
+unset _env_file
+
 export INTERFACES="\"$TARGET1_IFACE\", \"$TARGET2_IFACE\", \"$TARGET3_IFACE\", \"$HOST1_IFACE\", \"$HOST2_IFACE\", \"$HOST3_IFACE\""
 export TARGET_MAC1 TARGET_MAC2 TARGET_MAC3 HOST_MAC1 HOST_MAC2 HOST_MAC3
 
@@ -62,4 +81,5 @@ for _i in 1 2; do
 		export "BRIDGE${_i}_NET=${_br_base}.0/${_br_mask}"
 	fi
 done
-unset _role _n _ip_var _net_var _ip _base _mask _i _br_var _br_addr _br_base _br_mask
+
+unset _update_env _env_file _cidr_var _role _n _ip_var _net_var _ip _base _mask _i _br_var _br_addr _br_base _br_mask

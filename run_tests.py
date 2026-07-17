@@ -18,6 +18,7 @@ import socket
 import warnings
 import paramiko
 from scp import SCPClient
+from dotenv import dotenv_values
 from pathlib import Path
 from typing import Dict, List, Any, Optional
 import pytest
@@ -253,6 +254,8 @@ class NetworkSetup:
     def _get_target_cidr_env(self) -> Dict[str, str]:
         """Build environment variables for TARGET_CIDR from network config."""
         env = os.environ.copy()
+        env.update(dotenv_values(SCRIPT_DIR / ".env"))
+        env['_DEFAULTS_SKIP_ENV'] = '1'
 
         # Extract target IPs and subnet masks from network config
         for bridge_name, bridge_key in [('br1', 'br1'), ('br2', 'br2')]:

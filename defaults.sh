@@ -4,6 +4,12 @@
 #
 # Global variables
 #
+
+# shellcheck disable=SC1091
+_DEFAULTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+[ -z "$_DEFAULTS_SKIP_ENV" ] && [ -f "$_DEFAULTS_DIR/.env" ] && . "$_DEFAULTS_DIR/.env"
+unset _DEFAULTS_DIR
+
 COPR_PROJECT=timberland-v15.2
 COPR_USER=johnmeneghini
 

@@ -162,7 +162,9 @@ Directories and files are explained here:
 | nvme_rpm | libnvm.spec | A modified version of the Fedora libnvme.spec file from: https://src.fedoraproject.org/rpms/libnvme/blob/rawhide/f/libnvme.spec. This spec file has been modified to work with the timberland-sig libnvme source code in this submodule.
 | `dracut_rpm` | - | Contains the git submodule for https://github.com/timberland-sig/dracut. The rpm is generated using this source code with the `dracut.spec` file located in this directory. The code used to generate the rpm can be developed and changed by working in the provided *dracut_rpm/dracut* git repository.  Normal git workflows apply. |
 | `dracut_rpm` | dracut.spec | A modified version of the Fedora dracut.spec file from:  https://src.fedoraproject.org/rpms/dracut/blob/rawhide/f/dracut.spec. This spec file has been modified to work with the timberland-sig dracut source code in this submodule. |
-|  - | `defaults.sh` | Contains global variables which control the test bed configuration. If you need to change sometihing, look here first. MAC and IP address variables can be overridden by setting them as environment variables before sourcing this file. |
+|  - | `.env.example` | Template listing all configurable variables with their defaults. Copy to `.env` to get started — see [Customizing Configuration](#customizing-configuration). |
+|  - | `.env` | **User-created** (gitignored). Persistent overrides for variables defined in `defaults.sh`. Sourced automatically before defaults are applied, so values set here take precedence. |
+|  - | `defaults.sh` | Contains global variables which control the test bed configuration. If you need to change something, look here first. Variables can be overridden by placing them in the `.env` file or by setting them as environment variables before sourcing this file. |
 |  - | `rmp_lib.sh` | Contains global functions used by the scripts in the `libnvme_rpm`, `nvme_rpm`, and `dracut_rpm`  subdirectories. |
 | `vm-lib` | - | Contains shared scripts and functions used by both *target-vm* and *host-vm* subdirectories. Includes common network setup scripts and Makefile targets. |
 | `vm-lib` | `common.sh` | Contains global functions used by the scripts in the `target-vm` and `host-vm` subdirectories. |
@@ -178,6 +180,28 @@ Directories and files are explained here:
 
 Proposed changes and patches should be sent to the repsective repositories at:
 https://github.com/timberland-sig
+
+## Customizing Configuration
+
+All testbed variables (MAC addresses, IP addresses, UUIDs, NQNs, bridge names,
+port numbers, mirror URLs, etc.) have sensible defaults in `defaults.sh`. To
+override any of them **persistently** without editing tracked files, use a `.env`
+file:
+
+1. Copy the template:
+   ```
+   cp .env.example .env
+   ```
+2. Edit `.env` and change only the variables you need. The file is sourced by
+   `defaults.sh` before its own assignments, so any variable set in `.env` takes
+   precedence.
+3. `.env` is listed in `.gitignore`, so your local changes will never be
+   committed or conflict with upstream updates.
+
+Some scripts also write back to `.env` to keep computed state persistent across
+terminal sessions. For example, the router's address configuration
+(`router/addresses.sh`) stores the resolved `TARGET_CIDR*` and `HOST_CIDR*`
+values in `.env` so they survive across separate shell sessions.
 
 # Getting Started
 
@@ -227,8 +251,10 @@ and prepare it for use by the `host-vm`. Use `./setup.sh edk2 -s` or `./setup.sh
 If your hypervisor is on a remote system, you can use `make <target>`
 argment and connect to the VM console with `vncviewer` on your local machine.
 
-*Note that changing the specfic configuration - in terms of IP and MAC
-addresses, HOSTNQNs, etc. can be done by modifying the `defaults.sh` file.*
+*Note that changing the specific configuration — in terms of IP and MAC
+addresses, HOSTNQNs, etc. — can be done by creating a `.env` file
+(see [Customizing Configuration](#customizing-configuration)) or by
+modifying `defaults.sh` directly.*
 
 Also note that the scripts and `Makefile`s in the `host-vm` and `target-vm` directories are
 context sensitive. You can only run these scripts as: `./vm.sh` or
