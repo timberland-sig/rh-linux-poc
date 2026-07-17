@@ -197,24 +197,43 @@ eficonfig/config: eficonfig/config.in eficonfig/config2.in
 			read -p "MAC address: " INPUT_MAC
 		fi
 		sed -i "s/HOST_MAC/$$INPUT_MAC/" $@
-		if [ -n "$$ip_default" ]; then
-			read -p "Host IP address (default: $$ip_default): " INPUT_IP
-			INPUT_IP=$${INPUT_IP:-$$ip_default}
-		else
-			read -p "Host IP address: " INPUT_IP
-		fi
-		sed -i "s/HOST_IP/$$INPUT_IP/" $@
-		sed -i "s/HOSTGW_IP/0.0.0.0/" $@
+		local USE_DHCP=0
 		while true; do
-			read -p "Subnet mask (CIDR bits 1-31 or dotted decimal, default: $$mask_default): " INPUT_MASK
-			INPUT_MASK=$${INPUT_MASK:-$$mask_default}
-			if source ../vm-lib/common.sh && validate_subnet_mask "$$INPUT_MASK"; then
-				INPUT_MASK=$$(normalize_subnet_mask "$$INPUT_MASK")
+			read -p "Use DHCP? (y/n, default: n): " DHCP_ANSWER
+			DHCP_ANSWER=$${DHCP_ANSWER:-n}
+			if [ "$$DHCP_ANSWER" = "y" ]; then
+				USE_DHCP=1
+				break
+			elif [ "$$DHCP_ANSWER" = "n" ]; then
 				break
 			fi
-			echo "Error: Invalid subnet mask. Enter CIDR bit count (1-31) or dotted decimal (e.g., 255.255.255.0)."
 		done
-		sed -i "s/SUBNET_MASK/$$INPUT_MASK/" $@
+		if [ "$$USE_DHCP" = "1" ]; then
+			sed -i "s/HOST_DHCP/TRUE/" $@
+			sed -i "s/HOST_IP/0.0.0.0/" $@
+			sed -i "s/SUBNET_MASK/0.0.0.0/" $@
+			sed -i "s/HOSTGW_IP/0.0.0.0/" $@
+		else
+			sed -i "s/HOST_DHCP/FALSE/" $@
+			if [ -n "$$ip_default" ]; then
+				read -p "Host IP address (default: $$ip_default): " INPUT_IP
+				INPUT_IP=$${INPUT_IP:-$$ip_default}
+			else
+				read -p "Host IP address: " INPUT_IP
+			fi
+			sed -i "s/HOST_IP/$$INPUT_IP/" $@
+			sed -i "s/HOSTGW_IP/0.0.0.0/" $@
+			while true; do
+				read -p "Subnet mask (CIDR bits 1-31 or dotted decimal, default: $$mask_default): " INPUT_MASK
+				INPUT_MASK=$${INPUT_MASK:-$$mask_default}
+				if source ../vm-lib/common.sh && validate_subnet_mask "$$INPUT_MASK"; then
+					INPUT_MASK=$$(normalize_subnet_mask "$$INPUT_MASK")
+					break
+				fi
+				echo "Error: Invalid subnet mask. Enter CIDR bit count (1-31) or dotted decimal (e.g., 255.255.255.0)."
+			done
+			sed -i "s/SUBNET_MASK/$$INPUT_MASK/" $@
+		fi
 		if [ -n "$$target_default" ]; then
 			read -p "Target IP address (default: $$target_default): " INPUT_TARGET
 			INPUT_TARGET=$${INPUT_TARGET:-$$target_default}

@@ -5,6 +5,7 @@ MacString:HOST_MAC
 TargetPort:TARGET_PORT
 Enabled:1
 IpMode:0
+InitiatorInfoFromDhcp:HOST_DHCP
 LocalIp:HOST_IP
 SubnetMask:SUBNET_MASK
 Gateway:HOSTGW_IP
