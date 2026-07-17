@@ -147,7 +147,10 @@ else
 fi
 
 # Detect a bridged setup
-if [ -n "$(get_bridge_slaves ${BRIDGE0_NAME} 2>/dev/null)" ] ; then
+if has_router && [ -n "$(get_bridge_slaves ${BRIDGE0_NAME} 2>/dev/null)" ] ; then
+        NET0_NET="-netdev bridge,br=$VIRT_TARGET_BRIDGE_NAME0,id=net0,helper=$BRIDGE_HELPER"
+        NET0_DEV="-device virtio-net-pci,netdev=net0,mac=$TARGET_MAC1,addr=4"
+elif [ -n "$(get_bridge_slaves ${BRIDGE0_NAME} 2>/dev/null)" ] ; then
         NET0_NET="-netdev bridge,br=$BRIDGE0_NAME,id=net0,helper=$BRIDGE_HELPER"
         NET0_DEV="-device virtio-net-pci,netdev=net0,mac=$TARGET_MAC1,addr=4"
 else
@@ -156,8 +159,14 @@ else
         echo "$TARGET_PORT" > .netport
 fi
 
+if has_router ; then
+	BRIDGE1_NAME="$VIRT_TARGET_BRIDGE_NAME1"
+	BRIDGE2_NAME="$VIRT_TARGET_BRIDGE_NAME2"
+fi
+
 NET1_NET="-netdev bridge,br=$BRIDGE1_NAME,id=net1,helper=$BRIDGE_HELPER"
 NET1_DEV="-device rtl8139,netdev=net1,mac=$TARGET_MAC2,addr=5"
+
 NET2_NET="-netdev bridge,br=$BRIDGE2_NAME,id=net2,helper=$BRIDGE_HELPER"
 NET2_DEV="-device rtl8139,netdev=net2,mac=$TARGET_MAC3,addr=6"
 

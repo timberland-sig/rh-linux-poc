@@ -141,7 +141,10 @@ QARGS="$@"
 check_qemu_command
 
 # Setup network configuration based on the effective network setup
-if [ -n "$(get_bridge_slaves ${BRIDGE0_NAME} 2>/dev/null)" ] ; then
+if has_router && [ -n "$(get_bridge_slaves ${BRIDGE0_NAME} 2>/dev/null)" ] ; then
+        NET0_NET="-netdev bridge,br=$VIRT_HOST_BRIDGE_NAME0,id=net0,helper=$BRIDGE_HELPER"
+        NET0_DEV="-device virtio-net-pci,netdev=net0,mac=$HOST_MAC1,addr=4"
+elif [ -n "$(get_bridge_slaves ${BRIDGE0_NAME} 2>/dev/null)" ] ; then
         NET0_NET="-netdev bridge,br=$BRIDGE0_NAME,id=net0,helper=$BRIDGE_HELPER"
         NET0_DEV="-device e1000e,netdev=net0,mac=$HOST_MAC1,addr=4"
 else
@@ -186,6 +189,11 @@ EOF
     fi
 else
     echo "using a remote drive"
+fi
+
+if has_router ; then
+	BRIDGE1_NAME="$VIRT_HOST_BRIDGE_NAME1"
+	BRIDGE2_NAME="$VIRT_HOST_BRIDGE_NAME2"
 fi
 
 if nmcli dev | grep "$BRIDGE1_NAME" &>/dev/null ; then

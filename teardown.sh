@@ -31,6 +31,9 @@ display_help() {
 shutdown_vms() {
 	make -C $DIR/target-vm kill
 	make -C $DIR/host-vm kill
+	if command -v incus ; then
+		make -C $DIR/router kill
+	fi
 }
 
 wipe_vms() {
@@ -38,6 +41,9 @@ wipe_vms() {
 	# 'clean' only deletes temporary files for the 'target-vm'
 	make -C $DIR/target-vm wipe
 	make -C $DIR/host-vm clean
+	if command -v incus ; then
+		make -C $DIR/router clean
+	fi
 }
 
 revert_bridge_iface() {
@@ -88,6 +94,26 @@ revert_bridge_iface() {
     else
         echo "   - Bridge $br_name does not exist, skipping"
     fi
+}
+
+revert_router() {
+    echo " : Tearing down virtual router environment"
+
+    if command -v incus ; then
+        make -C $DIR/router kill
+        make -C $DIR/router wipe
+        make -C $DIR/router clean
+    fi
+
+    revert_bridge_iface "$VIRT_HOST_BRIDGE_NAME2"
+    revert_bridge_iface "$VIRT_HOST_BRIDGE_NAME1"
+    revert_bridge_iface "$VIRT_HOST_BRIDGE_NAME0"
+    revert_bridge_iface "$VIRT_TARGET_BRIDGE_NAME2"
+    revert_bridge_iface "$VIRT_TARGET_BRIDGE_NAME1"
+    revert_bridge_iface "$VIRT_TARGET_BRIDGE_NAME0"
+
+    echo ""
+    echo "Virtual router environment torn down!"
 }
 
 revert_network() {

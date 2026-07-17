@@ -69,6 +69,10 @@ ssh-copy-id -o StrictHostKeyChecking=no -o ConnectTimeout=20 -i $DIR/../.ssh/id_
 
 case "$VMNAME" in
     target-vm)
+        if has_router; then
+            TARGET_CIDR2=dhcp
+            TARGET_CIDR3=dhcp
+        fi
         make --makefile="$PWD/Makefile" .build/tcp.json
         scp -i $DIR/../.ssh/id_ecdsa -o StrictHostKeyChecking=no .build/{tcp.json,hosts.txt} $PWD/setup-nvme-target.sh $PWD/nvmet-mods.conf $DIR/../vm-lib/remote-netsetup.sh scp://${SSH_TARGET}
         run_ssh $VMNAME "
@@ -78,6 +82,10 @@ set -e
 "
     ;;
     host-vm)
+        if has_router; then
+            HOST_CIDR2=dhcp
+            HOST_CIDR3=dhcp
+        fi
         make --makefile="$PWD/Makefile" .build/discovery.conf
         scp -i $DIR/../.ssh/id_ecdsa -o StrictHostKeyChecking=no .build/* $DIR/../vm-lib/remote-netsetup.sh scp://${SSH_TARGET}
         run_ssh $VMNAME "\

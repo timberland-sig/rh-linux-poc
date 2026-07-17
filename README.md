@@ -94,7 +94,7 @@ firmware via the NBFT table.
 Router Config
 
 ```
-                                       router-vm
+                                       router
            host-vm               ----------------------             target-vm
      ----------------------      |        QEMU        |      -------------------------
      |     QEMU+UEFI      |      |                    |      |         QEMU          |

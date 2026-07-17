@@ -31,6 +31,8 @@ display_help() {
         echo "  net           : configure network environment "
         echo "                : - script prompts for \"bridged\" primary interface."
         echo "                :   Enter \"none\" to skip primary interace reconfiguration."
+        echo "  router        : configure the router (container) acting as a gateway"
+        echo "                : between the host-vm and target-vm"
         echo ""
         echo " Examples: "
         echo "  Install qemu and configure hypervisor networks"
@@ -154,10 +156,78 @@ install_network() {
     make --makefile="$DIR/vm-lib/Makefile" .ssh/id_ecdsa
 }
 
+setup_router() {
+	echo " : creating virtual bridges"
+
+	# Target <-> router bridges
+	sudo nmcli conn add type bridge ifname "$VIRT_TARGET_BRIDGE_NAME0" con-name "$VIRT_TARGET_BRIDGE_NAME0" stp yes
+	sudo nmcli conn add type bridge ifname "$VIRT_TARGET_BRIDGE_NAME1" con-name "$VIRT_TARGET_BRIDGE_NAME1" stp yes
+	sudo nmcli conn add type bridge ifname "$VIRT_TARGET_BRIDGE_NAME2" con-name "$VIRT_TARGET_BRIDGE_NAME2" stp yes
+
+	# Router <-> host bridges
+	sudo nmcli conn add type bridge ifname "$VIRT_HOST_BRIDGE_NAME0" con-name "$VIRT_HOST_BRIDGE_NAME0" stp yes
+	sudo nmcli conn add type bridge ifname "$VIRT_HOST_BRIDGE_NAME1" con-name "$VIRT_HOST_BRIDGE_NAME1" stp yes
+	sudo nmcli conn add type bridge ifname "$VIRT_HOST_BRIDGE_NAME2" con-name "$VIRT_HOST_BRIDGE_NAME2" stp yes
+
+	# Start the router
+	make -C router start
+    ( cd router && ./netsetup.sh )
+}
+
+install_router() {
+    if ! command -v incus ; then
+        # Check if 'root' already has a subordinate UID mapping
+        if ! grep -q "^root:" /etc/subuid; then
+            echo "Creating SubUID mapping for root..."
+            sudo usermod --add-subuids 1000000-1065535 root
+        fi
+
+        # Check if 'root' already has a subordinate GID mapping
+        if ! grep -q "^root:" /etc/subgid; then
+            echo "Creating SubGID mapping for root..."
+            sudo usermod --add-subgids 1000000-1065535 root
+        fi
+
+        sudo dnf install -y incus btrfs-progs
+
+        sudo systemctl enable --now incus.socket
+        sudo systemctl enable --now incus
+
+        # Enable container launch without sudo
+        sudo usermod -aG incus-admin $USER
+
+        echo " : initializing incus"
+        incus admin init --auto
+        set +e
+        # Add the default storage pool to the 'default' profile
+        incus storage create default btrfs
+        incus profile device add default root disk path=/ pool=default
+        # Add the default network bridge to the 'default' profile
+        incus network create incusbr0 ipv4.address=auto ipv6.address=none
+        incus profile device add default eth0 nic network=incusbr0 name=eth0
+        set -e
+
+        if [ "$(firewall-cmd --state)" = "running" ] ; then
+            # Relax firewall rules for DHCP assignment
+            echo " : enabling incus in firewalld"
+            sudo firewall-cmd --zone=trusted --change-interface=incusbr0 --permanent
+            sudo firewall-cmd --reload
+            sudo systemctl restart incus
+        fi
+
+        echo " : incus installed successfully!"
+    fi
+
+    export $(compgen -v)
+    export -f setup_router
+    sg incus-admin -c "setup_router"
+}
+
 install_virt() {
     if ! command -v qemu-system-x86_64 ; then
         sudo dnf install -y qemu-kvm qemu-img
     fi
+
     echo "allow all" > /tmp/bridge.conf
     sudo cp /tmp/bridge.conf /etc/qemu/bridge.conf
     sudo chmod 4755 /usr/libexec/qemu-bridge-helper
@@ -310,6 +380,9 @@ case "${MODE}" in
     ;;
     net)
         install_network $NEWARGS
+    ;;
+    router)
+        install_router
     ;;
     edk2)
 	install_edk2

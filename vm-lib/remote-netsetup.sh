@@ -12,7 +12,7 @@ mac2iface() {
 }
 
 if [ $# -ne 0 -a $# -ne 2 -a $# -ne 4 ] ; then
-	echo "Usage: $0 [<mac address 2> <mac address 3>] [<ip address 2> <ip address 3>]"
+	echo "Usage: $0 [<mac address 2> <mac address 3>] [<dhcp|ip/prefix 2> <dhcp|ip/prefix 3>]"
 	exit 1
 fi
 
@@ -34,37 +34,60 @@ if [ '(' -z $IF2 ')' -o '(' -z $IF3 ')' ] ; then
     echo "Failed to find a network interface with MAC address $BAD_MAC!"
 fi
 
-if [[ -n "$IF2" && "$(nmcli conn show | grep $IF2)" == *"$IF2"* ]]; then
-	CCON="$(nmcli --get-values name,device conn | grep $IF2 | cut -d ':' -f 1)"
-	nmcli dev connect "$IF2"
-	nmcli con modify $CCON ipv4.addresses $IP2 ipv4.method manual ipv6.method shared connection.autoconnect yes
-	nmcli dev reapply "$IF2"
-elif [[ -n "$IF2" ]] ; then
-	CONN2="$(nmcli dev status | grep $IF2)"
-	if [[ "$CONN2" == *"$IF2"* ]]; then
-			nmcli con add type ethernet con-name $IF2 ifname $IF2 ipv4.addresses $IP2 ipv4.method manual ipv6.method shared connection.autoconnect yes
-			nmcli con up "$IF2"
-	else
-			echo "$IF2 not found"
-			exit 1
-	fi
-fi
+setup_iface() {
+	local iface=$1
+	local ip_config=$2
 
-if [[ -n "$IF3" && "$(nmcli conn show | grep $IF3)" == *"$IF3"* ]]; then
-	CCON="$(nmcli --get-values name,device conn | grep $IF3 | cut -d ':' -f 1)"
-	nmcli dev connect "$IF3"
-	nmcli con modify $CCON ipv4.addresses $IP3 ipv4.method manual ipv6.method shared connection.autoconnect yes
-	nmcli dev reapply "$IF3"
-elif [[ -n "$IF3" ]] ; then
-	CONN2="$(nmcli dev status | grep $IF3)"
-	if [[ "$CONN2" == *"$IF3"* ]]; then
-		nmcli con add type ethernet con-name $IF3 ifname $IF3 ipv4.addresses $IP3 ipv4.method manual ipv6.method shared connection.autoconnect yes
-		nmcli con up "$IF3"
-	else
-		echo "$IF3 not found"
-		exit 1
+	if [ -z "$iface" ]; then
+		return
 	fi
-fi
+
+	if [ -z "$ip_config" ]; then
+		echo "Skipping interface $iface: no IP configuration provided"
+		return
+	fi
+
+	# Remove any pre-existing connections on this device
+	nmcli -t -g UUID con show 2>/dev/null | while read -r uuid; do
+		ifname=$(nmcli -g connection.interface-name con show "$uuid" 2>/dev/null) || continue
+		if [ "$ifname" = "$iface" ]; then
+			nmcli con delete uuid "$uuid" 2>/dev/null || true
+		fi
+	done
+
+	if [ "$ip_config" = "dhcp" ]; then
+		nmcli con add \
+			type ethernet \
+			con-name "${iface}-dhcp" \
+			ifname "$iface" \
+			ipv4.method auto \
+			ipv4.dhcp-timeout 30 \
+			ipv4.never-default yes \
+			ipv4.may-fail no \
+			ipv6.method shared \
+			connection.autoconnect yes \
+			connection.autoconnect-priority 10 \
+			connection.autoconnect-retries 2
+
+		nmcli con up "${iface}-dhcp"
+	else
+		nmcli con add \
+			type ethernet \
+			con-name "${iface}-static" \
+			ifname "$iface" \
+			ipv4.addresses "$ip_config" \
+			ipv4.method manual \
+			ipv4.never-default yes \
+			ipv6.method shared \
+			connection.autoconnect yes \
+			connection.autoconnect-priority 10
+
+		nmcli con up "${iface}-static"
+	fi
+}
+
+setup_iface "$IF2" "$IP2"
+setup_iface "$IF3" "$IP3"
 
 nmcli g hostname $VMNAME
 

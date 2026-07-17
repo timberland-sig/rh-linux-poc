@@ -39,6 +39,14 @@ BRIDGE0_NAME="${BRIDGE0_NAME:-br0}"
 BRIDGE1_NAME="${BRIDGE1_NAME:-br1}"
 BRIDGE2_NAME="${BRIDGE2_NAME:-br2}"
 
+VIRT_TARGET_BRIDGE_NAME0="${VIRT_TARGET_BRIDGE_NAME0:-virbr_target0}"
+VIRT_TARGET_BRIDGE_NAME1="${VIRT_TARGET_BRIDGE_NAME1:-virbr_target1}"
+VIRT_TARGET_BRIDGE_NAME2="${VIRT_TARGET_BRIDGE_NAME2:-virbr_target2}"
+
+VIRT_HOST_BRIDGE_NAME0="${VIRT_HOST_BRIDGE_NAME0:-virbr_host0}"
+VIRT_HOST_BRIDGE_NAME1="${VIRT_HOST_BRIDGE_NAME1:-virbr_host1}"
+VIRT_HOST_BRIDGE_NAME2="${VIRT_HOST_BRIDGE_NAME2:-virbr_host2}"
+
 # Note that TARGET_MAC1 and HOST_MAC1 are used with DHCP and must be unique to
 # your testbed.  Use the ./gen_macaddr.py script and replace these values
 # for your testbed.
