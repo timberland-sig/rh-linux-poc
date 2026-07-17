@@ -47,7 +47,7 @@ install_user() {
     if [ ! -f .usr ]; then
         sudo dnf install -y vim git wget ethtool net-tools zip unzip NetworkManager \
             lorax-lmc-novirt pykickstart openssl make python3-pytest python3-jsonschema \
-            python3 python3-blessed python3-paramiko python3-scp xterm xorg-x11-xauth
+            python3 python3-blessed python3-paramiko python3-scp python3-dotenv xterm xorg-x11-xauth
         touch .usr
     else
         echo " : Nothing to do!"
