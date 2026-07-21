@@ -217,9 +217,11 @@ install_edk2() {
     pushd edk2/edk2
     make -C BaseTools clean
     rm -rf Build
+    rm -f build.log
     make -C BaseTools
     source edksetup.sh
-    build -t GCC -a X64 -p OvmfPkg/OvmfPkgX64.dsc
+    build -t GCC -a X64 -p OvmfPkg/OvmfPkgX64.dsc -D NETWORK_SNP_ENABLE=FALSE -D NETWORK_IP6_ENABLE=FALSE \
+        -D NETWORK_ISCSI_ENABLE=FALSE -D NETWORK_PXE_BOOT_ENABLE=FALSE 2>&1 | tee -a build.log
 
     clean_edk2
 
