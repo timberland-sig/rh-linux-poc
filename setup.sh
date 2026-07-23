@@ -206,7 +206,8 @@ install_edk2() {
         # Timberland currently has two different release candidate branches to test.
         # Either one of these branches should work.
         # git clone -b dev-spdk-integration3 https://github.com/timberland-sig/edk2.git
-        git clone -b rel/timberland_1_0_1 git@github.com:timberland-sig/edk2.git
+        # git clone -b rel/timberland_1_0_1 git@github.com:timberland-sig/edk2.git
+        git clone -b timberland_1_0_1-john-nospdk git@github.com:johnmeneghini/edk2.git
         pushd edk2
         # The following is not needed with the dev-spdk-integration3 or rel/timberland_1_0_1 branch.
         # git config url."ssh://git@github.com/timberland-sig".insteadOf https://github.com/timberland-sig
@@ -220,8 +221,7 @@ install_edk2() {
     rm -f build.log
     make -C BaseTools
     source edksetup.sh
-    build -t GCC -a X64 -p OvmfPkg/OvmfPkgX64.dsc -D NETWORK_SNP_ENABLE=FALSE -D NETWORK_IP6_ENABLE=FALSE \
-        -D NETWORK_ISCSI_ENABLE=FALSE -D NETWORK_PXE_BOOT_ENABLE=FALSE 2>&1 | tee -a build.log
+    build -t GCC -a X64 -p OvmfPkg/OvmfPkgX64.dsc -D NETWORK_PXE_BOOT_ENABLE=FALSE 2>&1 | tee -a build.log
 
     clean_edk2
 
