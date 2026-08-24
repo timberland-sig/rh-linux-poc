@@ -165,7 +165,7 @@ class VMRunner:
     def collect_artifacts(self, host_ip: str, artifacts_dir: Path) -> bool:
         """SSH into the host-vm and collect intersting artifacts"""
 
-        ssh_key = SCRIPT_DIR / ".ssh" / "id_ecdsa"
+        ssh_key = SCRIPT_DIR / ".." / ".ssh" / "id_ecdsa"
         print("Collecting artifacts from host-vm...")
         client = paramiko.SSHClient()
         client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
