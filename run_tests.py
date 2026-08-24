@@ -214,7 +214,7 @@ class NetworkSetup:
             print(f"✗ Error checking target VM disk: {e}")
             return False
 
-    def _get_target_cidr_env(self) -> Dict[str, str]:
+    def _load_target_cidr_env(self) -> Dict[str, str]:
         """Build environment variables for TARGET_CIDR from network config."""
         env = os.environ.copy()
         env.update(dotenv_values(SCRIPT_DIR / ".env"))
@@ -264,7 +264,7 @@ class NetworkSetup:
             raise RuntimeError("Target VM disk not ready")
 
         # Prepare environment with TARGET_CIDR variables
-        env = self._get_target_cidr_env()
+        env = self._load_target_cidr_env()
 
         # Build vm.sh command with display mode
         cmd = ['bash', './vm.sh', 'start', 'disks/boot.qcow2']
