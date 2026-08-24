@@ -35,6 +35,7 @@ DEFAULTS = {
     'HOST_IP3': '192.168.110.30',
     'TARGET_IP2': '192.168.101.20',
     'TARGET_IP3': '192.168.110.20',
+    'SUBNET': '24',
     'SUBNQN': 'nqn.2014-08.org.nvmexpress:uuid:0c468c4d-a385-47e0-8299-6e95051277db',
 }
 
@@ -260,6 +261,8 @@ class NetworkSetup:
         env = os.environ.copy()
         env.update(dotenv_values(SCRIPT_DIR / ".env"))
         env['_DEFAULTS_SKIP_ENV'] = '1'
+        env['TARGET_CIDR2'] = f"{DEFAULTS['TARGET_IP2']}/{DEFAULTS['SUBNET']}"
+        env['TARGET_CIDR3'] = f"{DEFAULTS['TARGET_IP3']}/{DEFAULTS['SUBNET']}"
 
         # Extract target IPs and subnet masks from network config
         for bridge_name, bridge_key in [('br1', 'br1'), ('br2', 'br2')]:
@@ -270,7 +273,7 @@ class NetworkSetup:
             target_ip = bridge_config.get('targetVmIp', '')
             subnet_mask = bridge_config.get('subnetMask', 24)
 
-            if len(target_ip) == 0:
+            if len(target_ip) == 0 or target_ip == "dhcp":
                 continue
 
             # Ensure we have CIDR notation
