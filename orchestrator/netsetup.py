@@ -81,7 +81,7 @@ class NetworkSetup:
     def _load_target_cidr_env(self) -> Dict[str, str]:
         """Build environment variables for TARGET_CIDR from network config."""
         env = os.environ.copy()
-        env.update(dotenv_values(SCRIPT_DIR / ".env"))
+        env.update(dotenv_values(self.script_dir / ".env"))
         env['_DEFAULTS_SKIP_ENV'] = '1'
         env['TARGET_CIDR2'] = f"{DEFAULTS['TARGET_IP2']}/{DEFAULTS['SUBNET']}"
         env['TARGET_CIDR3'] = f"{DEFAULTS['TARGET_IP3']}/{DEFAULTS['SUBNET']}"
