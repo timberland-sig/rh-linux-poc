@@ -126,12 +126,16 @@ def load_test_config(test_file: str, schema_file: str) -> Dict[str, Any]:
     return config
 
 
-def prepare_environment(environment: Dict[str, Any], display_mode: str = 'vnc', vnc_display: Optional[int] = None):
+def prepare_environment(environment: Dict[str, Any], display_mode: str = 'vnc', vnc_display: Optional[int] = None,
+                        use_router: bool = False):
     """Setup network and target-vm for an environment."""
     network_setup = NetworkSetup(environment['network'], SCRIPT_DIR)
 
     network_setup.setup()
-    network_setup.setup_target_vm(display_mode=display_mode, vnc_display=vnc_display)
+    if use_router:
+        network_setup.setup_router()
+    network_setup.setup_target_vm(display_mode=display_mode, vnc_display=vnc_display,
+                                   use_router=use_router)
 
 
 # Pytest test parametrization hook
@@ -174,6 +178,7 @@ class TestNVMeBoot:
         cls.config = load_merged_config(test_files, schema_file)
         cls.cli_vnc = json.loads(os.environ.get('TEST_CLI_VNC', 'null'))
         cls.cli_graphical = os.environ.get('TEST_CLI_GRAPHICAL', '') == '1'
+        cls.no_timeout = os.environ.get('TEST_NO_TIMEOUT', '') == '1'
         ARTIFACTS_DIR.mkdir(exist_ok=True)
         print("\n" + "="*70)
         print("NVMe/TCP Boot Test Suite")
@@ -196,18 +201,26 @@ class TestNVMeBoot:
             env_config=environment,
         )
 
+        use_router = environment.get('useRouter', False)
+
         # Setup network once per environment
         if env_idx not in self.__class__.setup_environments:
             print(f"\n{'='*70}")
             print(f"Setting up environment: {env_name}")
+            if use_router:
+                print("Virtual router: enabled")
             print(f"{'='*70}")
             try:
-                # Teardown network before setting up new environment
+                # Teardown before setting up new environment
                 network_setup = NetworkSetup(environment['network'], SCRIPT_DIR)
-                network_setup.teardown()
+                if use_router:
+                    network_setup.teardown_router()
+                else:
+                    network_setup.teardown()
 
                 # Setup the new environment
-                prepare_environment(environment, display_mode=display_mode, vnc_display=vnc_display)
+                prepare_environment(environment, display_mode=display_mode, vnc_display=vnc_display,
+                                    use_router=use_router)
                 self.__class__.setup_environments.add(env_idx)
             except RuntimeError as e:
                 pytest.exit(f"SETUP FAILED: {e}", returncode=1)
@@ -219,10 +232,13 @@ class TestNVMeBoot:
 
         test = tests[test_idx]
         test_name = test.get('name', f'Test {test_idx}')
-        timeout = test.get('timeout', 120)
 
-        if timeout < 30:
-            warnings.warn(f"Test '{test_name}' has a timeout of {timeout}s, which may be too low for a boot test.")
+        if self.__class__.no_timeout:
+            timeout = float('inf')
+        else:
+            timeout = test.get('timeout', 120)
+            if timeout < 30:
+                warnings.warn(f"Test '{test_name}' has a timeout of {timeout}s, which may be too low for a boot test.")
 
         print(f"\n{'-'*70}")
         print(f"Running: {test_name}")
@@ -322,6 +338,12 @@ Examples:
         help='Validate configuration only, do not execute tests'
     )
 
+    parser.add_argument(
+        '--no-timeout',
+        action='store_true',
+        help='Disable test timeouts (wait indefinitely until success or manual kill)'
+    )
+
     display_group = parser.add_mutually_exclusive_group()
     display_group.add_argument(
         '--vnc',
@@ -352,6 +374,7 @@ Examples:
     os.environ['TEST_SCHEMA_FILE'] = args.schema_file
     os.environ['TEST_CLI_VNC'] = json.dumps(args.vnc)
     os.environ['TEST_CLI_GRAPHICAL'] = '1' if args.graphical else ''
+    os.environ['TEST_NO_TIMEOUT'] = '1' if args.no_timeout else ''
 
     try:
         if args.dry_run:

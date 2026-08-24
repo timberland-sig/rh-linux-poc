@@ -101,7 +101,7 @@ case "$VMNAME" in
                 # in dynamic mode, and also when there is no br0 on the
                 # hypervisor: in that case net0/$TARGET_MAC1 is actually
                 # QEMU usermode (SLIRP) networking, not the router's
-                # TARGET1_NET subnet, and already has its own working
+                # ROUTER_TO_TARGET_NET1 subnet, and already has its own working
                 # DHCP-assigned address/gateway/DNS that must not be
                 # touched.
                 if [ "$target_ip" = "localhost" ]; then
@@ -131,7 +131,7 @@ set -e
                 # in dynamic mode, and also when there is no br0 on the
                 # hypervisor: in that case net0/$HOST_MAC1 is actually
                 # QEMU usermode (SLIRP) networking, not the router's
-                # HOST1_NET subnet, and already has its own working
+                # ROUTER_TO_HOST_NET1 subnet, and already has its own working
                 # DHCP-assigned address/gateway/DNS that must not be
                 # touched.
                 if [ "$target_ip" = "localhost" ]; then
@@ -162,26 +162,26 @@ if has_router && ! has_dhcpd; then
     # not via $target_ip, which is only routable from the hypervisor.
     case "$VMNAME" in
         target-vm)
-            VM_RESIP="${TARGET1_RESIP}"
+            VM_RESIP="${ROUTER_TO_TARGET_RESIP1}"
             export VM_ROLE="target"
             export GATEWAY_MAC="${TARGET_MAC1}"
-            export GATEWAY_IP="${TARGET1_IP}"
+            export GATEWAY_IP="${ROUTER_TO_TARGET_IP1}"
             export MAC2="${TARGET_MAC2}"
             export MAC3="${TARGET_MAC3}"
             # Routes for TARGET: access HOST networks via TARGET interfaces
-            export ROUTES2="nmcli con modify \"\$CONN2\" +ipv4.routes \"${HOST2_NET} ${TARGET2_IP}\" +ipv4.routes \"${BRIDGE1_NET} ${TARGET2_IP}\""
-            export ROUTES3="nmcli con modify \"\$CONN3\" +ipv4.routes \"${HOST3_NET} ${TARGET3_IP}\" +ipv4.routes \"${BRIDGE2_NET} ${TARGET3_IP}\""
+            export ROUTES2="nmcli con modify \"\$CONN2\" +ipv4.routes \"${ROUTER_TO_HOST_NET2} ${ROUTER_TO_TARGET_IP2}\" +ipv4.routes \"${BRIDGE1_NET} ${ROUTER_TO_TARGET_IP2}\""
+            export ROUTES3="nmcli con modify \"\$CONN3\" +ipv4.routes \"${ROUTER_TO_HOST_NET3} ${ROUTER_TO_TARGET_IP3}\" +ipv4.routes \"${BRIDGE2_NET} ${ROUTER_TO_TARGET_IP3}\""
             ;;
         host-vm)
-            VM_RESIP="${HOST1_RESIP}"
+            VM_RESIP="${ROUTER_TO_HOST_RESIP1}"
             export VM_ROLE="host"
             export GATEWAY_MAC="${HOST_MAC1}"
-            export GATEWAY_IP="${HOST1_IP}"
+            export GATEWAY_IP="${ROUTER_TO_HOST_IP1}"
             export MAC2="${HOST_MAC2}"
             export MAC3="${HOST_MAC3}"
             # Routes for HOST: access TARGET networks via HOST interfaces
-            export ROUTES2="nmcli con modify \"\$CONN2\" +ipv4.routes \"${TARGET2_NET} ${HOST2_IP}\" +ipv4.routes \"${BRIDGE1_NET} ${HOST2_IP}\""
-            export ROUTES3="nmcli con modify \"\$CONN3\" +ipv4.routes \"${TARGET3_NET} ${HOST3_IP}\" +ipv4.routes \"${BRIDGE2_NET} ${HOST3_IP}\""
+            export ROUTES2="nmcli con modify \"\$CONN2\" +ipv4.routes \"${ROUTER_TO_TARGET_NET2} ${ROUTER_TO_HOST_IP2}\" +ipv4.routes \"${BRIDGE1_NET} ${ROUTER_TO_HOST_IP2}\""
+            export ROUTES3="nmcli con modify \"\$CONN3\" +ipv4.routes \"${ROUTER_TO_TARGET_NET3} ${ROUTER_TO_HOST_IP3}\" +ipv4.routes \"${BRIDGE2_NET} ${ROUTER_TO_HOST_IP3}\""
             ;;
     esac
     export DNS_SERVERS
