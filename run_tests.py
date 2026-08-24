@@ -35,6 +35,8 @@ DEFAULTS = {
     'HOST_IP3': '192.168.110.30',
     'TARGET_IP2': '192.168.101.20',
     'TARGET_IP3': '192.168.110.20',
+    'TARGET_PORT': 5555,
+    'HOST_PORT': 5556,
     'SUBNET': '24',
     'SUBNQN': 'nqn.2014-08.org.nvmexpress:uuid:0c468c4d-a385-47e0-8299-6e95051277db',
 }
@@ -117,6 +119,30 @@ def sanitize_dir_name(name: str) -> str:
     name = re.sub(r'[^a-z0-9]+', '-', name)
     name = name.strip('-')
     return name
+
+
+def check_ssh(host: str, port: int = 22) -> bool:
+    """Check if SSH connection, authentication, and channel execution succeed."""
+    ssh_key = SCRIPT_DIR / ".ssh" / "id_ecdsa"
+    client = paramiko.SSHClient()
+    client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    try:
+        client.connect(
+            host,
+            port=port,
+            username='root',
+            key_filename=str(ssh_key),
+            timeout=5,
+            banner_timeout=5,
+            auth_timeout=5,
+        )
+        _, stdout, _ = client.exec_command("true", timeout=5)
+        stdout.channel.recv_exit_status()
+        return True
+    except:
+        return False
+    finally:
+        client.close()
 
 
 def validate_schema(config: Dict[str, Any], schema_file: str) -> bool:
@@ -369,8 +395,22 @@ class NetworkSetup:
             raise RuntimeError("Target-vm QEMU process failed to start")
         print("✓ Target-vm started")
 
+        # Wait for target-vm SSH to become available
         br0_slave = self.network_config.get('br0', {}).get('slave', 'none')
         target_host = self._get_target_vm_host() if use_router and br0_slave != 'none' else 'localhost'
+        target_port = DEFAULTS['TARGET_PORT'] if target_host == 'localhost' else 22
+
+        print(f"Waiting for target-vm SSH on {target_host}...")
+        ssh_timeout = 60
+        start_time = time.time()
+        while time.time() - start_time < ssh_timeout:
+            if check_ssh(target_host, target_port):
+                elapsed = int(time.time() - start_time)
+                print(f"✓ Target-vm SSH is ready (took {elapsed}s)")
+                break
+            time.sleep(2)
+        else:
+            raise RuntimeError(f"Target-vm SSH not available within {ssh_timeout}s")
 
         # Run netsetup.sh with timeout
         print(f"Configuring target-vm network with './netsetup.sh {target_host}'...")
@@ -628,12 +668,12 @@ class EFIConfigGenerator:
 
         gateway = '0.0.0.0'
         if host_ip == 'dhcp':
-            ip_mode = 1
             local_ip = '0.0.0.0'
             subnet_mask = '0.0.0.0'
+            use_host_dhcp = "TRUE"
         else:
-            ip_mode = 0
             local_ip = host_ip
+            use_host_dhcp = "FALSE"
 
         config = f"""$Start
 AttemptName:Attempt{attempt_num}
@@ -641,7 +681,8 @@ HostName:host-vm
 MacString:{mac}
 TargetPort:{port}
 Enabled:1
-IpMode:{ip_mode}
+IpMode:0
+InitiatorInfoFromDhcp:{use_host_dhcp}
 LocalIp:{local_ip}
 SubnetMask:{subnet_mask}
 Gateway:{gateway}
@@ -797,7 +838,7 @@ class VMRunner:
                 vm_pings = True
 
             # Try SSH connection
-            if not vm_has_ssh and self._check_ssh(host_ip):
+            if not vm_has_ssh and check_ssh(host_ip):
                 elapsed = int(time.time() - start_time)
                 print(f"✓ VM is responsive via SSH (took {elapsed}s)")
                 vm_has_ssh = True
@@ -807,29 +848,6 @@ class VMRunner:
 
         print(f"✗ VM did not become responsive within {timeout}s")
         return False
-
-    def _check_ssh(self, host_ip: str, port: int = 22) -> bool:
-        """Check if SSH connection, authentication, and channel execution succeed."""
-        ssh_key = SCRIPT_DIR / ".ssh" / "id_ecdsa"
-        client = paramiko.SSHClient()
-        client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        try:
-            client.connect(
-                host_ip,
-                port=port,
-                username='root',
-                key_filename=str(ssh_key),
-                timeout=5,
-                banner_timeout=5,
-                auth_timeout=5,
-            )
-            _, stdout, _ = client.exec_command("true", timeout=5)
-            stdout.channel.recv_exit_status()
-            return True
-        except:
-            return False
-        finally:
-            client.close()
 
     def _check_ping(self, host_ip: str) -> bool:
         """Check if host responds to ping."""
