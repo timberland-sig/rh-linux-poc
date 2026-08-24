@@ -940,7 +940,7 @@ class TestNVMeBoot:
                 prepare_environment(environment, display_mode=display_mode, vnc_display=vnc_display)
                 self.__class__.setup_environments.add(env_idx)
             except RuntimeError as e:
-                pytest.fail(f"SETUP FAILED: {e}")
+                pytest.exit(f"SETUP FAILED: {e}", returncode=1)
 
         # Get the specific test
         tests = environment.get('tests', [])
