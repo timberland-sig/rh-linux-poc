@@ -3,6 +3,7 @@ import re
 import subprocess
 
 from pathlib import Path
+from typing import List, Optional
 
 
 SCRIPT_DIR = Path(__file__).parent
@@ -67,6 +68,37 @@ def check_ssh(host: str, port: int = 22) -> bool:
         return False
     finally:
         client.close()
+
+
+def run_script(cmd: List[str], label: str, timeout: int, cwd: Optional[Path] = None):
+    """Run a shell script, printing status and raising RuntimeError on failure.
+
+    label: Human-readable name for the operation, starting with a capital letter.
+           Forms status messages ("✓ {label} completed successfully") and
+           RuntimeError messages ("{label} failed with exit code N", "{label} timed out").
+    """
+    print(f"Running: {' '.join(cmd)}")
+    try:
+        result = subprocess.run(
+            cmd,
+            cwd=cwd,
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+        )
+        if result.returncode == 0:
+            print(f"✓ {label} completed successfully")
+        else:
+            print(f"✗ {label} failed with code {result.returncode}")
+            if result.stderr:
+                print(f"Error:\n{result.stderr}")
+            raise RuntimeError(f"{label} failed with exit code {result.returncode}")
+    except subprocess.TimeoutExpired:
+        print(f"✗ {label} timed out")
+        raise RuntimeError(f"{label} timed out")
+    except FileNotFoundError:
+        print(f"✗ Script not found: {cmd[0]}")
+        raise RuntimeError(f"Script not found: {cmd[0]}")
 
 
 def check_ping(host_ip: str) -> bool:
