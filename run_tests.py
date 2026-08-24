@@ -229,7 +229,7 @@ class NetworkSetup:
 
     def _check_target_vm_disk(self) -> bool:
         """Check if target-vm disk exists and has non-zero size."""
-        disk_path = self.target_vm_dir / "disks" / "rh-boot.qcow2"
+        disk_path = self.target_vm_dir / "disks" / "boot.qcow2"
 
         if not disk_path.exists():
             print(f"✗ Target VM disk not found: {disk_path}")
@@ -302,7 +302,7 @@ class NetworkSetup:
         env = self._get_target_cidr_env()
 
         # Build vm.sh command with display mode
-        cmd = ['bash', './vm.sh', 'start', 'disks/rh-boot.qcow2']
+        cmd = ['bash', './vm.sh', 'start', 'disks/boot.qcow2']
         if display_mode == 'graphical':
             cmd.append('--graphical')
         elif display_mode == 'vnc':
