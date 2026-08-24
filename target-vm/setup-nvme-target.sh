@@ -37,9 +37,9 @@ for zone in $(firewall-cmd --get-active-zones | grep -v '^\s' | cut -d' ' -f1); 
     firewall-cmd --zone=$zone --add-port=4420/tcp --permanent
 done
 
-sed -i "s|DISKPATH|$nvme_disk_path|" tcp.json
 # Backs up the original system nvmet config (if present)
-cp -b tcp.json /etc/nvmet/config.json
+cp /etc/nvmet/config.json /etc/nvmet/.config.json.old
+sed "s|DISKPATH|$nvme_disk_path|" tcp.json > /etc/nvmet/config.json
 
 systemctl daemon-reload
 systemctl restart firewalld
