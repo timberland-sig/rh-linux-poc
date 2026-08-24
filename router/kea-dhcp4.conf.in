@@ -74,10 +74,6 @@
             "pools": [ { "pool": "${TARGET2_POOL}" } ],
             "interface": "${TARGET2_IFACE}",
             "option-data": [
-                {
-                    "name": "routers",
-                    "data": "${TARGET2_IP}"
-                },
                 // Classless Static Routes (Option 121)
                 {
                     "name": "classless-static-route",
@@ -98,10 +94,6 @@
             "pools": [ { "pool": "${TARGET3_POOL}" } ],
             "interface": "${TARGET3_IFACE}",
             "option-data": [
-                {
-                    "name": "routers",
-                    "data": "${TARGET3_IP}"
-                },
                 // Classless Static Routes (Option 121)
                 {
                     "name": "classless-static-route",
@@ -140,10 +132,6 @@
             "pools": [ { "pool": "${HOST2_POOL}" } ],
             "interface": "${HOST2_IFACE}",
             "option-data": [
-                {
-                    "name": "routers",
-                    "data": "${HOST2_IP}"
-                },
                 // Classless Static Routes (Option 121)
                 {
                     "name": "classless-static-route",
@@ -164,10 +152,6 @@
             "pools": [ { "pool": "${HOST3_POOL}" } ],
             "interface": "${HOST3_IFACE}",
             "option-data": [
-                {
-                    "name": "routers",
-                    "data": "${HOST3_IP}"
-                },
                 // Classless Static Routes (Option 121)
                 {
                     "name": "classless-static-route",
