@@ -414,7 +414,7 @@ class NetworkSetup:
                 stdin=subprocess.DEVNULL,
                 capture_output=True,
                 text=True,
-                timeout=60
+                timeout=120
             )
 
             if result.returncode != 0:
