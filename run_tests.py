@@ -355,7 +355,7 @@ class NetworkSetup:
 
         # Run netsetup.sh with timeout
         print("Configuring target-vm network with './netsetup.sh localhost'...")
-        netsetup_script = self.script_dir / "vm-lib" / "netsetup.sh"
+        netsetup_script = self.script_dir / "target-vm" / "netsetup.sh"
 
         try:
             result = subprocess.run(
