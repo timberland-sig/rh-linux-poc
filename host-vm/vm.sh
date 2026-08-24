@@ -163,9 +163,11 @@ if [ ! -f eficonfig/NvmeOfCli.efi ]; then
     exit 1
 fi
 
-if [ ! -f vm_vars.fd ]; then
-    echo "Error: $PWD/vm_vars.fd not found!"
-    exit 1
+if [ "$OS_LOCATION" != "local" ] || [ "$LOCAL_HOST_VM_USE_NBFT" = "true" ]; then
+    if [ ! -f vm_vars.fd ]; then
+        echo "Error: $PWD/vm_vars.fd not found!"
+        exit 1
+    fi
 fi
 
 if [ ! -f OVMF_CODE.fd ]; then
@@ -208,8 +210,7 @@ fi
 BOOT_OPTIONS="-boot menu=on,splash-time=2000"
 
 VM_VARS_FLASH="-drive if=pflash,format=raw,file=vm_vars.fd"
-if [ "$OS_LOCATION" = "local" ] ; then
-    # No need for vm_vars.fd if booting from a local disk
+if [ "$OS_LOCATION" = "local" ] && [ "$LOCAL_HOST_VM_USE_NBFT" != "true" ] ; then
     VM_VARS_FLASH=""
 fi
 
