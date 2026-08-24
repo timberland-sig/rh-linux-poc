@@ -18,7 +18,7 @@ from typing import Dict, List, Any, Optional
 import pytest
 
 from orchestrator.eficonfig import EFIConfigGenerator
-from orchestrator.utils import *
+from orchestrator.utils import sanitize_dir_name
 from orchestrator.netsetup import NetworkSetup
 from orchestrator.runner import VMRunner
 
