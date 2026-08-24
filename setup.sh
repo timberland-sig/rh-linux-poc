@@ -278,8 +278,7 @@ install_edk2() {
         #  Note: replace http for git@github.com:timberland-sig/edk2.git with
         #  git config url."ssh://git@github.com/timberland-sig".insteadOf https://github.com/timberland-sig
 
-        # git clone -b timberland_1_0_1-john https://github.com/timberland-sig/edk2.git
-        git clone -b timberland_1_0_1-john-nospdk https://github.com/timberland-sig/edk2.git
+        git clone -b "$EDK2_REPO_BRANCH" "$EDK2_REPO_URL"
         pushd edk2
         git submodule update --init --recursive
         popd
