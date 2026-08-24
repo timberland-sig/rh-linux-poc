@@ -41,6 +41,7 @@ timezone Europe/Prague --utc
 
 # Root password
 rootpw --iscrypted --allow-ssh <ROOT_PASSWD>
+sshpw --username=root --iscrypted <ROOT_PASSWD>
 
 %post
 # Loop through all detected network devices and ensure they are set to auto-connect

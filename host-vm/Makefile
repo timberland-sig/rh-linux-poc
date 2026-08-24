@@ -322,7 +322,7 @@ nvmeof-utils/ovmf_vars_set: nvmeof-utils/ovmf_vars_set.c
 # Simply embed the anaconda kickstart file into the ISO
 boot.iso: .diso anaconda-ks.cfg ../vm-lib/common.sh
 	rm -f $@
-	sudo mkksiso --ks anaconda-ks.cfg $(INPUT_ISO) $@
+	sudo mkksiso --ks anaconda-ks.cfg --cmdline "inst.sshd" $(INPUT_ISO) $@
 
 anaconda-ks.cfg: anaconda-ks.cfg.template
 	@read -p "Enter a root password for the host-vm: " -s PASSWORD; echo; sed -e "s|<ROOT_PASSWD>|$$(openssl passwd -1 -stdin <<< $$PASSWORD)|" $< > $@
