@@ -74,7 +74,7 @@ case "$VMNAME" in
             TARGET_CIDR3=dhcp
         fi
         make --makefile="$PWD/Makefile" .build/tcp.json
-        scp -i $DIR/../.ssh/id_ecdsa -o StrictHostKeyChecking=no .build/{tcp.json,hosts.txt} $PWD/setup-nvme-target.sh $PWD/nvmet-mods.conf $DIR/../vm-lib/remote-netsetup.sh scp://${SSH_TARGET}
+        scp -i $DIR/../.ssh/id_ecdsa -o StrictHostKeyChecking=no .build/{tcp.json,hosts.txt} $PWD/wipe-nvme.sh $PWD/setup-nvme-target.sh $PWD/nvmet-mods.conf $DIR/../vm-lib/remote-netsetup.sh scp://${SSH_TARGET}
         run_ssh $VMNAME "
 set -e
 . remote-netsetup.sh $TARGET_MAC2 $TARGET_MAC3 \"$TARGET_CIDR2\" \"$TARGET_CIDR3\"
