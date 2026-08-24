@@ -334,7 +334,7 @@ clean-config:
 	-rm -f eficonfig/config
 
 .PHONY: reconfig
-reconfig: clean-config eficonfig/config
+reconfig: clean-config setup
 
 .PHONY: config
 config: reconfig
