@@ -134,15 +134,6 @@ def prepare_environment(environment: Dict[str, Any], display_mode: str = 'vnc', 
     network_setup.setup_target_vm(display_mode=display_mode, vnc_display=vnc_display)
 
 
-def generate_test_config(test: Dict[str, Any], environment: Dict[str, Any]):
-    """Generate EFI configuration for a test."""
-    efi_config = EFIConfigGenerator(
-        test=test,
-        environment=environment,
-    )
-    efi_config.generate()
-
-
 # Pytest test parametrization hook
 def pytest_generate_tests(metafunc):
     """Dynamically generate test parameters for each test case."""
@@ -237,11 +228,9 @@ class TestNVMeBoot:
         print(f"Running: {test_name}")
         print(f"{'-'*70}")
 
-        # Generate EFI config
-        generate_test_config(test, environment)
-
-        # Get expected host IP
+        # Generate EFI config and extract host IP from same instance
         efi_gen = EFIConfigGenerator(test, environment)
+        efi_gen.generate()
         host_ip = efi_gen.get_host_ip()
 
         # Prepare artifacts directory
