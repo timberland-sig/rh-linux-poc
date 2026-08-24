@@ -50,6 +50,11 @@
           "maximum": 99,
           "description": "VNC display number (default: 0 for target-vm, 1 for host-vm)"
         },
+        "useRouter": {
+          "type": "boolean",
+          "description": "When true, a virtual router is started for this environment. When false or absent, regular bridged networing is used.",
+          "default": false
+        },
         "tests": {
           "type": "array",
           "description": "List of test configurations",
@@ -176,6 +181,11 @@
               "type": "string",
               "const": "default",
               "description": "Use default host IP"
+            },
+            {
+              "type": "string",
+              "const": "dhcp",
+              "description": "Use DHCP to obtain the host IP address (IpMode=1)"
             }
           ]
         },
