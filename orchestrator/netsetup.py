@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Dict, List, Any, Optional
 
 from orchestrator.defaults import DEFAULTS
-from orchestrator.utils import netmask_to_cidr, check_ssh
+from orchestrator.utils import netmask_to_cidr, check_ssh, run_script
 
 
 SCRIPT_DIR = Path(__file__).parent
@@ -247,36 +247,6 @@ class NetworkSetup:
 
         print("✓ Target-vm setup complete")
 
-    def teardown(self):
-        """Execute network teardown."""
-        teardown_script = self.script_dir / "teardown.sh"
-        cmd = [str(teardown_script), 'net']
-
-        print(f"Running: {' '.join(cmd)}")
-
-        try:
-            result = subprocess.run(
-                cmd,
-                cwd=self.script_dir,
-                capture_output=True,
-                text=True,
-                timeout=60
-            )
-
-            if result.returncode == 0:
-                print("✓ Network teardown completed successfully")
-            else:
-                print(f"✗ Network teardown failed with code {result.returncode}")
-                if result.stderr:
-                    print(f"Error:\n{result.stderr}")
-                raise RuntimeError(f"Network teardown failed with exit code {result.returncode}")
-        except subprocess.TimeoutExpired:
-            print("✗ Network teardown timed out")
-            raise RuntimeError("Network teardown timed out")
-        except FileNotFoundError:
-            print(f"✗ Teardown script not found: {teardown_script}")
-            raise RuntimeError(f"Teardown script not found: {teardown_script}")
-
     def setup(self):
         """Execute network setup."""
         args = self._build_setup_args()
@@ -287,90 +257,18 @@ class NetworkSetup:
             ip_idx = i * 2 + 1
             print(f"  {bridge}: slave={args[slave_idx]}, ip={args[ip_idx]}")
 
-        setup_script = self.script_dir / "setup.sh"
-        cmd = [str(setup_script), 'net'] + args
+        print()
+        run_script([str(self.script_dir / "setup.sh"), 'net'] + args, "Network setup", 300, self.script_dir)
 
-        print(f"\nRunning: {' '.join(cmd)}")
-
-        try:
-            result = subprocess.run(
-                cmd,
-                cwd=self.script_dir,
-                capture_output=True,
-                text=True,
-                timeout=300
-            )
-
-            if result.returncode == 0:
-                print("✓ Network setup completed successfully")
-            else:
-                print(f"✗ Network setup failed with code {result.returncode}")
-                if result.stderr:
-                    print(f"Error:\n{result.stderr}")
-                raise RuntimeError(f"Network setup failed with exit code {result.returncode}")
-        except subprocess.TimeoutExpired:
-            print("✗ Network setup timed out after 5 minutes")
-            raise RuntimeError("Network setup timed out after 5 minutes")
-        except FileNotFoundError:
-            print(f"✗ Setup script not found: {setup_script}")
-            raise RuntimeError(f"Setup script not found: {setup_script}")
+    def teardown(self):
+        """Execute network teardown."""
+        run_script([str(self.script_dir / "teardown.sh"), 'net'], "Network teardown", 60, self.script_dir)
 
     def setup_router(self):
         """Provision and start the virtual router using ./setup.sh router."""
-        setup_script = self.script_dir / "setup.sh"
-        cmd = [str(setup_script), 'router']
-
-        print(f"\nRunning: {' '.join(cmd)}")
-
-        try:
-            result = subprocess.run(
-                cmd,
-                cwd=self.script_dir,
-                capture_output=True,
-                text=True,
-                timeout=300
-            )
-
-            if result.returncode == 0:
-                print("✓ Router setup completed successfully")
-            else:
-                print(f"✗ Router setup failed with code {result.returncode}")
-                if result.stderr:
-                    print(f"Error:\n{result.stderr}")
-                raise RuntimeError(f"Router setup failed with exit code {result.returncode}")
-        except subprocess.TimeoutExpired:
-            print("✗ Router setup timed out after 5 minutes")
-            raise RuntimeError("Router setup timed out after 5 minutes")
-        except FileNotFoundError:
-            print(f"✗ Setup script not found: {setup_script}")
-            raise RuntimeError(f"Setup script not found: {setup_script}")
+        print()
+        run_script([str(self.script_dir / "setup.sh"), 'router'], "Router setup", 300, self.script_dir)
 
     def teardown_router(self):
         """Tear down the virtual router using ./teardown.sh router."""
-        teardown_script = self.script_dir / "teardown.sh"
-        cmd = [str(teardown_script), 'router']
-
-        print(f"Running: {' '.join(cmd)}")
-
-        try:
-            result = subprocess.run(
-                cmd,
-                cwd=self.script_dir,
-                capture_output=True,
-                text=True,
-                timeout=60
-            )
-
-            if result.returncode == 0:
-                print("✓ Router teardown completed successfully")
-            else:
-                print(f"✗ Router teardown failed with code {result.returncode}")
-                if result.stderr:
-                    print(f"Error:\n{result.stderr}")
-                raise RuntimeError(f"Router teardown failed with exit code {result.returncode}")
-        except subprocess.TimeoutExpired:
-            print("✗ Router teardown timed out")
-            raise RuntimeError("Router teardown timed out")
-        except FileNotFoundError:
-            print(f"✗ Teardown script not found: {teardown_script}")
-            raise RuntimeError(f"Teardown script not found: {teardown_script}")
+        run_script([str(self.script_dir / "teardown.sh"), 'router'], "Router teardown", 60, self.script_dir)
