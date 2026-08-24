@@ -8,6 +8,7 @@ and runs boot tests using pytest.
 """
 
 import json
+import logging
 import os
 import re
 import shutil
@@ -25,6 +26,7 @@ import pytest
 
 
 warnings.formatwarning = lambda msg, *args, **kwargs: f"Warning: {msg}\n"
+logging.getLogger('paramiko').setLevel(logging.CRITICAL)
 
 # Default values for test configuration, matching defaults.sh
 DEFAULTS = {
