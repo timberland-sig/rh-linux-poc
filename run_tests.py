@@ -865,7 +865,7 @@ class VMRunner:
         """Follow the bootlog file and wait for a regex pattern to appear."""
         bootlog_path = self.host_vm_dir / "bootlog"
         regex = re.compile(pattern)
-        print(f"Waiting for bootlog entry: {pattern} (timeout: {timeout}s)...")
+        print(f"Waiting for bootlog entry regex: R\"{pattern}\" (timeout: {timeout}s)...")
         start_time = time.time()
 
         while not bootlog_path.exists():
