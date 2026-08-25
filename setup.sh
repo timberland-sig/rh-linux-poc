@@ -275,11 +275,12 @@ install_edk2() {
         pushd edk2
         # Timberland currently has two different release candidate branches to test.
         # Either one of these branches should work.
-        # git clone -b dev-spdk-integration3 https://github.com/timberland-sig/edk2.git
-        git clone -b rel/timberland_1_0_1 https://github.com/timberland-sig/edk2.git
+        #  Note: replace http for git@github.com:timberland-sig/edk2.git with
+        #  git config url."ssh://git@github.com/timberland-sig".insteadOf https://github.com/timberland-sig
+
+        # git clone -b timberland_1_0_1-john https://github.com/timberland-sig/edk2.git
+        git clone -b timberland_1_0_1-john-nospdk https://github.com/timberland-sig/edk2.git
         pushd edk2
-        # The following is not needed with the dev-spdk-integration3 or rel/timberland_1_0_1 branch.
-        # git config url."ssh://git@github.com/timberland-sig".insteadOf https://github.com/timberland-sig
         git submodule update --init --recursive
         popd
         popd
