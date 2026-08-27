@@ -5,7 +5,7 @@
 set -e
 
 DIR="$(dirname -- "$(realpath -- "$0")")"
-VMNAME=$(basename $PWD)
+export VMNAME=$(basename -- "$DIR")
 
 . $DIR/../vm-lib/common.sh
 . $DIR/../vm-lib/colors.sh
