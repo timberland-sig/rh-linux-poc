@@ -9,7 +9,9 @@ echo "$DIR"
 . $DIR/../defaults.sh
 . $DIR/../vm-lib/common.sh
 
-VMNAME=`basename $PWD`
+VMNAME=${VMNAME:-$(basename -- $PWD)}
+echo "VMNAME=${VMNAME}"
+VMDIR="$DIR/../$VMNAME"
 target_ip="$1"
 
 if [ $# -lt 1 ] ; then
@@ -54,15 +56,15 @@ SSH_TARGET="root@$target_ip"
 SSH_KNOWN_HOST_ID="$target_ip"
 case "$target_ip" in
     localhost)
-        make --makefile="$DIR/Makefile" NET_TYPE=localhost .build/hosts.txt
+        make -C "$VMDIR" NET_TYPE=localhost .build/hosts.txt
         SSH_TARGET="${SSH_TARGET}:$SSH_PORT"
         SSH_KNOWN_HOST_ID="[localhost]:$SSH_PORT"
     ;;
     *)
-        make --makefile="$DIR/Makefile" NET_TYPE=bridged .build/hosts.txt
+        make -C "$VMDIR" NET_TYPE=bridged .build/hosts.txt
     ;;
 esac
-chmod 644 .build/hosts.txt
+chmod 644 "$VMDIR/.build/hosts.txt"
 
 ssh-keygen -R "${SSH_KNOWN_HOST_ID}"
 ssh-copy-id -o StrictHostKeyChecking=no -o ConnectTimeout=20 -i $DIR/../.ssh/id_ecdsa.pub ssh://${SSH_TARGET}
@@ -73,8 +75,8 @@ case "$VMNAME" in
             TARGET_CIDR2=dhcp
             TARGET_CIDR3=dhcp
         fi
-        make --makefile="$PWD/Makefile" .build/tcp.json
-        scp -i $DIR/../.ssh/id_ecdsa -o StrictHostKeyChecking=no .build/{tcp.json,hosts.txt} $PWD/wipe-nvme.sh $PWD/setup-nvme-target.sh $PWD/nvmet-mods.conf $DIR/../vm-lib/remote-netsetup.sh scp://${SSH_TARGET}
+        make -C "$VMDIR" .build/tcp.json
+        scp -i $DIR/../.ssh/id_ecdsa -o StrictHostKeyChecking=no "${VMDIR}/.build/"{tcp.json,hosts.txt} $VMDIR/wipe-nvme.sh $VMDIR/setup-nvme-target.sh $VMDIR/nvmet-mods.conf $DIR/remote-netsetup.sh scp://${SSH_TARGET}
         run_ssh $VMNAME "
 set -e
 . remote-netsetup.sh $TARGET_MAC2 $TARGET_MAC3 \"$TARGET_CIDR2\" \"$TARGET_CIDR3\"
@@ -86,8 +88,8 @@ set -e
             HOST_CIDR2=dhcp
             HOST_CIDR3=dhcp
         fi
-        make --makefile="$PWD/Makefile" .build/discovery.conf
-        scp -i $DIR/../.ssh/id_ecdsa -o StrictHostKeyChecking=no .build/* $DIR/../vm-lib/remote-netsetup.sh scp://${SSH_TARGET}
+        make -C "$VMDIR" .build/discovery.conf
+        scp -i $DIR/../.ssh/id_ecdsa -o StrictHostKeyChecking=no ${VMDIR}/.build/* $DIR/../vm-lib/remote-netsetup.sh scp://${SSH_TARGET}
         run_ssh $VMNAME "\
             cp ./discovery.conf /etc/nvme/
 	    . remote-netsetup.sh $HOST_MAC2 $HOST_MAC3 \"$HOST_CIDR2\" \"$HOST_CIDR3\""
@@ -99,5 +101,5 @@ set -e
 esac
 
 echo ""
-echo "Use \"ssh -i $(realpath $PWD/../.ssh/id_ecdsa) ssh://${SSH_TARGET}\" to login to the $VMNAME"
+echo "Use \"ssh -i $(realpath $DIR/../.ssh/id_ecdsa) ssh://${SSH_TARGET}\" to login to the $VMNAME"
 echo ""
