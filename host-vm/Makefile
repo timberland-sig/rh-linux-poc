@@ -57,6 +57,7 @@ help:
 	@echo "  disks/boot.qcow2      Create an empty boot disk image ($(DRIVE_CAP))"
 	@echo "  boot.iso              Create a custom ISO with embedded Kickstart config"
 	@echo "  efidisk               Create EFI disk with NBFT configuration (this target is interactive)"
+	@echo "                        Use with './vm.sh nbft-setup' to program the NBFT into the VM."
 	@echo "  anaconda-ks.cfg       Generate Anaconda kickstart from template"
 	@echo ""
 	@echo "Configuration variables:"
@@ -71,6 +72,8 @@ help:
 	@echo "  make install-remote                 # Install to remote NVMe/TCP disk"
 	@echo "  make start-remote                   # Boot from remote NVMe/TCP disk"
 	@echo "  make DRIVE_CAP=100G install-local   # Install with 100GB disk"
+	@echo "  make efidisk                        # Create the EFI disk image"
+	@echo "  ./vm.sh nbft-setup                  # Boot from efidisk to program NBFT"
 	@echo "  make VNC_DISPLAY=1 start-remote     # Start with VNC on display :1"
 	@echo ""
 
@@ -332,7 +335,7 @@ clean-config:
 	-rm -f eficonfig/config
 
 .PHONY: reconfig
-reconfig: clean-config eficonfig/config
+reconfig: clean-config setup
 
 .PHONY: config
 config: reconfig

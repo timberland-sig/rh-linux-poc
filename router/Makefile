@@ -45,7 +45,7 @@ enter:
 
 .PHONY: wipe
 wipe:
-	incus delete $(VMNAME)
+	-incus delete $(VMNAME)
 .PHONY: clean
 clean:
 	-rm -f *.log

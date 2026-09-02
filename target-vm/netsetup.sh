@@ -5,7 +5,7 @@
 set -e
 
 DIR="$(dirname -- "$(realpath -- "$0")")"
-VMNAME=$(basename $PWD)
+export VMNAME=$(basename -- "$DIR")
 
 . $DIR/../vm-lib/common.sh
 . $DIR/../vm-lib/colors.sh
@@ -68,5 +68,5 @@ if [ "$NEW_SUBNQN" -eq 1 ]; then
     echo -e "${YELLOW}Generated new subsystem NQN: $SUBNQN${NC}"
 fi
 
-echo "$TARGET_IP1" > .ip
+echo "$TARGET_IP1" > $DIR/.ip
 $DIR/../vm-lib/netsetup.sh "$TARGET_IP1"
