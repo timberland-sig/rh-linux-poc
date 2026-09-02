@@ -57,20 +57,36 @@ help:
 .ONESHELL: auto-start
 auto-start: disks/nvme1.qcow2 $(SETUP_SCRIPT)
 	[ -f disks/boot.qcow2 ] || make auto-install || exit 1
+	@source ../vm-lib/colors.sh && \
+		if pgrep -f "[q]emu-system-x86.*$(VMNAME)" > /dev/null; then \
+			echo -e "$${YELLOW}WARNING$${NC} $(VMNAME) is already running"; \
+		fi
 	@bash ./$(SETUP_SCRIPT) start disks/boot.qcow2 $(_DISPLAY_ARGS) -n $(EXTRA_DRIVES) -- $(QEMU_ARGS)
 
 .PHONY: auto-install
 auto-install: disks/boot.qcow2 iso boot.iso $(SETUP_SCRIPT)
+	@source ../vm-lib/colors.sh && \
+		if pgrep -f "[q]emu-system-x86.*$(VMNAME)" > /dev/null; then \
+			echo -e "$${YELLOW}WARNING$${NC} $(VMNAME) is already running"; \
+		fi
 	@source ../vm-lib/colors.sh && echo -e "$${RED}The VM is installing. Do not interrupt!$${NC}"
 	@bash ./$(SETUP_SCRIPT) install $< -F -i boot.iso -- $(QEMU_ARGS)
 
 .PHONY: start
 start: disks/nvme1.qcow2 $(SETUP_SCRIPT)
 	[ -f disks/boot.qcow2 ] || make install
+	@source ../vm-lib/colors.sh && \
+		if pgrep -f "[q]emu-system-x86.*$(VMNAME)" > /dev/null; then \
+			echo -e "$${YELLOW}WARNING$${NC} $(VMNAME) is already running"; \
+		fi
 	@bash ./$(SETUP_SCRIPT) start disks/boot.qcow2 $(_DISPLAY_ARGS) -i $(ISO) -n $(EXTRA_DRIVES) -- $(QEMU_ARGS)
 
 .PHONY: install
 install: iso disks/boot.qcow2
+	@source ../vm-lib/colors.sh && \
+		if pgrep -f "[q]emu-system-x86.*$(VMNAME)" > /dev/null; then \
+			echo -e "$${YELLOW}WARNING$${NC} $(VMNAME) is already running"; \
+		fi
 	@bash ./$(SETUP_SCRIPT) install disks/boot.qcow2 $(_DISPLAY_ARGS) -n $(EXTRA_DRIVES) -- $(QEMU_ARGS)
 
 .PHONY: enter

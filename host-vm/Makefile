@@ -79,22 +79,42 @@ setup: vm_vars.fd .build/hostid
 
 .PHONY: start-local
 start-local: disks/boot.qcow2 $(SETUP_SCRIPT)
+	@source ../vm-lib/colors.sh && \
+		if pgrep -f "[q]emu-system-x86.*$(VMNAME)" > /dev/null; then \
+			echo -e "$${YELLOW}WARNING$${NC} $(VMNAME) is already running"; \
+		fi
 	bash ./$(SETUP_SCRIPT) $(_DISPLAY_ARGS) start local -- $(QEMU_ARGS)
 
 .PHONY: install-local
 install-local: iso disks/boot.qcow2 $(ISO)
+	@source ../vm-lib/colors.sh && \
+		if pgrep -f "[q]emu-system-x86.*$(VMNAME)" > /dev/null; then \
+			echo -e "$${YELLOW}WARNING$${NC} $(VMNAME) is already running"; \
+		fi
 	bash ./$(SETUP_SCRIPT) -i $(ISO) $(_DISPLAY_ARGS) install local -- $(QEMU_ARGS)
 
 .PHONY: install-remote
 install-remote: iso $(ISO)
+	@source ../vm-lib/colors.sh && \
+		if pgrep -f "[q]emu-system-x86.*$(VMNAME)" > /dev/null; then \
+			echo -e "$${YELLOW}WARNING$${NC} $(VMNAME) is already running"; \
+		fi
 	bash ./$(SETUP_SCRIPT) -i $(ISO) $(_DISPLAY_ARGS) install remote -- $(QEMU_ARGS)
 
 .PHONY: install-efidisk
 install-efidisk: iso $(ISO) efidisk
+	@source ../vm-lib/colors.sh && \
+		if pgrep -f "[q]emu-system-x86.*$(VMNAME)" > /dev/null; then \
+			echo -e "$${YELLOW}WARNING$${NC} $(VMNAME) is already running"; \
+		fi
 	bash ./$(SETUP_SCRIPT) nbft-setup $(_DISPLAY_ARGS)
 
 .PHONY: start-remote
 start-remote:
+	@source ../vm-lib/colors.sh && \
+		if pgrep -f "[q]emu-system-x86.*$(VMNAME)" > /dev/null; then \
+			echo -e "$${YELLOW}WARNING$${NC} $(VMNAME) is already running"; \
+		fi
 	bash ./$(SETUP_SCRIPT) $(_DISPLAY_ARGS) start remote -- $(QEMU_ARGS)
 
 .PHONY: enter
