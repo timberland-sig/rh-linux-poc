@@ -1,8 +1,8 @@
 {
   "environments": [
     {
-      "name": "Localhost Environment",
-      "useRouter": false,
+      "name": "Localhost Environment with a router",
+      "useRouter": true,
       "network": {
         "br0": {
           "slave": "none",
@@ -13,16 +13,14 @@
         "br1": {
           "slave": "none",
           "hypervisorIp": "192.168.101.1",
-          "targetVmIp": "192.168.101.20",
-          "hostVmIp": "192.168.101.30",
-          "subnetMask": 24
+          "targetVmIp": "dhcp",
+          "hostVmIp": "dhcp"
         },
         "br2": {
           "slave": "none",
           "hypervisorIp": "192.168.110.1",
-          "targetVmIp": "192.168.110.20",
-          "hostVmIp": "192.168.110.30",
-          "subnetMask": 24
+          "targetVmIp": "dhcp",
+          "hostVmIp": "dhcp"
         }
       },
       "tests": [
@@ -33,9 +31,8 @@
             {
               "targetName": "Soft target",
               "macAddress": "default",
-              "hostIp": "default",
-              "subnetMask": 24,
-              "targetIp": "default",
+              "hostIp": "dhcp",
+              "targetIp": "192.168.21.2",
               "subsystemNQN": "nqn.2014-08.org.nvmexpress:uuid:0c468c4d-a385-47e0-8299-6e95051277db"
             }
           ]
@@ -47,9 +44,8 @@
             {
               "targetName": "Soft target",
               "macAddress": "default",
-              "hostIp": "default",
-              "subnetMask": 24,
-              "targetIp": "default",
+              "hostIp": "dhcp",
+              "targetIp": "192.168.21.2",
               "subsystemNQN": "nqn.2014-08.org.nvmexpress.discovery"
             }
           ]
@@ -61,15 +57,15 @@
             {
               "targetName": "Soft target",
               "macAddress": "default",
-              "hostIp": "default",
-              "targetIp": "default",
+              "hostIp": "dhcp",
+              "targetIp": "192.168.21.2",
               "subsystemNQN": "nqn.2014-08.org.nvmexpress:uuid:0c468c4d-a385-47e0-8299-6e95051277db"
             },
             {
               "targetName": "Soft target",
               "macAddress": "default",
-              "hostIp": "default",
-              "targetIp": "default",
+              "hostIp": "dhcp",
+              "targetIp": "192.168.22.2",
               "subsystemNQN": "nqn.2014-08.org.nvmexpress:uuid:0c468c4d-a385-47e0-8299-6e95051277db"
             }
           ]
@@ -81,15 +77,15 @@
             {
               "targetName": "Soft target",
               "macAddress": "default",
-              "hostIp": "default",
-              "targetIp": "default",
+              "hostIp": "dhcp",
+              "targetIp": "192.168.21.2",
               "subsystemNQN": "nqn.2014-08.org.nvmexpress.discovery"
             },
             {
               "targetName": "Soft target",
               "macAddress": "default",
-              "hostIp": "default",
-              "targetIp": "default",
+              "hostIp": "dhcp",
+              "targetIp": "192.168.22.2",
               "subsystemNQN": "nqn.2014-08.org.nvmexpress.discovery"
             }
           ]

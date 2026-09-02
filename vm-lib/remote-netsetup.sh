@@ -8,7 +8,7 @@ to_lower() {
 
 mac2iface() {
 	local macaddr=$1
-    find /sys/class/net -mindepth 1 ! -name lo -execdir sh -c "MAC=\$(cat {}/address 2>/dev/null); if [ \"\$MAC\" = \"$macaddr\" ]; then echo \"\$(basename {})\"; fi" \;
+    find /sys/class/net -mindepth 1 ! -name lo -execdir sh -c "[ -e {}/device ] || exit 0; MAC=\$(cat {}/address 2>/dev/null); if [ \"\$MAC\" = \"$macaddr\" ]; then echo \"\$(basename {})\"; fi" \;
 }
 
 if [ $# -ne 0 -a $# -ne 2 -a $# -ne 4 ] ; then

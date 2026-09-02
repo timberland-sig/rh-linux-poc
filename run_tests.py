@@ -8,6 +8,7 @@ and runs boot tests using pytest.
 """
 
 import json
+import logging
 import os
 import re
 import shutil
@@ -25,6 +26,7 @@ import pytest
 
 
 warnings.formatwarning = lambda msg, *args, **kwargs: f"Warning: {msg}\n"
+logging.getLogger('paramiko').setLevel(logging.CRITICAL)
 
 # Default values for test configuration, matching defaults.sh
 DEFAULTS = {
@@ -35,6 +37,9 @@ DEFAULTS = {
     'HOST_IP3': '192.168.110.30',
     'TARGET_IP2': '192.168.101.20',
     'TARGET_IP3': '192.168.110.20',
+    'TARGET_PORT': 5555,
+    'HOST_PORT': 5556,
+    'SUBNET': '24',
     'SUBNQN': 'nqn.2014-08.org.nvmexpress:uuid:0c468c4d-a385-47e0-8299-6e95051277db',
 }
 
@@ -118,6 +123,30 @@ def sanitize_dir_name(name: str) -> str:
     return name
 
 
+def check_ssh(host: str, port: int = 22) -> bool:
+    """Check if SSH connection, authentication, and channel execution succeed."""
+    ssh_key = SCRIPT_DIR / ".ssh" / "id_ecdsa"
+    client = paramiko.SSHClient()
+    client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    try:
+        client.connect(
+            host,
+            port=port,
+            username='root',
+            key_filename=str(ssh_key),
+            timeout=5,
+            banner_timeout=5,
+            auth_timeout=5,
+        )
+        _, stdout, _ = client.exec_command("true", timeout=5)
+        stdout.channel.recv_exit_status()
+        return True
+    except:
+        return False
+    finally:
+        client.close()
+
+
 def validate_schema(config: Dict[str, Any], schema_file: str) -> bool:
     """Validate test configuration against JSON schema."""
     try:
@@ -147,12 +176,16 @@ def load_test_config(test_file: str, schema_file: str) -> Dict[str, Any]:
     return config
 
 
-def prepare_environment(environment: Dict[str, Any], display_mode: str = 'vnc', vnc_display: Optional[int] = None):
+def prepare_environment(environment: Dict[str, Any], display_mode: str = 'vnc', vnc_display: Optional[int] = None,
+                        use_router: bool = False):
     """Setup network and target-vm for an environment."""
     network_setup = NetworkSetup(environment['network'], SCRIPT_DIR)
 
     network_setup.setup()
-    network_setup.setup_target_vm(display_mode=display_mode, vnc_display=vnc_display)
+    if use_router:
+        network_setup.setup_router()
+    network_setup.setup_target_vm(display_mode=display_mode, vnc_display=vnc_display,
+                                   use_router=use_router)
 
 
 def generate_test_config(test: Dict[str, Any], environment: Dict[str, Any]):
@@ -256,6 +289,8 @@ class NetworkSetup:
         env = os.environ.copy()
         env.update(dotenv_values(SCRIPT_DIR / ".env"))
         env['_DEFAULTS_SKIP_ENV'] = '1'
+        env['TARGET_CIDR2'] = f"{DEFAULTS['TARGET_IP2']}/{DEFAULTS['SUBNET']}"
+        env['TARGET_CIDR3'] = f"{DEFAULTS['TARGET_IP3']}/{DEFAULTS['SUBNET']}"
 
         # Extract target IPs and subnet masks from network config
         for bridge_name, bridge_key in [('br1', 'br1'), ('br2', 'br2')]:
@@ -266,7 +301,7 @@ class NetworkSetup:
             target_ip = bridge_config.get('targetVmIp', '')
             subnet_mask = bridge_config.get('subnetMask', 24)
 
-            if len(target_ip) == 0:
+            if len(target_ip) == 0 or target_ip == "dhcp":
                 continue
 
             # Ensure we have CIDR notation
@@ -288,7 +323,16 @@ class NetworkSetup:
 
         return env
 
-    def setup_target_vm(self, display_mode: str = 'vnc', vnc_display: Optional[int] = None):
+    def _get_target_vm_host(self) -> str:
+        """Get the target VM's reachable IP from the network config (br0)."""
+        br0 = self.network_config.get('br0', {})
+        target_ip = br0.get('targetVmIp', '')
+        if target_ip:
+            return target_ip.split('/')[0]
+        return DEFAULTS.get('TARGET_IP2', '192.168.101.20')
+
+    def setup_target_vm(self, display_mode: str = 'vnc', vnc_display: Optional[int] = None,
+                        use_router: bool = False):
         """Setup and start the target-vm."""
         print("\n" + "="*70)
         print("Setting up target-vm")
@@ -353,19 +397,36 @@ class NetworkSetup:
             raise RuntimeError("Target-vm QEMU process failed to start")
         print("✓ Target-vm started")
 
+        # Wait for target-vm SSH to become available
+        br0_slave = self.network_config.get('br0', {}).get('slave', 'none')
+        target_host = self._get_target_vm_host() if use_router and br0_slave != 'none' else 'localhost'
+        target_port = DEFAULTS['TARGET_PORT'] if target_host == 'localhost' else 22
+
+        print(f"Waiting for target-vm SSH on {target_host}...")
+        ssh_timeout = 60
+        start_time = time.time()
+        while time.time() - start_time < ssh_timeout:
+            if check_ssh(target_host, target_port):
+                elapsed = int(time.time() - start_time)
+                print(f"✓ Target-vm SSH is ready (took {elapsed}s)")
+                break
+            time.sleep(2)
+        else:
+            raise RuntimeError(f"Target-vm SSH not available within {ssh_timeout}s")
+
         # Run netsetup.sh with timeout
-        print("Configuring target-vm network with './netsetup.sh localhost'...")
+        print(f"Configuring target-vm network with './netsetup.sh {target_host}'...")
         netsetup_script = self.script_dir / "target-vm" / "netsetup.sh"
 
         try:
             result = subprocess.run(
-                [str(netsetup_script), 'localhost'],
+                [str(netsetup_script), target_host],
                 cwd=self.target_vm_dir,
                 env=env,
                 stdin=subprocess.DEVNULL,
                 capture_output=True,
                 text=True,
-                timeout=60
+                timeout=120
             )
 
             if result.returncode != 0:
@@ -460,6 +521,66 @@ class NetworkSetup:
             print(f"✗ Setup script not found: {setup_script}")
             raise RuntimeError(f"Setup script not found: {setup_script}")
 
+    def setup_router(self):
+        """Provision and start the virtual router using ./setup.sh router."""
+        setup_script = self.script_dir / "setup.sh"
+        cmd = [str(setup_script), 'router']
+
+        print(f"\nRunning: {' '.join(cmd)}")
+
+        try:
+            result = subprocess.run(
+                cmd,
+                cwd=self.script_dir,
+                capture_output=True,
+                text=True,
+                timeout=300
+            )
+
+            if result.returncode == 0:
+                print("✓ Router setup completed successfully")
+            else:
+                print(f"✗ Router setup failed with code {result.returncode}")
+                if result.stderr:
+                    print(f"Error:\n{result.stderr}")
+                raise RuntimeError(f"Router setup failed with exit code {result.returncode}")
+        except subprocess.TimeoutExpired:
+            print("✗ Router setup timed out after 5 minutes")
+            raise RuntimeError("Router setup timed out after 5 minutes")
+        except FileNotFoundError:
+            print(f"✗ Setup script not found: {setup_script}")
+            raise RuntimeError(f"Setup script not found: {setup_script}")
+
+    def teardown_router(self):
+        """Tear down the virtual router using ./teardown.sh router."""
+        teardown_script = self.script_dir / "teardown.sh"
+        cmd = [str(teardown_script), 'router']
+
+        print(f"Running: {' '.join(cmd)}")
+
+        try:
+            result = subprocess.run(
+                cmd,
+                cwd=self.script_dir,
+                capture_output=True,
+                text=True,
+                timeout=60
+            )
+
+            if result.returncode == 0:
+                print("✓ Router teardown completed successfully")
+            else:
+                print(f"✗ Router teardown failed with code {result.returncode}")
+                if result.stderr:
+                    print(f"Error:\n{result.stderr}")
+                raise RuntimeError(f"Router teardown failed with exit code {result.returncode}")
+        except subprocess.TimeoutExpired:
+            print("✗ Router teardown timed out")
+            raise RuntimeError("Router teardown timed out")
+        except FileNotFoundError:
+            print(f"✗ Teardown script not found: {teardown_script}")
+            raise RuntimeError(f"Teardown script not found: {teardown_script}")
+
 
 class EFIConfigGenerator:
     """Generates host-vm/eficonfig/config for NVMe boot attempts."""
@@ -547,6 +668,15 @@ class EFIConfigGenerator:
         timeout = self._resolve_default(attempt.get('timeout', 'default'), 'timeout', attempt_idx)
         subnet_mask = self._get_subnet_mask(attempt, attempt_idx)
 
+        gateway = '0.0.0.0'
+        if host_ip == 'dhcp':
+            local_ip = '0.0.0.0'
+            subnet_mask = '0.0.0.0'
+            use_host_dhcp = "TRUE"
+        else:
+            local_ip = host_ip
+            use_host_dhcp = "FALSE"
+
         config = f"""$Start
 AttemptName:Attempt{attempt_num}
 HostName:host-vm
@@ -554,9 +684,10 @@ MacString:{mac}
 TargetPort:{port}
 Enabled:1
 IpMode:0
-LocalIp:{host_ip}
+InitiatorInfoFromDhcp:{use_host_dhcp}
+LocalIp:{local_ip}
 SubnetMask:{subnet_mask}
-Gateway:0.0.0.0
+Gateway:{gateway}
 TargetIp:{target_ip}
 NQN:{nqn}
 ConnectTimeout:{timeout}
@@ -709,7 +840,7 @@ class VMRunner:
                 vm_pings = True
 
             # Try SSH connection
-            if not vm_has_ssh and self._check_ssh(host_ip):
+            if not vm_has_ssh and check_ssh(host_ip):
                 elapsed = int(time.time() - start_time)
                 print(f"✓ VM is responsive via SSH (took {elapsed}s)")
                 vm_has_ssh = True
@@ -719,29 +850,6 @@ class VMRunner:
 
         print(f"✗ VM did not become responsive within {timeout}s")
         return False
-
-    def _check_ssh(self, host_ip: str, port: int = 22) -> bool:
-        """Check if SSH connection, authentication, and channel execution succeed."""
-        ssh_key = SCRIPT_DIR / ".ssh" / "id_ecdsa"
-        client = paramiko.SSHClient()
-        client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        try:
-            client.connect(
-                host_ip,
-                port=port,
-                username='root',
-                key_filename=str(ssh_key),
-                timeout=5,
-                banner_timeout=5,
-                auth_timeout=5,
-            )
-            _, stdout, _ = client.exec_command("true", timeout=5)
-            stdout.channel.recv_exit_status()
-            return True
-        except:
-            return False
-        finally:
-            client.close()
 
     def _check_ping(self, host_ip: str) -> bool:
         """Check if host responds to ping."""
@@ -759,7 +867,7 @@ class VMRunner:
         """Follow the bootlog file and wait for a regex pattern to appear."""
         bootlog_path = self.host_vm_dir / "bootlog"
         regex = re.compile(pattern)
-        print(f"Waiting for bootlog entry: {pattern} (timeout: {timeout}s)...")
+        print(f"Waiting for bootlog entry regex: R\"{pattern}\" (timeout: {timeout}s)...")
         start_time = time.time()
 
         while not bootlog_path.exists():
@@ -926,18 +1034,26 @@ class TestNVMeBoot:
             env_config=environment,
         )
 
+        use_router = environment.get('useRouter', False)
+
         # Setup network once per environment
         if env_idx not in self.__class__.setup_environments:
             print(f"\n{'='*70}")
             print(f"Setting up environment: {env_name}")
+            if use_router:
+                print("Virtual router: enabled")
             print(f"{'='*70}")
             try:
-                # Teardown network before setting up new environment
+                # Teardown before setting up new environment
                 network_setup = NetworkSetup(environment['network'], SCRIPT_DIR)
-                network_setup.teardown()
+                if use_router:
+                    network_setup.teardown_router()
+                else:
+                    network_setup.teardown()
 
                 # Setup the new environment
-                prepare_environment(environment, display_mode=display_mode, vnc_display=vnc_display)
+                prepare_environment(environment, display_mode=display_mode, vnc_display=vnc_display,
+                                    use_router=use_router)
                 self.__class__.setup_environments.add(env_idx)
             except RuntimeError as e:
                 pytest.fail(f"SETUP FAILED: {e}")
