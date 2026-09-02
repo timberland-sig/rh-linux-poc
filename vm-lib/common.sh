@@ -455,7 +455,7 @@ has_router() {
         DIR="$(dirname -- "$(realpath -- "$BASH_SOURCE[0]")")"
 
 	command -v incus && \
-		[ "$(incus info router-vm | grep '^Status:' | cut -d' ' -f2)" = 'RUNNING' ]
+		[ "$(incus info router-vm 2>/dev/null | grep '^Status:' | cut -d' ' -f2)" = 'RUNNING' ]
 }
 
 # NOTE: caller must set `target_ip` before calling this function.
