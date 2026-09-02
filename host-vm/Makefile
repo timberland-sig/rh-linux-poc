@@ -174,6 +174,7 @@ eficonfig/config: eficonfig/config.in eficonfig/config2.in
 		local ip_default=$$3
 		local target_default=$$4
 		local mask_default=$$5
+		local gateway_default=$$6
 		if [ $$num -gt 1 ]; then
 			echo ""
 			while true; do
@@ -222,7 +223,14 @@ eficonfig/config: eficonfig/config.in eficonfig/config2.in
 				read -p "Host IP address: " INPUT_IP
 			fi
 			sed -i "s/HOST_IP/$$INPUT_IP/" $@
-			sed -i "s/HOSTGW_IP/0.0.0.0/" $@
+			if [ -n "$$gateway_default" ]; then
+				read -p "Gateway IP address (default: $$gateway_default): " INPUT_GW
+				INPUT_GW=$${INPUT_GW:-$$gateway_default}
+			else
+				read -p "Gateway IP address (default: 0.0.0.0): " INPUT_GW
+				INPUT_GW=$${INPUT_GW:-0.0.0.0}
+			fi
+			sed -i "s/HOSTGW_IP/$$INPUT_GW/" $@
 			while true; do
 				read -p "Subnet mask (CIDR bits 1-31 or dotted decimal, default: $$mask_default): " INPUT_MASK
 				INPUT_MASK=$${INPUT_MASK:-$$mask_default}
@@ -265,10 +273,19 @@ eficonfig/config: eficonfig/config.in eficonfig/config2.in
 	split_cidr $$HOST_CIDR2   HOST_IP2   MASK
 	split_cidr $$HOST_CIDR3   HOST_IP3   MASK
 
-	-configure_attempt 1 "$$HOST_MAC2" "$$HOST_IP2" "$$TARGET_IP2" "$$MASK2" && \
-	configure_attempt 2 "$$HOST_MAC3" "$$HOST_IP3" "$$TARGET_IP3" "$$MASK3" && \
-	configure_attempt 3 "" "" "" && \
-	configure_attempt 4 "" "" ""
+	if has_router 2>/dev/null; then
+		source ../router/addresses.sh
+		GW_DEFAULT2="$$HOST2_IP"
+		GW_DEFAULT3="$$HOST3_IP"
+	else
+		GW_DEFAULT2="0.0.0.0"
+		GW_DEFAULT3="0.0.0.0"
+	fi
+
+	-configure_attempt 1 "$$HOST_MAC2" "$$HOST_IP2" "$$TARGET_IP2" "$$MASK2" "$$GW_DEFAULT2" && \
+	configure_attempt 2 "$$HOST_MAC3" "$$HOST_IP3" "$$TARGET_IP3" "$$MASK3" "$$GW_DEFAULT3" && \
+	configure_attempt 3 "" "" "" "" "" && \
+	configure_attempt 4 "" "" "" "" ""
 
 	read -p "Connection timeout (default: 3000): " TIMEOUT
 	TIMEOUT=$${TIMEOUT:-3000}
