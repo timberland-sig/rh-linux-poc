@@ -42,7 +42,6 @@ check_args() {
            *)
                echo " Invalid argument: $MODE" >&2
                display_rpm_help
-               popd
                exit 1
            ;;
     esac

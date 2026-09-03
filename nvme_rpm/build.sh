@@ -5,7 +5,7 @@
 DIR="$(dirname -- "$(realpath -- "$0")")"
 . $DIR/../rpm_lib.sh
 
-VERSION=2.4
+VERSION=3.0-rc3
 MODE=blank
 COPR_PROJECT=blank
 
@@ -14,11 +14,11 @@ check_args $# $1 $2
 build_dist() {
     rm -f nvme-cli-*.tar.gz
     rm -rf mock_build rpmbuild
-    cp nvme.spec nvme-cli
+    cp nvme-cli.spec nvme-cli
     pushd nvme-cli
     make purge
-    git archive --output ../nvme-cli-${VERSION}.tar --format=tar --add-file nvme.spec HEAD
-    rm nvme.spec
+    git archive --output ../nvme-cli-${VERSION}.tar --format=tar --prefix=nvme-cli-${VERSION}/ --add-file nvme-cli.spec HEAD
+    rm nvme-cli.spec
     popd
     gzip -f -9 nvme-cli-${VERSION}.tar
 }
@@ -61,7 +61,7 @@ case "${MODE}" in
              prep_rpm
              build_srpm
              RPM="$(ls rpmbuild/SRPMS/nvme-cli-*.src.rpm)"
-             mock -r fedora-36-x86_64 --arch=x86_64 --no-clean --resultdir $PWD/mock_build $RPM
+             mock -r fedora-44-x86_64 --arch=x86_64 --no-clean --resultdir $PWD/mock_build $RPM
            ;;
            *)
            echo " Invalid argument: $MODE" >&2
