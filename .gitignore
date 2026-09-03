@@ -54,3 +54,4 @@ host-vm/copy_efi.sh
 host-vm/eficonfig/config
 host-vm/efidisk
 .env
+CLAUDE.md

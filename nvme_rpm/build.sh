@@ -14,11 +14,11 @@ check_args $# $1 $2
 build_dist() {
     rm -f nvme-cli-*.tar.gz
     rm -rf mock_build rpmbuild
-    cp nvme-cli.spec nvme-cli
+    cp nvme.spec nvme-cli
     pushd nvme-cli
     make purge
-    git archive --output ../nvme-cli-${VERSION}.tar --format=tar --add-file nvme-cli.spec HEAD
-    rm nvme-cli.spec
+    git archive --output ../nvme-cli-${VERSION}.tar --format=tar --add-file nvme.spec HEAD
+    rm nvme.spec
     popd
     gzip -f -9 nvme-cli-${VERSION}.tar
 }
