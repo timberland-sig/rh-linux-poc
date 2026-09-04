@@ -4,7 +4,7 @@ This repository contains packages, scripts and instructions to assit in the set 
 
 1. An X86_64 based hardware platform with 32GB of memory, 12 (VT-x) cores, at least 20GB of spare storage space.
 2. A hardwired ethernet connection with access to a DHCP server and the public network.
-3. A recent version of Fedora 42 installed on your host - this will be your hypervisor.
+3. A recent version of **Fedora 44** installed on your host - this will be your hypervisor.
 4. A user account with with [sudo](https://developers.redhat.com/blog/2018/08/15/how-to-enable-sudo-on-rhel#:~:text=DR%3A%20Basic%20sudo-,TL%3BDR%3A%20Basic%20sudo,out%20and%20back%20in%20again) access so you can administer the hypervisor.
 5. (optional) A user account with [git](https://git-scm.com/book/en/v2/Getting-Started-First-Time-Git-Setup) configured so you can modify code.
 6. (optional) A valid github login with an [ssh key](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/adding-a-new-ssh-key-to-your-github-account) configured
@@ -12,7 +12,7 @@ This repository contains packages, scripts and instructions to assit in the set 
 
 This POC was developed on a [ThinkPad T Series
 Laptop](https://www.lenovo.com/us/en/c/laptops/thinkpad/thinkpadt) using a
-modified version of Fedora 42 with an [upstream QEMU
+modified version of **Fedora 44** with an [upstream QEMU
 library](https://www.qemu.org/download/) installed. It's
 best to use a current version of Fedora for a hypervisor, if possible.
 
@@ -44,10 +44,10 @@ some configuration settings in `/etc` and `/usr/libexec`.*
 It will essentially run the following commands to download and install the *prebuilt* Timberland SIG NVMe/TCP Boot test environment:
 
 ```
-./setup.sh user   # this will install essential packages - only has to be ran once
-./setup.sh virt   # this will install QEMU (only on Fedora) - only has to be ran once
-./setup.sh edk2   # this will download and install the Timberland-sig artifacts - only has to be ran once
-./setup.sh net    # this will modify your hypervisor network - run this only once
+./setup.sh user     # this will install essential packages - only has to be ran once
+./setup.sh virt     # this will install QEMU (only on Fedora) - only has to be ran once
+./setup.sh edk2_zip # this will download and install the Timberland-sig artifacts - only has to be ran once
+./setup.sh net      # this will modify your hypervisor network - run this only once
 ```
 
 After running the quickstart, you can optionally use:
@@ -158,14 +158,12 @@ Directories and files are explained here:
 | :-----   | :----  | :----      |
 | `nvme_rpm` |  -  | Contains the git submodule for https://github.com/timberland-sig/nvme-cli. The rpm is generated using this source code with the `nvme-cli.spec` file located in this directory. The code used to generate the rpm can be developed and changed by working in the provided *nvme_rpm/nvme-cli* git repository.  Normal git workflows apply. |
 | nvme_rpm | nvme-cli.spec | A modified version of the Fedora nvme-cli.spec file from: https://src.fedoraproject.org/rpms/nvme-cli/blob/rawhide/f/nvme-cli.spec. This spec file has been modified to work with the timberland-sig nvme-cli source code in this submodule.
-| `libnvme_rpm` | - | Contains the git submodule for https://github.com/timberland-sig/libnvme. The rpm is generated using this source code with the `libnvme.spec` file located in this directory. The code used to generate the rpm can be developed and changed by working in the provided *libnvme_rpm/libnvme* git repository.  Normal git workflows apply. |
-| nvme_rpm | libnvm.spec | A modified version of the Fedora libnvme.spec file from: https://src.fedoraproject.org/rpms/libnvme/blob/rawhide/f/libnvme.spec. This spec file has been modified to work with the timberland-sig libnvme source code in this submodule.
-| `dracut_rpm` | - | Contains the git submodule for https://github.com/timberland-sig/dracut. The rpm is generated using this source code with the `dracut.spec` file located in this directory. The code used to generate the rpm can be developed and changed by working in the provided *dracut_rpm/dracut* git repository.  Normal git workflows apply. |
+| `dracut_rpm` | - | Contains the git submodule for https://github.com/timberland-sig/dracut-ng. The rpm is generated using this source code with the `dracut.spec` file located in this directory. The code used to generate the rpm can be developed and changed by working in the provided *dracut_rpm/dracut* git repository.  Normal git workflows apply. |
 | `dracut_rpm` | dracut.spec | A modified version of the Fedora dracut.spec file from:  https://src.fedoraproject.org/rpms/dracut/blob/rawhide/f/dracut.spec. This spec file has been modified to work with the timberland-sig dracut source code in this submodule. |
 |  - | `.env.example` | Template listing all configurable variables with their defaults. Copy to `.env` to get started — see [Customizing Configuration](#customizing-configuration). |
 |  - | `.env` | **User-created** (gitignored). Persistent overrides for variables defined in `defaults.sh`. Sourced automatically before defaults are applied, so values set here take precedence. |
 |  - | `defaults.sh` | Contains global variables which control the test bed configuration. If you need to change something, look here first. Variables can be overridden by placing them in the `.env` file or by setting them as environment variables before sourcing this file. |
-|  - | `rmp_lib.sh` | Contains global functions used by the scripts in the `libnvme_rpm`, `nvme_rpm`, and `dracut_rpm`  subdirectories. |
+|  - | `rmp_lib.sh` | Contains global functions used by the scripts in the `nvme_rpm` and `dracut_rpm`  subdirectories. |
 | `vm-lib` | - | Contains shared scripts and functions used by both *target-vm* and *host-vm* subdirectories. Includes common network setup scripts and Makefile targets. |
 | `vm-lib` | `common.sh` | Contains global functions used by the scripts in the `target-vm` and `host-vm` subdirectories. |
 | `vm-lib` | `netsetup.sh` | Unified network setup launcher script used by both VMs. |
@@ -177,6 +175,7 @@ Directories and files are explained here:
 | `router` | `netsetup.sh` | Configures the router VM's network interfaces via NetworkManager, loads the nftables firewall ruleset, and deploys the Kea DHCPv4 server configuration inside the Incus container. |
 | `router` | `Makefile` | Build targets for managing the router Incus container. |
 | `router` | `.env.example` | Template listing all configurable router variables (interface names, IPs, subnets) with their defaults. Copy to `.env` to override. |
+|`edk2`    | Contains the timberland-sig edk2 repository. The built artifacts are contained in: *edk2/edk2/Build/OvmfX64/DEBUG_GCC5/X64*.  The spefic artifacts need to boot with nvme/tcp are moved to: *host-vm/eficonfig/NvmeOfCli.efi*, *host-vm/OVMF_CODE.fd* and *host-vm/vm_vars.fd*. |
 
 Proposed changes and patches should be sent to the repsective repositories at:
 https://github.com/timberland-sig
@@ -243,8 +242,8 @@ account.
 *Note: this only works with Fedora and should be run with caution. When in
 doubt, install and setup qemu yourself, manually.*
 
-Run `./setup.sh edk2` - This script will download the latest Timberland-SIG release of the EDK2 firmware
-and prepare it for use by the `host-vm`. Use `./setup.sh edk2 -s` or `./setup.sh edk2 --source` to build from source instead.
+Run `./setup.sh edk2_zip` - This script will download the latest Timberland-SIG release of the EDK2 firmware
+and prepare it for use by the `host-vm`. Use `./setup.sh edk2` or `./setup.sh edk2` to build from source instead.
 
 # Setup your Virtual Machines
 
@@ -811,23 +810,31 @@ created in the follow directories:
 
 | Directory  | Decription |
 | :-----   | :----      |
-|`edk2`    | Contains the timberland-sig edk2 repository. The built artifacts are contained in: *edk2/edk2/Build/OvmfX64/DEBUG_GCC5/X64*.  The spefic artifacts need to boot with nvme/tcp are moved to: *host-vm/eficonfig/NvmeOfCli.efi*, *host-vm/OVMF_CODE.fd* and *host-vm/vm_vars.fd*. |
 | `lorax_results` | contains the bootable iso generated from the build process. This iso is created using the generated rpm from your `copr.fedorainfracloud.org` project. The specific location of the iso is: *lorax_results/images/boot.iso*`.  This is the default iso used by the *host-vm\vm.sh* and *target-vm\vm.sh* scripts.|
 | `copr.fedorainfracloud.org` | Contains rpms for nvme-cli, libnvme and dracut. (e.g.: see [johnmeneghini's](https://copr.fedorainfracloud.org/coprs/johnmeneghini/timberland-sig/) copr repository. |
 
 ## Developer Build
 
+The devel build is designed to help create custom rpms (nvme-cli and dracut) and publish them in a Copr directory. These customer rpms can be used to build a customer fedora boot.iso for development and testing.
+
 1. Create your user account, enable [sudo](https://developers.redhat.com/blog/2018/08/15/how-to-enable-sudo-on-rhel#:~:text=DR%3A%20Basic%20sudo-,TL%3BDR%3A%20Basic%20sudo,out%20and%20back%20in%20again) access, and configure your github [ssh-key](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/adding-a-new-ssh-key-to-your-github-account).
 2. Set up a [copr](https://docs.pagure.org/copr.copr/user_documentation.html#quick-start) user account and add [.config/copr](https://copr.fedorainfracloud.org/api/) to your user account.
-3. Create a working branch with `git checkout -b MYBRANCH` to keep configuration changes for your test bed.
-4. Edit the `defaults.sh` file and set the `COPR_USER` and `COPR_PROJECT` variables (c.f. `corp-cli whoami` and `corp-cli list`).
+3. Edit the `.env` file and set the `COPR_USER` and `COPR_PROJECT` variables (c.f. `corp-cli whoami` and `corp-cli list`) for your personal project.
 
-Now run the following commands to build and install your NVMe/TCP Boot test environment:
+Now run the following commands to develop and build your rpms. Example:
 
 ```
-  ./setup_extra.sh -m build fedora-37  # this will build all needed rpms and artifacts and create a fedora-37 bootable iso
+cd nvme_rpm
+make rpm
+make copr
 ```
 
-The next step is to go to [Setup your Virtual Machines](#setup-your-virtual-machines) and install the `host-vm`.
+This will build your nvme-cli rpm and publish it a the Copr project defined by `COPR_USER` and `COPR_PROJECT`.
+
+Alternatively, you can use the following build all of rpms locally.
+
+```
+  ./setup_extra.sh mock fedora-44  # this will build all needed rpms and artifacts and create a fedora-37 bootable iso
+```
 
 **END**

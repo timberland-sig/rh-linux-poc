@@ -10,7 +10,7 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 . $DIR/defaults.sh
 
 # Configuraiton
-MODES="user|devel|virt|edk2|edk2_zip|net|router"
+MODES="quickstart|user|devel|virt|edk2|edk2_zip|net|router"
 MODE="user"
 
 set -e
@@ -62,7 +62,7 @@ install_devel_pkgs() {
         sudo dnf install -y asciidoc audit-libs-devel binutils-devel elfutils-devel java-devel kabi-dw libcap-devel \
             libcap-ng-devel libmnl-devel llvm ncurses-devel newt-devel nss-tools numactl-devel pciutils-devel perl perl-generators \
             pesign python3-devel python3-docutils xmlto rpm-build yum-utils sg3_utils dwarves libbabeltrace-devel libbpf-devel openssl-devel \
-            wget bison acpica-tools binutils gcc gcc-c++ meson cmake dbus-devel libuuid libuuid-devel \
+            wget bison acpica-tools binutils gcc gcc-c++ asciidoctor keyutils-libs-devel meson cmake dbus-devel libuuid libuuid-devel \
             json-c-devel json-c json-c-doc clang openssl kmod-devel python3-sphinx python3-sphinx_rtd_theme swig \
             systemd-devel mock lorax tar gpg pciutils copr-cli nvme-cli nasm
         sudo usermod -a -G mock $USER
@@ -328,7 +328,6 @@ install_edk2_zip() {
 
     popd
 }
-
 
 while getopts "h" opt; do
         case "${opt}" in

@@ -4,13 +4,13 @@
 %global libname libnvme3
 
 Name:		nvme-cli
-Version:	3.0~rc3
+Version:	3.0~rc2
 Release:	1
 Summary:	NVMe management command line interface
 
 License:        GPL-2.0-only
-URL:            https://github.com/timberland-sig/nvme-cli
-Source:         %{name}-%{version_no_tilde}.tar.gz
+URL:            https://github.com/linux-nvme/nvme-cli
+Source0:        %{url}/archive/v%{version_no_tilde}/%{name}-%{version_no_tilde}.tar.gz
 
 BuildRequires: gcc gcc-c++ cmake
 BuildRequires: swig
@@ -182,7 +182,7 @@ fi
 # Do not install the dracut rule yet.  See rhbz 1742764
 # /usr/lib/dracut/dracut.conf.d/70-nvmf-autoconnect.conf
 %{nmlibdir}/dispatcher.d/80-nvmf-connect-nbft.sh
-# %%{nmlibdir}/conf.d/99-nvme-nbft-no-ignore-carrier.conf
+# %{nmlibdir}/conf.d/99-nvme-nbft-no-ignore-carrier.conf
 
 %files -n %{libname}
 # %license COPYING ccan/licenses/*
@@ -207,9 +207,6 @@ fi
 %{python3_sitearch}/libnvme3/*
 
 %changelog
-* Fri Sep 04 2026 John Meneghini <jmeneghi@redhat.com> - 3.0~rc3-1
-- Naked clone of upstream nvme-cli repo for Timberland SIG
-
 * Thu Aug 27 2026 Tomas Bzatek <tbzatek@redhat.com> - 3.0~rc2-1
 - Update to 3.0-rc2
 

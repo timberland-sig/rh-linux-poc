@@ -1,15 +1,14 @@
-[submodule "libnvme_rpm/libnvme"]
-	path = libnvme_rpm/libnvme
-	url = git@github.com:timberland-sig/libnvme.git
-	branch = timberlandmaster_final_v13
 [submodule "nvme_rpm/nvme-cli"]
 	path = nvme_rpm/nvme-cli
-	url = git@github.com:timberland-sig/nvme-cli.git
-	branch = timberlandmaster_final
-[submodule "dracut_rpm/dracut"]
-	path = dracut_rpm/dracut
-	url = git@github.com:timberland-sig/dracut.git
-	branch = timberland_final_v2
+	url = https://github.com/timberland-sig/nvme-cli.git
+	branch = timberland_main
+[submodule "dracut_rpm/dracut_ng"]
+	path = dracut_rpm/dracut-ng
+	url = https://github.com/timberland-sig/dracut-ng.git
+	branch = timberland_main
+[submodule "redhat/rpms/nvme-cli"]
+	path = redhat/rpms/nvme-cli
+	url = https://github.com/linux-nvme/nvme-cli.git
 [submodule "host-vm/nvmeof-utils"]
 	path = host-vm/nvmeof-utils
 	url = https://github.com/timberland-sig/nvmeof-utils.git

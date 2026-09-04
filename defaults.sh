@@ -10,7 +10,7 @@ _DEFAULTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 [ -z "$_DEFAULTS_SKIP_ENV" ] && [ -f "$_DEFAULTS_DIR/.env" ] && . "$_DEFAULTS_DIR/.env"
 unset _DEFAULTS_DIR
 
-COPR_PROJECT=timberland-v15.2
+COPR_PROJECT=NBFT
 COPR_USER=johnmeneghini
 
 # These are the system UUID, Host NQN and Host ID for the target-vm

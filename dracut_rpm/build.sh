@@ -5,8 +5,8 @@
 DIR="$(dirname -- "$(realpath -- "$0")")"
 . $DIR/../rpm_lib.sh
 
-VERSION=059
-RELEASE=4
+VERSION=112
+RELEASE=1
 MODE=blank
 COPR_PROJECT=blank
 
@@ -14,19 +14,13 @@ check_args $# $1 $2
 
 build_dist() {
     rm -rf dracut-${VERSION} dracut-${VERSION}.tar.xz
-    pushd dracut
+    cp dracut.spec dracut-ng
+    pushd dracut-ng
     make clean
-    make dist
-    cp dracut-${VERSION}.tar.xz ../
-    make clean
+    git archive --output ../dracut-${VERSION}.tar --format=tar --prefix=dracut-${VERSION}/ --add-file dracut.spec HEAD
+    rm dracut.spec
     popd
-    xz -d -v dracut-${VERSION}.tar.xz
-    tar -xf dracut-${VERSION}.tar
-    cp dracut.spec dracut-${VERSION}
-    rm dracut-${VERSION}.tar
-    tar -cf dracut-${VERSION}.tar dracut-${VERSION}
     xz -9 dracut-${VERSION}.tar
-    rm -rf dracut-${VERSION}
 }
 
 prep_rpm() {
@@ -67,7 +61,7 @@ case "${MODE}" in
              prep_rpm
              build_srpm
              RPM="$(ls rpmbuild/SRPMS/dracut-*.src.rpm)"
-             mock -r fedora-36-x86_64 --arch=x86_64 --no-clean --resultdir $PWD/mock_build $RPM
+             mock -r fedora-44-x86_64 --arch=x86_64 --no-clean --resultdir $PWD/mock_build $RPM
            ;;
            *)
            echo " Invalid argument: $MODE" >&2
