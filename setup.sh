@@ -10,7 +10,7 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 . $DIR/defaults.sh
 
 # Configuraiton
-MODES="user|devel|virt|edk2|edk2_zip|net|router"
+MODES="quickstart|user|devel|virt|edk2|edk2_zip|net|router"
 MODE="user"
 
 set -e
@@ -328,7 +328,6 @@ install_edk2_zip() {
 
     popd
 }
-
 
 while getopts "h" opt; do
         case "${opt}" in

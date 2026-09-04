@@ -1,56 +1,50 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-3.0+
 # Copyright (C) 2023 John Meneghini <jmeneghi@redhat.com> All rights reserved.
+# vim: set tabstop=4 shiftwidth=4 expandtab :
+#
 
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+#echo "DIR = $DIR"
 . $DIR/defaults.sh
 
-MODES="iso|copr|rpms|artif|mock|build"
+MODES="iso|copr|rpms|mock|build"
 MODE=""
-RPM_VERSIONS="fedora-36|fedora-37|fedora-42|centos-stream-9|opensuse-tumbleweed"
-RH_VERSIONS="fedora-36|fedora-37|fedora-42|centos-stream-9"
-MOCK_VERSION=fedora-36-x86_64
+RH_VERSIONS="fedora-44|fedora-45|centos-stream-10"
+ISO_VERSIONS="fedora-44|fedora-45|centos-stream-10"
+RPM_VERSIONS="fedora-44|fedora-45|centos-stream-10"
+MOCK_VERSION=fedora-44-x86_64
 MOCKBUILD=0
 
 display_help() {
-            echo
+        echo
         echo " Usage: ${0##*/} [-h] [-m ] <$MODES> [$ALL_VERSIONS]"
         echo
         echo "  -h            : display this help"
         echo "  -m            : use mock to build things"
         echo ""
-        echo "  user          : setup basic user environment (default)"
-        echo "  pkgs          : install all pkgs needed for host build environment "
-        echo "  virt          : install qemu-kvm environment "
-        echo "  copr          : create copr project $COPR_PROJECT and upload all rpms "
-        echo "                : - results at: https://copr.fedorainfracloud.org/coprs/"
-        echo "  net           : configure network environment "
-        echo "                : - script prompts for \"bridged\" primary interface."
-        echo "                :   Enter \"none\" to skip primary interace reconfiguration."
-        echo "  artifacts     : install prebuilt EDK2 artifacts"
-        echo "                :   Download artifacts.zip in \"artifacts\" directory first. "
-        echo "  mock  < $ALL_VERSIONS > "
+        echo "  rpms          : build rpms "
+        echo "                : - results at: nvme_rpm and dracut_rpm"
+        echo "  mock  < $RH_VERSIONS > "
         echo "                : mock build of all rpms "
-        echo "  iso   < $ISO_VERSIONS > "
-        echo "                : build bootable iso image with timberland-sig artifacts"
-        echo "                : - results appear in 'lorax/results' directory"
-        echo "  build < $ISO_VERSIONS > "
-        echo "                : install packages, build edk2, create copr repository, and build iso"
-        echo "                : - results appear in 'lorax/results' directory"
-        echo ""
-        echo "  prebuilt < $ISO_VERSIONS > "
-        echo "                : Download a release ISO and a prebuilt Timberland SIG EDK2"
-        echo "                : - ISOs appear in 'ISO' directory"
+        echo "                : - results at: mock_repo/results/<$RH_VERSIONS>"
+#        echo "  copr          : create copr project $COPR_PROJECT and upload all rpms "
+#        echo "                : - results at: https://copr.fedorainfracloud.org/coprs/"
+#        echo "  iso   < $ISO_VERSIONS > "
+#        echo "                : build bootable iso image with timberland-sig artifacts"
+#        echo "                : - results appear in 'lorax/results' directory"
+#        echo "  build < $ISO_VERSIONS > "
+#        echo "                : install packages, build edk2, create copr repository, and build iso"
+#        echo "                : - results appear in 'lorax/results' directory"
+#        echo ""
+#        echo " Examples: "
+#        echo "  Build an ISO with copr rpms and local edk2 artifacts"
+#        echo "       ./${0##*/} -m iso fedora-44 "
         echo ""
         echo " Examples: "
-        echo "  Install qemu and configure hypervisor networks"
-        echo "       ./${0##*/} virt "
-        echo "       ./${0##*/} net "
-        echo "  Configure hypervisor and install prebuilt bits"
-        echo "       ./${0##*/} prebuilt fedora-39 "
-        echo "  Configure user/dev environment, clone all repositories and build all bits"
-        echo "       ./${0##*/} -m build fedora-37"
-        echo "  Build an ISO with copr rpms and local edk2 artifacts"
-        echo "       ./${0##*/} -m iso fedora-36 "
+        echo "  Build rpms"
+        echo "       ./${0##*/} rpms "
+        echo "       ./${0##*/} mock fedora-44 "
         echo ""
         exit 1
 }
@@ -64,17 +58,14 @@ check_version_rh() {
         exit 1
     fi
     case "${VERSION}" in
-        fedora-36)
-            MOCK_VERSION=fedora-36-x86_64
+        fedora-44)
+            MOCK_VERSION=fedora-44-x86_64
         ;;
-        fedora-37)
-            MOCK_VERSION=fedora-37-x86_64
+        fedora-45)
+            MOCK_VERSION=fedora-45-x86_64
         ;;
-        fedora-42)
-            MOCK_VERSION=fedora-42-x86_64
-        ;;
-        centos-stream-9)
-            MOCK_VERSION="centos-stream+epel-9-x86_64"
+        centos-stream-10)
+            MOCK_VERSION="centos-stream+epel-10-x86_64"
         ;;
         *)
             echo "  Invalid argument: $VERSION" >&2
@@ -92,18 +83,18 @@ check_version_iso() {
         exit 1
     fi
     case "${VERSION}" in
-        fedora-36)
-            MOCK_VERSION=fedora-36-x86_64
+        fedora-44)
+            MOCK_VERSION=fedora-44-x86_64
         ;;
-        fedora-37)
-            MOCK_VERSION=fedora-37-x86_64
+        fedora-45)
+            MOCK_VERSION=fedora-45-x86_64
         ;;
-        fedora-42)
-            MOCK_VERSION=fedora-42-x86_64
+        centos-stream-10)
+            MOCK_VERSION="centos-stream+epel-10-x86_64"
         ;;
         *)
             echo "  Invalid argument: $VERSION" >&2
-            echo "  use: \"$0 $MODE <$ISO_VERSIONS>\"" >&2
+            echo "  use: \"$0 $MODE <$RH_VERSIONS>\"" >&2
             exit 1
         ;;
     esac
@@ -117,24 +108,18 @@ check_version_rpm() {
         exit 1
     fi
     case "${VERSION}" in
-        fedora-36)
-            MOCK_VERSION=fedora-36-x86_64
+        fedora-44)
+            MOCK_VERSION=fedora-44-x86_64
         ;;
-        fedora-37)
-            MOCK_VERSION=fedora-37-x86_64
+        fedora-45)
+            MOCK_VERSION=fedora-45-x86_64
         ;;
-        fedora-42)
-            MOCK_VERSION=fedora-42-x86_64
-        ;;
-        centos-stream-9)
-            MOCK_VERSION="centos-stream+epel-9-x86_64"
-        ;;
-        opensuse-tumbleweed)
-            MOCK_VERSION=opensuse-tumbleweed-x86_64
+        centos-stream-10)
+            MOCK_VERSION="centos-stream+epel-10-x86_64"
         ;;
         *)
             echo "  Invalid argument: $VERSION" >&2
-            echo "  use: \"$0 $MODE <$RPM_VERSIONS>\"" >&2
+            echo "  use: \"$0 $MODE <$RH_VERSIONS>\"" >&2
             exit 1
         ;;
     esac
@@ -155,15 +140,6 @@ build_nvme_rpms() {
         exit 1
     else
         $DIR/nvme_rpm/build.sh $1 $2
-    fi
-}
-
-build_libnvme_rpms() {
-    if [ ! -d $DIR/libnvme_rpm ]; then
-        echo "$DIR/libnvme_rpm not found!"
-        exit 1
-    else
-        $DIR/libnvme_rpm/build.sh $1 $2
     fi
 }
 
@@ -204,6 +180,9 @@ build_mock_iso() {
     fi
 }
 
+#
+# XXX this all needs to be replade with mkiso
+#
 build_direct_iso() {
 
     echo "direct build"
@@ -231,6 +210,7 @@ build_direct_iso() {
     popd
 }
 
+# XXX this code is obsolete
 mock_iso() {
 
     exit 1
@@ -255,6 +235,7 @@ mock_iso() {
 
 }
 
+# XXX this code is obsolete
 build_copr_iso() {
 
     if ! copr-cli list | grep "$COPR_PROJECT\/$1" ; then
@@ -292,98 +273,66 @@ build_copr_iso() {
 
 }
 
-install_artifacts_zip() {
-    pushd $DIR
+while getopts "h" opt; do
+        case "${opt}" in
+                h)
+                        display_help >&2
+                        exit 0
+                ;;
+                *)
+                        echo "  Invalid argument: -$OPTARG" >&2
+                        echo "  Try: \"$0 -h\"" >&2
+                        exit 1
+                ;;
+        esac
+done
 
-	if [ ! -d ISO ]; then
-        mkdir -p ISO
-    fi
+shift "$((OPTIND-1))"   # Discard the options and sentinel --
+MODE=$(echo "$@" | tr -t '/' ' ' | awk '{print $1}')
 
-    if [ ! -f artifacts/artifact.zip ]; then
-        echo "file artifact.zip not found!"
-		exit 1
-    fi
+if [ -z "${MODE}" ]; then
+     echo "Try: \"$0 -h\"" >&2
+fi
 
-    pushd artifacts
-	unzip artifact.zip
-
-    if [ ! -f timberland-ovmf.zip ]; then
-        echo "file timberland-ovmf.zip not found!"
-		exit 1
-	fi
-
-	unzip timberland-ovmf.zip
-
-    if [ ! -f OVMF_CODE.fd ]; then
-        echo "file OVMF_CODE.fd not found!"
-        exit 1
-    fi
-
-	popd
-
-    rm -f  host-vm/OVMF_CODE.fd
-    rm -f  host-vm/vm_vars.fd
-    rm -f  host-vm/eficonfig/NvmeOfCli.efi
-    rm -f  host-vm/eficonfig/VConfig.efi
-    cp -fv artifacts/OVMF_CODE.fd host-vm/OVMF_CODE.fd
-    cp -fv artifacts/OVMF_VARS.fd host-vm/vm_vars.fd
-    cp -fv artifacts/OVMF_VARS.fd ISO/OVMF_VARS.fd
-    cp -fv artifacts/NvmeOfCli.efi host-vm/eficonfig/NvmeOfCli.efi
-    cp -fv artifacts/VConfig.efi host-vm/eficonfig/VConfig.efi
-
-	popd
-}
+shift 1
+VERSION="$@"
 
 case "${MODE}" in
-    iso)
-        check_version_iso
-        install_devel
-        build_copr_iso $VERSION
-    ;;
-    edk2)
-        install_edk2
-    ;;
-    copr)
-        #check_version_rh
-        create_copr_project
-        build_libnvme_rpms copr $COPR_PROJECT
-        build_dracut_rpms copr $COPR_PROJECT
-        build_nvme_rpms copr $COPR_PROJECT
-    ;;
+#    iso)
+#        check_version_iso
+#        build_copr_iso $VERSION
+#    ;;
+#    copr)
+#        check_version_rh
+#        create_copr_project
+#        build_dracut_rpms copr $COPR_PROJECT
+#        build_nvme_rpms copr $COPR_PROJECT
+#    ;;
     rpms)
-        build_libnvme_rpms rpm
         build_dracut_rpms rpm
         build_nvme_rpms rpm
-    ;;
-    artif*)
-        install_artifacts_zip
     ;;
     mock)
         check_version_rpm
         rm -rf $DIR/mock_repo
         pushd $DIR
-        build_libnvme_rpms srpm
         build_nvme_rpms srpm
         build_dracut_rpms srpm
-        SRPM1="$(ls libnvme_rpm/rpmbuild/SRPMS/libnvme-*.src.rpm)"
-        SRPM2="$(ls nvme_rpm/rpmbuild/SRPMS/nvme-cli-*.src.rpm)"
-        SRPM3="$(ls dracut_rpm/rpmbuild/SRPMS/dracut-*.src.rpm)"
+        SRPM1="$(ls nvme_rpm/rpmbuild/SRPMS/nvme-cli-*.src.rpm)"
+        SRPM2="$(ls dracut_rpm/rpmbuild/SRPMS/dracut-*.src.rpm)"
         mock -r $MOCK_VERSION --init
-        mock -r $MOCK_VERSION --arch=x86_64 --no-clean --localrepo=$DIR/mock_repo --chain $SRPM1 $SRPM2 $SRPM3
+        mock -r $MOCK_VERSION --arch=x86_64 --no-clean --localrepo=$DIR/mock_repo --chain $SRPM1 $SRPM2
         popd
     ;;
-    build)
-        check_version_iso
-        install_devel
-        install_edk2
-        build_libnvme_rpms copr $COPR_PROJECT
-        build_dracut_rpms copr $COPR_PROJECT
-        build_nvme_rpms copr $COPR_PROJECT
-        build_copr_iso $VERSION
-        echo ""
-        echo " All artifacts have been built"
-        echo ""
-    ;;
+#    build)
+#        check_version_iso
+#        build_dracut_rpms copr $COPR_PROJECT
+#        build_nvme_rpms copr $COPR_PROJECT
+#        build_copr_iso $VERSION
+#        echo ""
+#        echo " All artifacts have been built"
+#        echo ""
+#    ;;
     *)
         echo "  Invalid argument: $MODE" >&2
         echo "  Try: \"$0 -h\"" >&2
