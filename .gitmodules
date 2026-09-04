@@ -6,6 +6,9 @@
 	path = dracut_rpm/dracut-ng
 	url = https://github.com/timberland-sig/dracut-ng.git
 	branch = timberland_main
+[submodule "redhat/rpms/nvme-cli"]
+	path = redhat/rpms/nvme-cli
+	url = https://github.com/linux-nvme/nvme-cli.git
 [submodule "host-vm/nvmeof-utils"]
 	path = host-vm/nvmeof-utils
 	url = https://github.com/timberland-sig/nvmeof-utils.git
