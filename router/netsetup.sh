@@ -103,6 +103,11 @@ if ! $RUN command -v kea-dhcp4 ; then
 	$RUN dnf install -y kea
 fi
 
+_dns=$($RUN resolvectl dns 2>/dev/null | grep -oE '([0-9]{1,3}\.){3}[0-9]{1,3}' | sort -u | paste -sd',' | sed 's/,/, /g')
+if [ -n "$_dns" ]; then
+	DNS_SERVERS="$_dns"
+fi
+
 echo "DNS: ${DNS_SERVERS}"
 envsubst < "$DIR/kea-dhcp4.conf.in" | $RUN bash -c 'cat - > /etc/kea/kea-dhcp4.conf'
 $RUN systemctl enable --now kea-dhcp4.service
