@@ -90,10 +90,13 @@ MIRROR_FEDORA="${MIRROR_FEDORA:-https://download.fedoraproject.org/pub/fedora/li
 
 EDK2_REPO_URL="${EDK2_REPO_URL:-https://github.com/timberland-sig/edk2.git}"
 # EDK2_REPO_BRANCH="${EDK2_REPO_BRANCH:-rel/timberland_1_0_1}"
-EDK2_REPO_BRANCH="${EDK2_REPO_BRANCH:-timberland_1_0_1-john-nospdk}"
+# EDK2_REPO_BRANCH="${EDK2_REPO_BRANCH:-timberland_1_0_1-john-nospdk}"
+EDK2_REPO_BRANCH="${EDK2_REPO_BRANCH:-timberland_main}"
 
 #OVMF_ZIP="timberland-ovmf-release-edk2-stable201903-4950-g72976af.zip"
-OVMF_ZIP="timberland-ovmf-release-edk2-stable202605-46-g4e9e9e6.zip"
+#OVMF_ZIP="timberland-ovmf-release-edk2-stable202605-46-g4e9e9e6.zip"
+OVMF_ZIP="timberland-ovmf-release-edk2-stable202605-86-g106f7dd.zip"
 
 #OVMF_URL="https://github.com/timberland-sig/edk2/releases/download/release-edk2-stable201903-4950-g72976af/"
-OVMF_URL="https://github.com/timberland-sig/edk2/releases/download/release-edk2-stable202605-46-g4e9e9e6/"
+#OVMF_URL="https://github.com/timberland-sig/edk2/releases/download/release-edk2-stable202605-46-g4e9e9e6/"
+OVMF_URL="https://github.com/timberland-sig/edk2/releases/download/release-edk2-stable202605-86-g106f7dd/"
