@@ -56,12 +56,12 @@ SSH_TARGET="root@$target_ip"
 SSH_KNOWN_HOST_ID="$target_ip"
 case "$target_ip" in
     localhost)
-        make -C "$VMDIR" NET_TYPE=localhost .build/hosts.txt
+        make -C "$VMDIR" -f "$DIR/Makefile" NET_TYPE=localhost .build/hosts.txt
         SSH_TARGET="${SSH_TARGET}:$SSH_PORT"
         SSH_KNOWN_HOST_ID="[localhost]:$SSH_PORT"
     ;;
     *)
-        make -C "$VMDIR" NET_TYPE=bridged .build/hosts.txt
+        make -C "$VMDIR" -f "$DIR/Makefile" NET_TYPE=bridged .build/hosts.txt
     ;;
 esac
 chmod 644 "$VMDIR/.build/hosts.txt"
