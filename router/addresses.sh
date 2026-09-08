@@ -2,11 +2,16 @@
 # SPDX-License-Identifier: GPL-3.0+
 # Copyright (C) 2026 Michal Rábek <mrabek@redhat.com> All rights reserved.
 
-DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-. "$DIR/../defaults.sh"
-
-# shellcheck disable=SC1091
-[ -f "$DIR/.env" ] && . "$DIR/.env"
+# Scope DIR locally so it doesn't override the caller's DIR when sourced
+_source_deps() {
+	local DIR
+	DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+	. "$DIR/../defaults.sh"
+	# shellcheck disable=SC1091
+	[ -f "$DIR/.env" ] && . "$DIR/.env"
+	_env_file="$DIR/../.env"
+}
+_source_deps
 
 # Target-side subnets (192.168.2x)
 export TARGET1_IFACE="${TARGET1_IFACE:-eth3}"
@@ -59,7 +64,6 @@ _update_env() {
 	fi
 }
 
-_env_file="$DIR/../.env"
 for _role in TARGET HOST; do
 	for _n in 1 2 3; do
 		_cidr_var="${_role}_CIDR${_n}"
@@ -82,4 +86,4 @@ for _i in 1 2; do
 	fi
 done
 
-unset _update_env _env_file _cidr_var _role _n _ip_var _net_var _ip _base _mask _i _br_var _br_addr _br_base _br_mask
+unset _source_deps _update_env _env_file _cidr_var _role _n _ip_var _net_var _ip _base _mask _i _br_var _br_addr _br_base _br_mask
