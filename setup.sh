@@ -354,7 +354,7 @@ shift 1
 NEWARGS="$@"
 
 case "${MODE}" in
-    quick*)
+    quick*|install)
         install_user
         install_virt
         install_edk2_zip
