@@ -48,6 +48,7 @@ install_user() {
         sudo dnf install -y vim git wget ethtool net-tools zip unzip NetworkManager \
             lorax-lmc-novirt pykickstart openssl make python3-pytest python3-jsonschema \
             python3 python3-blessed python3-paramiko python3-scp python3-dotenv xterm xorg-x11-xauth
+        sudo dnf group install -y development-tools
         touch .usr
     else
         echo " : Nothing to do!"
@@ -58,7 +59,6 @@ install_user() {
 
 install_devel_pkgs() {
     if [ ! -f .edk2pkgs ]; then
-        sudo dnf group install -y development-tools
         sudo dnf install -y asciidoc audit-libs-devel binutils-devel elfutils-devel java-devel kabi-dw libcap-devel \
             libcap-ng-devel libmnl-devel llvm ncurses-devel newt-devel nss-tools numactl-devel pciutils-devel perl perl-generators \
             pesign python3-devel python3-docutils xmlto rpm-build yum-utils sg3_utils dwarves libbabeltrace-devel libbpf-devel openssl-devel \
