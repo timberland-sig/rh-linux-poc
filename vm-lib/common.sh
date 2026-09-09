@@ -452,8 +452,6 @@ get_bridge_slaves() {
 }
 
 has_router() {
-        DIR="$(dirname -- "$(realpath -- "$BASH_SOURCE[0]")")"
-
 	command -v incus && \
 		[ "$(incus info router-vm 2>/dev/null | grep '^Status:' | cut -d' ' -f2)" = 'RUNNING' ]
 }
