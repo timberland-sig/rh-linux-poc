@@ -1,0 +1,138 @@
+name: Bug Report
+description: Report a bug in the NVMe/TCP Boot POC
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for reporting a bug. Please fill in as much detail as possible
+        so we can reproduce the issue. You can get most of this information by
+        running `./status.sh` on the hypervisor.
+
+  # ---------- What happened ----------
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug description
+      description: A clear description of what went wrong.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: |
+        List the exact commands or actions you took before the bug appeared.
+        Include any `make` targets, `setup.sh` modes, or manual steps.
+      placeholder: |
+        1. ./setup.sh quickstart
+        2. cd target-vm && make auto-start
+        3. cd ../host-vm && make setup
+        4. make install-remote   # chose Fedora 44
+        5. ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What you expected to happen.
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: What actually happened instead.
+    validations:
+      required: true
+
+  # ---------- Environment ----------
+
+  - type: markdown
+    attributes:
+      value: "## Hypervisor environment"
+
+  - type: input
+    id: host-os
+    attributes:
+      label: Hypervisor OS and version
+      description: Output of `cat /etc/redhat-release` or equivalent.
+      placeholder: "Fedora release 44 (Forty Four)"
+
+  # ---------- Network topology ----------
+
+  - type: markdown
+    attributes:
+      value: "## Network topology"
+
+  - type: dropdown
+    id: topology
+    attributes:
+      label: Network topology
+      description: Are you using the direct bridge setup or the router VM?
+      options:
+        - Only virtual bridges, no br0 (default setup)
+        - Only virtual bridges, with br0
+        - Bridged physical interfaces, no br0
+        - Bridged physical interfaces, with br0
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: has-router
+    attributes:
+      label: Router VM
+      description: Are you using the virtual router?
+      options:
+        - label: Yes.
+          required: false # Set to true if they MUST check it to submit
+
+  - type: textarea
+    id: network-config
+    attributes:
+      label: Network configuration
+      description: |
+        Paste the output of `ip -br addr show` on the hypervisor.
+        If using the router, also include `incus exec router-vm -- ip -br addr show`.
+      render: text
+
+  - type: input
+    id: target-os
+    attributes:
+      label: Target VM OS version
+      description: Distro and version installed on target-vm (if applicable).
+      placeholder: "Fedora 44"
+
+  # ---------- Logs and diagnostics ----------
+
+  - type: markdown
+    attributes:
+      value: "## Logs and diagnostics"
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs or terminal output
+      description: |
+        Paste any relevant output: error messages, QEMU console output, etc.
+        For boot failures, the UEFI shell output or VNC screenshot is very helpful.
+      render: text
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots
+      description: |
+        If applicable, attach VNC screenshots of the UEFI shell, Anaconda installer,
+        boot failure screens, or QEMU console output.
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional context
+      description: Anything else that might help — workarounds you tried, whether this worked before, related issues, etc.
