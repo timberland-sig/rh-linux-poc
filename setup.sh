@@ -21,7 +21,7 @@ display_help() {
         echo
         echo "  -h            : display this help"
         echo ""
-        echo "  quickstart    : runs user, virt, net, edk2_zip"
+        echo "  install       : runs user, virt, net, edk2_zip"
         echo "  user          : setup basic user environment (default)"
         echo "  devel         : setup development environment"
         echo "  virt          : install qemu-kvm environment "
@@ -354,7 +354,7 @@ shift 1
 NEWARGS="$@"
 
 case "${MODE}" in
-    quick*)
+    install)
         install_user
         install_virt
         install_edk2_zip
