@@ -38,24 +38,26 @@ some configuration settings in `/etc` and `/usr/libexec`.*
 
 3. **If this is your first time downloading this repository, you can simply run:**
   ```
-  ./setup.sh quickstart
+  make install
   ```
 
 It will essentially run the following commands to download and install the *prebuilt* Timberland SIG NVMe/TCP Boot test environment:
 
 ```
-./setup.sh user     # this will install essential packages - only has to be ran once
-./setup.sh virt     # this will install QEMU (only on Fedora) - only has to be ran once
-./setup.sh edk2_zip # this will download and install the Timberland-sig artifacts - only has to be ran once
-./setup.sh net      # this will modify your hypervisor network - run this only once
+make user       # this will install essential packages - only has to be ran once
+make virt       # this will install QEMU (only on Fedora) - only has to be ran once
+make edk2_zip   # this will download and install the Timberland-sig artifacts - only has to be ran once
+make net        # this will modify your hypervisor network - run this only once
 ```
 
-After running the quickstart, you can optionally use:
+After running the install, you can optionally use:
 ```
 ./setup.sh test   # this will automatically set up both VMs (target-vm and host-vm)
                   # ↳ starts target-vm with VNC on :0 and host-vm setup with VNC on :1
                   # ↳ useful for quick testing and automated setups
 ```
+
+Run `make help` to see all available top-level targets.
 
 In case of problems consult the [Set up your Hypervisor](#set-up-your-hypervisor) section below.
 The next step is to go to [Setup your Virtual Machines](#setup-your-virtual-machines) and install the `host-vm`.
@@ -208,13 +210,13 @@ Step by step instructions for creating your QEMU Virtual Machines.
 
 ## Set up your Hypervisor
 
-Run `./setup.sh user` - This script will install some prerequisite rpms and
+Run `make user` - This will install some prerequisite rpms and
 validate that your user account is correctly configured.  If this script shows
 an error, correct the problem and run it again.
 
-Run `./setup.sh net` - This will modify your hypervisor network configuration and
-create three bridged networks. Run this script with caution because it will
-change your network config. Running this script from a remote shell may
+Run `make net` - This will modify your hypervisor network configuration and
+create three bridged networks. Run this with caution because it will
+change your network config. Running this from a remote shell may
 disconnect your session. When in doubt, configure the bridged networks yourself, manually.
 
 During setup, you will be prompted to configure IP addresses for each bridge. You can:
@@ -234,7 +236,7 @@ If you find NVMe/TCP boot not working later, please double-check all IP address 
 | `br1`    | a virtual bridged network (default: static address `192.168.101.1/24`) |
 | `br2`     | a virtual bridged network (default: static address `192.168.110.1/24`) |
 
-Run `./setup.sh virt` - This script will install the needed qemu-kvm packages
+Run `make virt` - This will install the needed qemu-kvm packages
 and change the permissions of `/etc/qemu/bridge.conf` and
 `/usr/libexec/qemu-bridge-helper`. This will allow qemu to run from your user
 account.
@@ -242,8 +244,8 @@ account.
 *Note: this only works with Fedora and should be run with caution. When in
 doubt, install and setup qemu yourself, manually.*
 
-Run `./setup.sh edk2_zip` - This script will download the latest Timberland-SIG release of the EDK2 firmware
-and prepare it for use by the `host-vm`. Use `./setup.sh edk2` or `./setup.sh edk2` to build from source instead.
+Run `make edk2_zip` - This will download the latest Timberland-SIG release of the EDK2 firmware
+and prepare it for use by the `host-vm`. Use `make edk2` to build from source instead.
 
 # Setup your Virtual Machines
 
@@ -558,12 +560,17 @@ do a warm restart. The firmware variables will be reloaded and the `host-vm` sho
 
 ## Resetting the POC configuration
 
-To reset the network configuration and ensure test repeatability, run:
+To tear down the router and reset the network configuration, run:
+```
+make clean
+```
+
+This will tear down the router environment and remove all bridge interfaces, restoring the original network configuration. The SSH key created during setup is preserved and must be removed manually if needed.
+
+To reset only the network configuration without touching the router, run:
 ```
 ./teardown.sh net
 ```
-
-This will remove all bridge interfaces and restore the original network configuration. The SSH key created during setup is preserved and must be removed manually if needed.
 
 # Automated Test Runner
 
@@ -739,7 +746,7 @@ this will **wipe the virtual drives** as well (along with the OS):
 
 Once the setup has been cleaned up, run:
 ```
-./setup.sh router
+make router
 ```
 
 _Note that the script shall install the `incus` container engine, which requires the provision
@@ -802,7 +809,7 @@ NVMe/TCP soft target must be re-configured with new addresses.
 
 ## Build all Timberland-sig artifacts
 
-Run `./setup.sh devel` - This script clones all of the timberland-sig
+Run `make devel` - This clones all of the timberland-sig
 repositories, builds all needed artifiacts and rpms, and installs them in your
 personal copr repo. It then to creates a bootable iso image with the
 [lorax](https://weldr.io/lorax/lorax.html) uility. Artifacts and rpms are
