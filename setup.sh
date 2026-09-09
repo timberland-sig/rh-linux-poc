@@ -86,8 +86,9 @@ install_devel() {
             echo " : You must setup setup ~/.ssh"
             exit 1
         else
-            ssh -o StrictHostKeyChecking=no -T git@github.com
-            if [ $? -ne 1 ]; then
+            rc=0
+            ssh -o StrictHostKeyChecking=no -T git@github.com || rc=$?
+            if [ $rc -ne 1 ]; then
                 echo " : You must setup your ssh key for github.com"
                 exit 1
             fi
