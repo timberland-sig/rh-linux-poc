@@ -1005,6 +1005,13 @@ class TestNVMeBoot:
             else:
                 print(f"Warning: bootlog not found at {bootlog_src}")
 
+            eficonfig_src = Path("host-vm") / "eficonfig" / "config"
+            if eficonfig_src.exists():
+                shutil.copy2(eficonfig_src, artifact_dir / "eficonfig")
+                print(f"✓ EFI config saved to {artifact_dir / 'eficonfig'}")
+            else:
+                print(f"Warning: EFI config not found at {eficonfig_src}")
+
             # Always cleanup
             vm_runner.cleanup()
 
