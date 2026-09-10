@@ -233,7 +233,7 @@ fi
 
 mkdir -p $PWD/.build
 cat > .build/start-vm.sh << EOF
-$QEMU -name $VMNAME -M q35 -accel kvm -cpu host -m 4G -smp 4 $QARGS \\
+$QEMU -name $VMNAME -M q35 -accel kvm -cpu host,+invtsc -m 4G -smp 4 $QARGS \\
 -uuid $HOST_SYS_UUID \\
 $BOOT_OPTIONS \\
 $CDROM \\
