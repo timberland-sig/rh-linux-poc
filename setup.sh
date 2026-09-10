@@ -21,7 +21,7 @@ display_help() {
         echo
         echo "  -h            : display this help"
         echo ""
-        echo "  quickstart    : runs user, virt, net, edk2_zip"
+        echo "  install       : runs user, virt, net, edk2_zip"
         echo "  user          : setup basic user environment (default)"
         echo "  devel         : setup development environment"
         echo "  virt          : install qemu-kvm environment "
@@ -48,6 +48,7 @@ install_user() {
         sudo dnf install -y vim git wget ethtool net-tools zip unzip NetworkManager \
             lorax-lmc-novirt pykickstart openssl make python3-pytest python3-jsonschema \
             python3 python3-blessed python3-paramiko python3-scp python3-dotenv xterm xorg-x11-xauth
+        sudo dnf group install -y development-tools
         touch .usr
     else
         echo " : Nothing to do!"
@@ -58,7 +59,6 @@ install_user() {
 
 install_devel_pkgs() {
     if [ ! -f .edk2pkgs ]; then
-        sudo dnf group install -y development-tools
         sudo dnf install -y asciidoc audit-libs-devel binutils-devel elfutils-devel java-devel kabi-dw libcap-devel \
             libcap-ng-devel libmnl-devel llvm ncurses-devel newt-devel nss-tools numactl-devel pciutils-devel perl perl-generators \
             pesign python3-devel python3-docutils xmlto rpm-build yum-utils sg3_utils dwarves libbabeltrace-devel libbpf-devel openssl-devel \
@@ -86,8 +86,9 @@ install_devel() {
             echo " : You must setup setup ~/.ssh"
             exit 1
         else
-            ssh -o StrictHostKeyChecking=no -T git@github.com
-            if [ $? -ne 1 ]; then
+            rc=0
+            ssh -o StrictHostKeyChecking=no -T git@github.com || rc=$?
+            if [ $rc -ne 1 ]; then
                 echo " : You must setup your ssh key for github.com"
                 exit 1
             fi
@@ -354,7 +355,7 @@ shift 1
 NEWARGS="$@"
 
 case "${MODE}" in
-    quick*)
+    install)
         install_user
         install_virt
         install_edk2_zip
