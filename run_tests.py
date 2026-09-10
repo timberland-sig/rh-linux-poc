@@ -174,6 +174,7 @@ class TestNVMeBoot:
         cls.config = load_merged_config(test_files, schema_file)
         cls.cli_vnc = json.loads(os.environ.get('TEST_CLI_VNC', 'null'))
         cls.cli_graphical = os.environ.get('TEST_CLI_GRAPHICAL', '') == '1'
+        cls.no_timeout = os.environ.get('TEST_NO_TIMEOUT', '') == '1'
         ARTIFACTS_DIR.mkdir(exist_ok=True)
         print("\n" + "="*70)
         print("NVMe/TCP Boot Test Suite")
@@ -219,10 +220,13 @@ class TestNVMeBoot:
 
         test = tests[test_idx]
         test_name = test.get('name', f'Test {test_idx}')
-        timeout = test.get('timeout', 120)
 
-        if timeout < 30:
-            warnings.warn(f"Test '{test_name}' has a timeout of {timeout}s, which may be too low for a boot test.")
+        if self.__class__.no_timeout:
+            timeout = float('inf')
+        else:
+            timeout = test.get('timeout', 120)
+            if timeout < 30:
+                warnings.warn(f"Test '{test_name}' has a timeout of {timeout}s, which may be too low for a boot test.")
 
         print(f"\n{'-'*70}")
         print(f"Running: {test_name}")
@@ -322,6 +326,12 @@ Examples:
         help='Validate configuration only, do not execute tests'
     )
 
+    parser.add_argument(
+        '--no-timeout',
+        action='store_true',
+        help='Disable test timeouts (wait indefinitely until success or manual kill)'
+    )
+
     display_group = parser.add_mutually_exclusive_group()
     display_group.add_argument(
         '--vnc',
@@ -352,6 +362,7 @@ Examples:
     os.environ['TEST_SCHEMA_FILE'] = args.schema_file
     os.environ['TEST_CLI_VNC'] = json.dumps(args.vnc)
     os.environ['TEST_CLI_GRAPHICAL'] = '1' if args.graphical else ''
+    os.environ['TEST_NO_TIMEOUT'] = '1' if args.no_timeout else ''
 
     try:
         if args.dry_run:
