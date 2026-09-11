@@ -3,31 +3,32 @@
 %global nmlibdir %{_prefix}/lib/NetworkManager
 %global libname libnvme3
 
-Name:		nvme-cli
-Version:	3.0~rc2
-Release:	1
-Summary:	NVMe management command line interface
+Name:           nvme-cli
+Version:        3.0
+Release:        1
+Summary:        NVMe management command line interface
 
 License:        GPL-2.0-only
 URL:            https://github.com/linux-nvme/nvme-cli
 Source0:        %{url}/archive/v%{version_no_tilde}/%{name}-%{version_no_tilde}.tar.gz
+Source1:        99-nvme-nbft-no-ignore-carrier.conf
 
-BuildRequires: gcc gcc-c++ cmake
-BuildRequires: swig
-BuildRequires: python3-devel
+BuildRequires:  gcc gcc-c++ cmake
+BuildRequires:  swig
+BuildRequires:  python3-devel
 
-BuildRequires: meson >= 1.7
-BuildRequires: json-c-devel >= 0.18
-BuildRequires: openssl-devel
-BuildRequires: dbus-devel
-BuildRequires: keyutils-libs-devel
-BuildRequires: kmod-libs kmod-devel
-BuildRequires: perl-interpreter
+BuildRequires:  meson >= 1.7
+BuildRequires:  json-c-devel >= 0.18
+BuildRequires:  openssl-devel
+BuildRequires:  dbus-devel
+BuildRequires:  keyutils-libs-devel
+BuildRequires:  kmod-libs kmod-devel
+BuildRequires:  perl-interpreter
 
 BuildRequires:  asciidoc
 BuildRequires:  xmlto
 
-BuildRequires: systemd-rpm-macros
+BuildRequires:  systemd-rpm-macros
 
 Requires:       util-linux
 
@@ -42,8 +43,8 @@ from the Timberland-sig repository.
 
 
 %package -n %libname
-Summary:	Linux-native nvme device management library
-License:	LGPL-2.1-or-later
+Summary:        Linux-native nvme device management library
+License:        LGPL-2.1-or-later
 
 %description -n %libname
 Provides type definitions for NVMe specification structures,
@@ -56,7 +57,7 @@ from the Timberland-sig repository.
 %package -n %{libname}-devel
 Summary:        Development files for libnvme3
 Requires:       %{libname}%{?_isa} = %{version}-%{release}
-License:	LGPL-2.1-or-later
+License:        LGPL-2.1-or-later
 
 %description -n %{libname}-devel
 This package provides header files to include and libraries to link with
@@ -64,7 +65,7 @@ for Linux-native nvme device maangement.
 
 %package -n %{libname}-doc
 Summary:        Reference manual for %{libname}
-License:	LGPL-2.1-or-later
+License:        LGPL-2.1-or-later
 BuildArch:      noarch
 BuildRequires:  python3-sphinx
 BuildRequires:  python3-sphinx_rtd_theme
@@ -107,15 +108,9 @@ This package contains Python bindings for libnvme3.
 %meson_install --skip-subprojects
 %ldconfig_scriptlets
 %{__install} -D -pm 644 README.md %{buildroot}%{_pkgdocdir}/README.md
-
-# hostid and hostnqn are supposed to be unique per machine.  We obviously
-# can't package them.
-# nvme-stas ships the stas-config@.service that will take care
-# of generating these files if missing. See rhbz 2065886#c19
-rm -f %{buildroot}%{_sysconfdir}/nvme/hostid
-rm -f %{buildroot}%{_sysconfdir}/nvme/hostnqn
-
-# Do not install the dracut rule yet.  See rhbz 1742764
+%{__install} -D -pm 644 SECURITY.md %{buildroot}%{_pkgdocdir}/SECURITY.md
+mkdir -p $RPM_BUILD_ROOT%{nmlibdir}/conf.d
+%{__install} -pm 644 %{SOURCE1} $RPM_BUILD_ROOT%{nmlibdir}/conf.d/
 rm -f %{buildroot}/usr/lib/dracut/dracut.conf.d/70-nvmf-autoconnect.conf
 
 %post
@@ -124,20 +119,6 @@ rm -f %{buildroot}/usr/lib/dracut/dracut.conf.d/70-nvmf-autoconnect.conf
 %systemd_post nvmf-autoconnect.service
 %systemd_post nvmf-connect@.service
 %systemd_post nvmf-connect-nbft.service
-
-if [ $1 -eq 1 ]; then # 1 : This package is being installed for the first time
-	if [ ! -s /usr/local/etc/nvme/hostnqn ]; then
-		echo $(/usr/local/sbin/nvme gen-hostnqn) > /usr/local/etc/nvme/hostnqn
-        fi
-        if [ ! -s /usr/local/etc/nvme/hostid ]; then
-                uuidgen > /usr/local/etc/nvme/hostid
-        fi
-        if [ -S /run/udev/control ]; then
-                # apply udev and systemd changes that we did
-                systemctl daemon-reload
-                udevadm control --reload-rules && udevadm trigger
-        fi
-fi
 
 %preun
 %systemd_preun nvmefc-boot-connections.service
@@ -152,7 +133,7 @@ fi
 %systemd_postun nvmf-connect-nbft.service
 
 %files
-%license LICENSE
+%license LICENSE LICENSES
 %doc %{_pkgdocdir}
 %{_sbindir}/nvme
 %{_mandir}/man1/nvme*.gz
@@ -179,13 +160,11 @@ fi
 %{_udevrulesdir}/71-nvmf-vastdata.rules
 %{_udevrulesdir}/71-nvmf-hpe.rules
 
-# Do not install the dracut rule yet.  See rhbz 1742764
-# /usr/lib/dracut/dracut.conf.d/70-nvmf-autoconnect.conf
 %{nmlibdir}/dispatcher.d/80-nvmf-connect-nbft.sh
-# %{nmlibdir}/conf.d/99-nvme-nbft-no-ignore-carrier.conf
+%{nmlibdir}/conf.d/99-nvme-nbft-no-ignore-carrier.conf
 
 %files -n %{libname}
-# %license COPYING ccan/licenses/*
+%license libnvme/COPYING
 %{_libdir}/libnvme3.so.1
 %{_libdir}/libnvme3.so.1.0.0
 
@@ -199,7 +178,6 @@ fi
 %{_libdir}/pkgconfig/libnvme3.pc
 
 %files -n %{libname}-doc
-%doc %{_pkgdocdir}
 %{_mandir}/man2/*.2*
 
 %files -n python3-%{libname}
@@ -207,6 +185,9 @@ fi
 %{python3_sitearch}/libnvme3/*
 
 %changelog
+* Wed Sep 09 2026 Tomas Bzatek <tbzatek@redhat.com> - 3.0-1
+- Update to 3.0
+
 * Thu Aug 27 2026 Tomas Bzatek <tbzatek@redhat.com> - 3.0~rc2-1
 - Update to 3.0-rc2
 
