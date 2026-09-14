@@ -198,14 +198,14 @@ install_router() {
         sudo usermod -aG incus-admin $USER
 
         echo " : initializing incus"
-        incus admin init --auto
+        sudo incus admin init --auto
         set +e
         # Add the default storage pool to the 'default' profile
-        incus storage create default btrfs
-        incus profile device add default root disk path=/ pool=default
+        sudo incus storage create default btrfs
+        suso incus profile device add default root disk path=/ pool=default
         # Add the default network bridge to the 'default' profile
-        incus network create incusbr0 ipv4.address=auto ipv6.address=none
-        incus profile device add default eth0 nic network=incusbr0 name=eth0
+        sudo incus network create incusbr0 ipv4.address=auto ipv6.address=none
+        sudo incus profile device add default eth0 nic network=incusbr0 name=eth0
         set -e
 
         if [ "$(firewall-cmd --state)" = "running" ] ; then
