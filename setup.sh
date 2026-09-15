@@ -10,7 +10,7 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 . $DIR/defaults.sh
 
 # Configuraiton
-MODES="quickstart|user|devel|virt|edk2|edk2_zip|net|router"
+MODES="quickstart|user|devel|devel_ssh|virt|edk2|edk2_zip|net|router"
 MODE="user"
 
 set -e
@@ -23,7 +23,8 @@ display_help() {
         echo ""
         echo "  quickstart    : runs user, virt, net, edk2_zip"
         echo "  user          : setup basic user environment (default)"
-        echo "  devel         : setup development environment"
+        echo "  devel         : setup development environment https"
+        echo "  devel_ssh     : setup development environment with ssh"
         echo "  virt          : install qemu-kvm environment "
         echo "  edk2_zip      : install lastest timberland-sig edk2 release"
         echo "  edk2          : git clone timberland-sig edk2 repo"
@@ -70,8 +71,9 @@ install_devel_pkgs() {
     fi
 }
 
-install_devel() {
 
+install_devel() {
+    install_user
     if [ ! -f .devel ]; then
         echo " : Installing developer environment"
 
@@ -108,6 +110,23 @@ install_devel() {
         touch .devel
     fi
 
+    git submodule update --init --recursive
+
+}
+
+install_devel_ssh() {
+    install_devel
+    git -C nvme_rpm/nvme-cli config url."ssh://git@github.com/timberland-sig".insteadOf https://github.com/timberland-sig
+    git -C dracut_rpm/dracut-ng config url."ssh://git@github.com/timberland-sig".insteadOf https://github.com/timberland-sig
+    git -C host-vm/nvmeof-utils config url."ssh://git@github.com/timberland-sig".insteadOf https://github.com/timberland-sig
+    git -C redhat/rpms/nvme-cli config url."ssh://git@github.com/linux-nvme".insteadOf https://github.com/linux-nvme
+
+    if [ -d edk2 ]; then
+        git -C edk2/edk2 config url."ssh://git@github.com/timberland-sig".insteadOf https://github.com/timberland-sig
+    fi
+}
+
+install_macaddr() {
     if [ ! -f .macaddr ]; then
         FOO="$(./gen_macaddr.py)"
         if [ -z "$FOO" ]; then
@@ -126,9 +145,6 @@ install_devel() {
 
         touch .macaddr
     fi
-
-    git submodule update --init --recursive
-
 }
 
 install_network() {
@@ -374,6 +390,9 @@ case "${MODE}" in
     ;;
     devel)
         install_devel
+    ;;
+    devel_ssh)
+        install_devel_ssh
     ;;
     virt)
         install_virt

@@ -10,7 +10,6 @@ help:
 	@echo "Setup targets:"
 	@echo "  quickstart    : runs user, virt, net, edk2_zip"
 	@echo "  user          : setup basic user environment"
-	@echo "  devel         : setup development environment"
 	@echo "  virt          : install qemu-kvm environment"
 	@echo "  edk2_zip      : install latest timberland-sig edk2 release"
 	@echo "  edk2          : git clone timberland-sig edk2 repo"
@@ -22,8 +21,11 @@ help:
 	@echo "                : between the host-vm and target-vm"
 	@echo ""
 	@echo "Other targets:"
+	@echo "  devel         : setup development environment with https"
+	@echo "  devel_ssh     : setup development environment with ssh"
 	@echo "  status        : show network interfaces, edk2 info, and VM states"
-	@echo "  clean         : tear down the router and revert network configuration"
+	@echo "  clean         : stop all VMs, teardown the router and revert network configuration"
+	@echo "  install       : same as quickstart: runs user, virt, net, edk2_zip"
 	@echo ""
 
 .PHONY: install
@@ -41,6 +43,10 @@ user:
 .PHONY: devel
 devel:
 	./setup.sh devel
+
+.PHONY: devel_ssh
+devel_ssh:
+	./setup.sh devel_ssh
 
 .PHONY: virt
 virt:
