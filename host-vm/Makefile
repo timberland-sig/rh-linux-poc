@@ -292,8 +292,8 @@ eficonfig/config: eficonfig/config.in eficonfig/config2.in
 	configure_attempt 3 "" "" "" && \
 	configure_attempt 4 "" "" ""
 
-	read -p "Connection timeout (default: 3000): " TIMEOUT
-	TIMEOUT=$${TIMEOUT:-3000}
+	read -p "Connection timeout (default: 10000): " TIMEOUT
+	TIMEOUT=$${TIMEOUT:-10000}
 	sed -i "s/TIMEOUT/$$TIMEOUT/" $@
 
 	@echo ""
