@@ -74,6 +74,14 @@ chmod 644 "$VMDIR/.build/hosts.txt"
 ssh-keygen -R "${SSH_KNOWN_HOST_ID}"
 ssh-copy-id -o StrictHostKeyChecking=no -o ConnectTimeout=20 -i $DIR/../.ssh/id_ecdsa.pub ssh://${SSH_TARGET}
 
+# Install router's SSH key if it exists
+ROUTER_SSH_KEY="$DIR/../.ssh/router/id_ecdsa.pub"
+if [ -f "$ROUTER_SSH_KEY" ]; then
+    echo "Installing router's SSH public key on $VMNAME..."
+    ssh-copy-id -f -o StrictHostKeyChecking=no -o ConnectTimeout=20 -i "$ROUTER_SSH_KEY" ssh://${SSH_TARGET}
+    echo "Router SSH key installed on $VMNAME"
+fi
+
 case "$VMNAME" in
     target-vm)
         GATEWAY="" ROUTES2="" ROUTES3="" DNS_SERVERS=""
