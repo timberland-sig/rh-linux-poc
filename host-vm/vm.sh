@@ -149,7 +149,7 @@ elif [ -n "$(get_bridge_slaves ${BRIDGE0_NAME} 2>/dev/null)" ] ; then
         NET0_DEV="-device e1000e,netdev=net0,mac=$HOST_MAC1,addr=4"
 else
         NET0_NET="-netdev user,id=net0,hostfwd=tcp::$HOST_PORT-:22"
-        NET0_DEV="-device e1000e,netdev=net0,addr=4"
+        NET0_DEV="-device e1000e,netdev=net0,mac=$HOST_MAC1,addr=4"
 fi
 
 # Only find ISO for 'install' mode
