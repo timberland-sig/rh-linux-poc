@@ -74,6 +74,14 @@ chmod 644 "$VMDIR/.build/hosts.txt"
 ssh-keygen -R "${SSH_KNOWN_HOST_ID}"
 ssh-copy-id -o StrictHostKeyChecking=no -o ConnectTimeout=20 -i $DIR/../.ssh/id_ecdsa.pub ssh://${SSH_TARGET}
 
+# Install router's SSH key if it exists
+ROUTER_SSH_KEY="$DIR/../.ssh/router/id_ecdsa.pub"
+if [ -f "$ROUTER_SSH_KEY" ]; then
+    echo "Installing router's SSH public key on $VMNAME..."
+    ssh-copy-id -o StrictHostKeyChecking=no -o ConnectTimeout=20 -i "$ROUTER_SSH_KEY" ssh://${SSH_TARGET}
+    echo "Router SSH key installed on $VMNAME"
+fi
+
 # Install VM utilities to /usr/local/bin
 echo "Installing VM utilities on $VMNAME..."
 scp -i $DIR/../.ssh/id_ecdsa -o StrictHostKeyChecking=no $DIR/mac2iface scp://${SSH_TARGET}//usr/local/bin/
