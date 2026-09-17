@@ -97,6 +97,25 @@ fi
 
 $RUN ip -h -c -o -br address show
 
+# SSH key generation and distribution
+
+echo "Setting up SSH keys for router-vm..."
+
+# Generate SSH key pair on router-vm if it doesn't exist
+if ! $RUN test -f /root/.ssh/id_ecdsa ; then
+	echo "Generating SSH key pair on router-vm..."
+	$RUN ssh-keygen -t ecdsa -N '' -f /root/.ssh/id_ecdsa -C 'router-vm@rh-linux-poc'
+fi
+
+# Copy the public key to the hypervisor (but don't add to authorized_keys)
+ROUTER_SSH_DIR="$DIR/../.ssh/router"
+mkdir -p "$ROUTER_SSH_DIR"
+incus file pull router-vm/root/.ssh/id_ecdsa.pub "$ROUTER_SSH_DIR/id_ecdsa.pub"
+echo "Router public key saved to $ROUTER_SSH_DIR/id_ecdsa.pub"
+
+# Install some useful packages for SSH
+$RUN dnf install -y openssh-clients
+
 # Firewall setup
 
 $RUN sysctl -w net.ipv4.ip_forward=1
