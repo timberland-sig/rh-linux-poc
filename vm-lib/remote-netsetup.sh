@@ -11,16 +11,19 @@ mac2iface() {
     find /sys/class/net -mindepth 1 ! -name lo -execdir sh -c "MAC=\$(cat {}/address 2>/dev/null); if [ \"\$MAC\" = \"$macaddr\" ]; then echo \"\$(basename {})\"; fi" \;
 }
 
-if [ $# -ne 0 -a $# -ne 2 -a $# -ne 4 ] ; then
-	echo "Usage: $0 [<mac address 2> <mac address 3>] [<dhcp|ip/prefix 2> <dhcp|ip/prefix 3>]"
+if [ $# -ne 0 -a $# -ne 3 -a $# -ne 6 ] ; then
+	echo "Usage: $0 [<mac address 1> <mac address 2> <mac address 3>] [<dhcp|ip/prefix 1> <dhcp|ip/prefix 2> <dhcp|ip/prefix 3>]"
 	exit 1
 fi
 
-MAC2="$(to_lower \"$1\")"
-MAC3="$(to_lower \"$2\")"
-IP2="$3"
-IP3="$4"
+MAC1="$(to_lower \"$1\")"
+MAC2="$(to_lower \"$2\")"
+MAC3="$(to_lower \"$3\")"
+IP1="$4"
+IP2="$5"
+IP3="$6"
 
+IF1="$(mac2iface \"$MAC1\")"
 IF2="$(mac2iface \"$MAC2\")"
 IF3="$(mac2iface \"$MAC3\")"
 
@@ -37,6 +40,7 @@ fi
 setup_iface() {
 	local iface=$1
 	local ip_config=$2
+	local never_default=${3:-yes}
 
 	if [ -z "$iface" ]; then
 		return
@@ -44,6 +48,7 @@ setup_iface() {
 
 	if [ -z "$ip_config" ]; then
 		echo "Skipping interface $iface: no IP configuration provided"
+		return
 	fi
 
 	# If an nbft connection owns this device, leave it alone entirely
@@ -75,7 +80,7 @@ setup_iface() {
 			ifname "$iface" \
 			ipv4.method auto \
 			ipv4.dhcp-timeout 30 \
-			ipv4.never-default yes \
+			ipv4.never-default "$never_default" \
 			ipv4.may-fail no \
 			ipv6.method shared \
 			connection.autoconnect yes \
@@ -90,7 +95,7 @@ setup_iface() {
 			ifname "$iface" \
 			ipv4.addresses "$ip_config" \
 			ipv4.method manual \
-			ipv4.never-default yes \
+			ipv4.never-default "$never_default" \
 			ipv6.method shared \
 			connection.autoconnect yes \
 			connection.autoconnect-priority 10
@@ -99,8 +104,13 @@ setup_iface() {
 	fi
 }
 
-setup_iface "$IF2" "$IP2"
-setup_iface "$IF3" "$IP3"
+# IF1 is the router-facing (gateway) interface: it must be allowed to hold
+# the default route, so never-default is "no". IP1 is only non-empty in
+# static mode (dynamic mode leaves the primary interface untouched, same
+# as before this interface was managed here).
+setup_iface "$IF1" "$IP1" no
+setup_iface "$IF2" "$IP2" yes
+setup_iface "$IF3" "$IP3" yes
 
 nmcli g hostname $VMNAME
 

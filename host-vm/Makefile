@@ -185,6 +185,9 @@ eficonfig/config: eficonfig/config.in eficonfig/config2.in
 	source ../defaults.sh
 	source ../vm-lib/colors.sh
 	source ../vm-lib/common.sh
+	if has_router; then
+		source ../router/addresses.sh
+	fi
 
 	sed -i "s/HOSTNQN/$$HOSTNQN/" $@
 	sed -i "s/HOSTID/$$HOSTID/" $@
@@ -199,6 +202,7 @@ eficonfig/config: eficonfig/config.in eficonfig/config2.in
 		local ip_default=$$3
 		local target_default=$$4
 		local mask_default=$$5
+		local gw_default=$$6
 		if [ $$num -gt 1 ]; then
 			echo ""
 			while true; do
@@ -247,7 +251,7 @@ eficonfig/config: eficonfig/config.in eficonfig/config2.in
 				read -p "Host IP address: " INPUT_IP
 			fi
 			sed -i "s/HOST_IP/$$INPUT_IP/" $@
-			sed -i "s/HOSTGW_IP/0.0.0.0/" $@
+			sed -i "s/HOSTGW_IP/$${gw_default:-0.0.0.0}/" $@
 			while true; do
 				read -p "Subnet mask (CIDR bits 1-31 or dotted decimal, default: $$mask_default): " INPUT_MASK
 				INPUT_MASK=$${INPUT_MASK:-$$mask_default}
@@ -290,8 +294,8 @@ eficonfig/config: eficonfig/config.in eficonfig/config2.in
 	split_cidr $$HOST_CIDR2   HOST_IP2   MASK
 	split_cidr $$HOST_CIDR3   HOST_IP3   MASK
 
-	-configure_attempt 1 "$$HOST_MAC2" "$$HOST_IP2" "$$TARGET_IP2" "$$MASK2" && \
-	configure_attempt 2 "$$HOST_MAC3" "$$HOST_IP3" "$$TARGET_IP3" "$$MASK3" && \
+	-configure_attempt 1 "$$HOST_MAC2" "$$HOST_IP2" "$$TARGET_IP2" "$$MASK2" "$$HOST2_IP" && \
+	configure_attempt 2 "$$HOST_MAC3" "$$HOST_IP3" "$$TARGET_IP3" "$$MASK3" "$$HOST3_IP" && \
 	configure_attempt 3 "" "" "" && \
 	configure_attempt 4 "" "" ""
 
