@@ -23,6 +23,7 @@ help:
 	@echo "Other targets:"
 	@echo "  devel         : setup development environment with https"
 	@echo "  devel_ssh     : setup development environment with ssh"
+	@echo "  env           : initialized the .env environment"
 	@echo "  status        : show network interfaces, edk2 info, and VM states"
 	@echo "  clean         : stop all VMs, teardown the router and revert network configuration"
 	@echo "  install       : same as quickstart: runs user, virt, net, edk2_zip"
@@ -47,6 +48,10 @@ devel:
 .PHONY: devel_ssh
 devel_ssh:
 	./setup.sh devel_ssh
+
+.PHONY: env
+env:
+	./setup.sh env
 
 .PHONY: virt
 virt:

@@ -10,7 +10,7 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 . $DIR/defaults.sh
 
 # Configuraiton
-MODES="quickstart|user|devel|devel_ssh|virt|edk2|edk2_zip|net|router"
+MODES="quickstart|user|devel|devel_ssh|env|virt|edk2|edk2_zip|net|router"
 MODE="user"
 
 set -e
@@ -25,6 +25,7 @@ display_help() {
         echo "  user          : setup basic user environment (default)"
         echo "  devel         : setup development environment https"
         echo "  devel_ssh     : setup development environment with ssh"
+        echo "  env           : initialize the .env environment"
         echo "  virt          : install qemu-kvm environment "
         echo "  edk2_zip      : install lastest timberland-sig edk2 release"
         echo "  edk2          : git clone timberland-sig edk2 repo"
@@ -126,24 +127,82 @@ install_devel_ssh() {
     fi
 }
 
-install_macaddr() {
+install_env() {
     if [ ! -f .macaddr ]; then
+
+        if [ ! -f .env ]; then
+            cp -fv .env.example .env
+        fi
+
         FOO="$(./gen_macaddr.py)"
         if [ -z "$FOO" ]; then
             echo " : gen_macaddr.py failed! "
             exit 1
         else
-            sed -i "s/^TARGET_MAC1.*/TARGET_MAC1\=$FOO/" defaults.sh
+            sed -i "s/^HOST_MAC1.*/HOST_MAC1\=\"$FOO\"/" .env
+            echo " : set HOST_MAC1 to $FOO"
         fi
         FOO="$(./gen_macaddr.py)"
         if [ -z "$FOO" ]; then
             echo " : gen_macaddr.py failed! "
             exit 1
         else
-            sed -i "s/^HOST_MAC1.*/HOST_MAC1\=$FOO/" defaults.sh
+            sed -i "s/^HOST_MAC2.*/HOST_MAC2\=\"$FOO\"/" .env
+            echo " : set HOST_MAC2 to $FOO"
+        fi
+        FOO="$(./gen_macaddr.py)"
+        if [ -z "$FOO" ]; then
+            echo " : gen_macaddr.py failed! "
+            exit 1
+        else
+            sed -i "s/^HOST_MAC3.*/HOST_MAC3\=\"$FOO\"/" .env
+            echo " : set HOST_MAC3 to $FOO"
+        fi
+        FOO="$(./gen_macaddr.py)"
+        if [ -z "$FOO" ]; then
+            echo " : gen_macaddr.py failed! "
+            exit 1
+        else
+            sed -i "s/^TARGET_MAC1.*/TARGET_MAC1\=\"$FOO\"/" .env
+            echo " : set TARGET_MAC1 to $FOO"
+        fi
+        FOO="$(./gen_macaddr.py)"
+        if [ -z "$FOO" ]; then
+            echo " : gen_macaddr.py failed! "
+            exit 1
+        else
+            sed -i "s/^TARGET_MAC2.*/TARGET_MAC2\=\"$FOO\"/" .env
+            echo " : set TARGET_MAC3 to $FOO"
+        fi
+        FOO="$(./gen_macaddr.py)"
+        if [ -z "$FOO" ]; then
+            echo " : gen_macaddr.py failed! "
+            exit 1
+        else
+            sed -i "s/^TARGET_MAC3.*/TARGET_MAC3\=\"$FOO\"/" .env
+            echo " : set TARGET_MAC3 to $FOO"
+        fi
+
+        FOO="$(uuidgen)"
+        if [ -z "$FOO" ]; then
+            echo " : uuidgen failed! "
+            exit 1
+        else
+            sed -i "s/^HOST_SYS_UUID.*/HOST_SYS_UUID\=\"$FOO\"/" .env
+            echo " : set HOST_SYS_UUID to $FOO"
+        fi
+        FOO="$(uuidgen)"
+        if [ -z "$FOO" ]; then
+            echo " : uuidgen failed! "
+            exit 1
+        else
+            sed -i "s/^TARGET_SYS_UUID.*/TARGET_SYS_UUID\=\"$FOO\"/" .env
+            echo " : set TARGET_SYS_UUID to $FOO"
         fi
 
         touch .macaddr
+    else
+            echo " : Nothing to do!"
     fi
 }
 
@@ -246,7 +305,7 @@ install_virt() {
     fi
 
     echo "allow all" > /tmp/bridge.conf
-    sudo cp /tmp/bridge.conf /etc/qemu/bridge.conf
+    sudo cp -fv /tmp/bridge.conf /etc/qemu/bridge.conf
     sudo chmod 4755 /usr/libexec/qemu-bridge-helper
 }
 
@@ -393,6 +452,9 @@ case "${MODE}" in
     ;;
     devel_ssh)
         install_devel_ssh
+    ;;
+    env)
+        install_env
     ;;
     virt)
         install_virt
