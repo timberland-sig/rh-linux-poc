@@ -33,8 +33,11 @@ display_help() {
         echo "  net           : configure network environment "
         echo "                : - script prompts for \"bridged\" primary interface."
         echo "                :   Enter \"none\" to skip primary interace reconfiguration."
-        echo "  router        : configure the router (container) acting as a gateway"
+        echo "  router [dynamic|static]"
+        echo "                : configure the router (container) acting as a gateway"
         echo "                : between the host-vm and target-vm"
+        echo "                : - dynamic: deploy DHCP server (default)"
+        echo "                : - static: skip DHCP server deployment"
         echo ""
         echo " Examples: "
         echo "  Install qemu and configure hypervisor networks"
@@ -234,6 +237,7 @@ install_network() {
 }
 
 setup_router() {
+	local router_mode="${1:-dynamic}"
 	echo " : creating virtual bridges"
 
 	# Target <-> router bridges
@@ -248,10 +252,19 @@ setup_router() {
 
 	# Start the router
 	make -C router start
-    ( cd router && ./netsetup.sh )
+    ( cd router && ./netsetup.sh "$router_mode" )
 }
 
 install_router() {
+    local router_mode="${1:-dynamic}"
+
+    if [[ "$router_mode" != "dynamic" && "$router_mode" != "static" ]]; then
+        echo "  Invalid router mode: $router_mode" >&2
+        echo "  Must be 'dynamic' or 'static'" >&2
+        echo "  Try: \"$0 -h\"" >&2
+        exit 1
+    fi
+
     if ! command -v incus ; then
         # Check if 'root' already has a subordinate UID mapping
         if ! grep -q "^root:" /etc/subuid; then
@@ -297,7 +310,7 @@ install_router() {
 
     export $(compgen -v)
     export -f setup_router
-    sg incus-admin -c "setup_router"
+    sg incus-admin -c "setup_router \"$router_mode\""
 }
 
 install_virt() {
@@ -464,7 +477,7 @@ case "${MODE}" in
         install_network $NEWARGS
     ;;
     router)
-        install_router
+        install_router $NEWARGS
     ;;
     edk2)
 	install_edk2
