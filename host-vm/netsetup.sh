@@ -66,5 +66,12 @@ if [ "$GEN_NQN" -eq 1 ]; then
     echo -e "${YELLOW}Host ID: $HOSTID${NC}"
 fi
 
-echo "$HOST_IP1" > .ip
-$DIR/../vm-lib/netsetup.sh "$HOST_IP1"
+echo "$HOST_IP1" > $DIR/.ip
+
+# Propagate -x (xtrace) into vm-lib/netsetup.sh, which runs as its own
+# bash process and would otherwise not inherit it.
+if [[ $- == *x* ]]; then
+    bash -x $DIR/../vm-lib/netsetup.sh "$HOST_IP1"
+else
+    $DIR/../vm-lib/netsetup.sh "$HOST_IP1"
+fi
