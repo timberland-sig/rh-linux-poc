@@ -8,11 +8,23 @@ VMNAME="router-vm"
 . $DIR/../vm-lib/colors.sh
 . "$DIR/addresses.sh"
 
+# Parse mode argument
+ROUTER_MODE="${1:-dynamic}"
+
+if [[ "$ROUTER_MODE" != "dynamic" && "$ROUTER_MODE" != "static" ]]; then
+    echo "Error: Invalid mode '$ROUTER_MODE'. Must be 'dynamic' or 'static'."
+    show-help
+fi
+
 show-help() {
     echo ""
-    echo " Usage: netsetup.sh"
+    echo " Usage: netsetup.sh [dynamic|static]"
     echo ""
     echo " Configures the network of $VMNAME"
+    echo ""
+    echo " Arguments:"
+    echo "  dynamic - Deploy DHCP server (default)"
+    echo "  static  - Skip DHCP server deployment"
     echo ""
     echo " Environment variables:"
     echo "  ROUTER_CIDR2 - Router IP address in CIDR notation (default: empty)"
@@ -85,6 +97,25 @@ fi
 
 $RUN ip -h -c -o -br address show
 
+# SSH key generation and distribution
+
+echo "Setting up SSH keys for router-vm..."
+
+# Generate SSH key pair on router-vm if it doesn't exist
+if ! $RUN test -f /root/.ssh/id_ecdsa ; then
+	echo "Generating SSH key pair on router-vm..."
+	$RUN ssh-keygen -t ecdsa -N '' -f /root/.ssh/id_ecdsa -C 'router-vm@rh-linux-poc'
+fi
+
+# Copy the public key to the hypervisor (but don't add to authorized_keys)
+ROUTER_SSH_DIR="$DIR/../.ssh/router"
+mkdir -p "$ROUTER_SSH_DIR"
+incus file pull router-vm/root/.ssh/id_ecdsa.pub "$ROUTER_SSH_DIR/id_ecdsa.pub"
+echo "Router public key saved to $ROUTER_SSH_DIR/id_ecdsa.pub"
+
+# Install some useful packages for SSH
+$RUN dnf install -y openssh-clients
+
 # Firewall setup
 
 $RUN sysctl -w net.ipv4.ip_forward=1
@@ -99,15 +130,28 @@ $RUN systemctl enable --now nftables.service
 
 # DHCP server setup
 
-if ! $RUN command -v kea-dhcp4 ; then
-	$RUN dnf install -y kea
-fi
-
+# Get DNS servers from router (needed for both modes)
 _dns=$($RUN resolvectl dns 2>/dev/null | grep -oE '([0-9]{1,3}\.){3}[0-9]{1,3}' | sort -u | paste -sd',' | sed 's/,/, /g')
 if [ -n "$_dns" ]; then
 	DNS_SERVERS="$_dns"
 fi
 
 echo "DNS: ${DNS_SERVERS}"
-envsubst < "$DIR/kea-dhcp4.conf.in" | $RUN bash -c 'cat - > /etc/kea/kea-dhcp4.conf'
-$RUN systemctl enable --now kea-dhcp4.service
+
+if [ "$ROUTER_MODE" = "static" ]; then
+	# Static mode: uninstall DHCP server if installed
+	if $RUN command -v kea-dhcp4 ; then
+		echo "Static mode: Removing DHCP server..."
+		$RUN systemctl stop kea-dhcp4.service || true
+		$RUN systemctl disable kea-dhcp4.service || true
+		$RUN dnf remove -y kea
+	fi
+else
+	# Dynamic mode: install and configure DHCP server
+	if ! $RUN command -v kea-dhcp4 ; then
+		$RUN dnf install -y kea
+	fi
+
+	envsubst < "$DIR/kea-dhcp4.conf.in" | $RUN bash -c 'cat - > /etc/kea/kea-dhcp4.conf'
+	$RUN systemctl enable --now kea-dhcp4.service
+fi

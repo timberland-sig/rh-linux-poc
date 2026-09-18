@@ -1,0 +1,16 @@
+#!/bin/bash
+# SPDX-License-Identifier: GPL-3.0+
+# Copyright (C) 2026 Michal Rábek <mrabek@redhat.com> All rights reserved.
+#
+# Find network interface by MAC address
+# This script gets installed to /usr/local/bin/mac2iface on VMs
+
+if [ $# -ne 1 ]; then
+    echo "Usage: mac2iface <mac-address>" >&2
+    echo "" >&2
+    echo "Find network interface by MAC address" >&2
+    exit 1
+fi
+
+macaddr=$(echo "$1" | awk '{print tolower($0)}')
+find /sys/class/net -mindepth 1 ! -name lo -execdir sh -c "[ -e {}/device ] || exit 0; MAC=\$(cat {}/address 2>/dev/null); if [ \"\$MAC\" = \"$macaddr\" ]; then echo \"\$(basename {})\"; fi" \;
