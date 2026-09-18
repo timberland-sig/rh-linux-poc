@@ -185,8 +185,8 @@ eficonfig/config: eficonfig/config.in eficonfig/config2.in
 
 	sed -i "s/HOSTNQN/$$HOSTNQN/" $@
 	sed -i "s/HOSTID/$$HOSTID/" $@
-	echo -e "$${YELLOW}host-vm host NQN: $$HOSTNQN$${NC}"
-	echo -e "$${YELLOW}host-vm host ID:  $$HOSTID$${NC}"
+	echo -e "host-vm host NQN: $$HOSTNQN$${NC}"
+	echo -e "host-vm host ID:  $$HOSTID$${NC}"
 	echo ""
 
 # Function to configure a boot attempt
