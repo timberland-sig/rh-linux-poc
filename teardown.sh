@@ -169,9 +169,8 @@ if [ -z "${MODE}" ]; then
 fi
 
 case "${MODE}" in
-    vm)
+    vm|vms)
 		shutdown_vms
-		wipe_vms
     ;;
     router)
 		shutdown_vms
