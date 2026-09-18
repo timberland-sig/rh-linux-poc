@@ -178,6 +178,8 @@ Directories and files are explained here:
 | `router` | `netsetup.sh` | Configures the router VM's network interfaces via NetworkManager, loads the nftables firewall ruleset, and deploys the Kea DHCPv4 server configuration inside the Incus container. |
 | `router` | `Makefile` | Build targets for managing the router Incus container. |
 | `router` | `.env.example` | Template listing all configurable router variables (interface names, IPs, subnets) with their defaults. Copy to `.env` to override. |
+| `router` | `static-client-config.sh.in` | Template of the script that configures DNS, routes and the default gateway on the VMs in `static` router mode. Rendered with `envsubst` and executed on each VM via SSH by the router. |
+| `vm-lib` | `mac2iface` | Finds a network interface by its MAC address. Installed to `/usr/local/bin/mac2iface` on the VMs, used by the static-mode client configuration. |
 |`edk2`    | Contains the timberland-sig edk2 repository. The built artifacts are contained in: *edk2/edk2/Build/OvmfX64/DEBUG_GCC5/X64*.  The spefic artifacts needed to boot with nvme/tcp are moved to: *host-vm/eficonfig/NvmeOfCli.efi*, *host-vm/OVMF_CODE.fd* and *host-vm/vm_vars.fd*. |
 
 Proposed changes and patches should be sent to the repsective repositories at:
@@ -463,7 +465,8 @@ the latest available Fedora version, or provide an HTTP(S) link to an ISO file o
 
 There are also `+ Copr` options. These options override the `nvme-cli` package in the resulting OS installation.
 Instead of the official RPM, a custom RPM built by us is used. Use this to test with `nvme-cli-3.0`
-(at the time of writing this is the fresh upstream unpackaged version).
+(at the time of writing this is the fresh upstream unpackaged version). This RPM also carries the
+`nvme-discoverd` subpackage - a system daemon that replaces the udev autoconnect rules from nvme-cli 2.x.
 
 You may also use your own Copr repository by setting the `COPR_PROJECT` and `COPR_USER` variables in `.env`.
 
@@ -743,8 +746,15 @@ This `router-vm` is provisioned as an Incus system container running Fedora Linu
 
 The services that it provides out of the box are:
 - firewall (`nftables`)
-- DHCP server (`kea`)
+- DHCP server (`kea`, in `dynamic` mode only)
 - static routing tables
+- passwordless root SSH access to the `target-vm` and `host-vm`
+
+The SSH access is set up during router provisioning: an ECDSA key pair is generated
+inside the router container and the public key (also stored in `.ssh/router/id_ecdsa.pub`
+on the hypervisor) is installed into the VMs' `authorized_keys` by their
+`netsetup.sh` scripts. This mirrors real setups where the network administrator has
+root access to the nodes they manage.
 
 To activate the router, you first need to tear down the currently provisioned
 virtual machines using:
@@ -767,8 +777,31 @@ Once the setup has been cleaned up, run:
 make router
 ```
 
+The `static` mode is the default. It uses a bash script instead of a DHCP server to
+configure the networks on the VMs. The script does not need to be executed by the
+user - the `netsetup.sh` scripts take care of this.
+
+The `dynamic` mode provisions a DHCP server that takes care of configuring the host
+and the target automatically. It can be selected with:
+```
+make router-dynamic
+```
+
+Both modes are also available through `./setup.sh router [dynamic|static]` (or the
+`make router-static` alias). Switching between modes reconfigures the router: if a
+router was set up in the `dynamic` mode and then subsequently `./setup.sh router static`
+is invoked again, the DHCP server is removed. The inverse applies too - if the DHCP is
+missing in `dynamic` mode, it is (re)installed.
+
 _Note that the script shall install the `incus` container engine, which requires the provision
 of SubUIDs and SubGIDs. The user is expected to resolve any errors that occur manually._
+
+**WARNING:** Beware that when using `static` mode with `br0` provisioned, the VMs will have **absolutely no
+network configuration** out of the box! Moreover, if you change the DHCP setup to a static setup
+without re-installing the OS in between, there will likely be leftover configuration that will need to be updated.
+That **does not** mean that the configuration is necesarily bad and that an OS reinstall is necessary - sometimes
+this may mean less manual work, sometimes more, depending on how exactly does the existing configuration clash
+with the intended one.
 
 ## Provisioning the VMs
 
@@ -781,7 +814,7 @@ and hook up to the proper virtual bridges. Their `netsetup.sh` scripts must be r
 ```
 
 The IP addresses of the VMs on their management interface can be set
-in the `router-vm/.env` file. This file does not exists by default, but can be created
+in the `router-vm/.env` file. This file does not exist by default, but can be created
 by copying the `router-vm/.env.example` file into `router-vm/.env`.
 
 ```shell
@@ -836,7 +869,7 @@ created in the follow directories:
 | Directory  | Decription |
 | :-----   | :----      |
 | `lorax_results` | contains the bootable iso generated from the build process. This iso is created using the generated rpm from your `copr.fedorainfracloud.org` project. The specific location of the iso is: *lorax_results/images/boot.iso*`.  This is the default iso used by the *host-vm\vm.sh* and *target-vm\vm.sh* scripts.|
-| `copr.fedorainfracloud.org` | Contains rpms for nvme-cli, libnvme and dracut. (e.g.: see [johnmeneghini's](https://copr.fedorainfracloud.org/coprs/johnmeneghini/timberland-sig/) copr repository. |
+| `copr.fedorainfracloud.org` | Contains rpms for nvme-cli (with the `nvme-discoverd` daemon), libnvme and dracut. (e.g.: see [johnmeneghini's](https://copr.fedorainfracloud.org/coprs/johnmeneghini/timberland-sig/) copr repository. |
 
 ## Developer Build
 
