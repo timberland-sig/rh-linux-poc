@@ -149,13 +149,13 @@ fi
 # Detect a bridged setup
 if has_router && [ -n "$(get_bridge_slaves ${BRIDGE0_NAME} 2>/dev/null)" ] ; then
         NET0_NET="-netdev bridge,br=$VIRT_TARGET_BRIDGE_NAME0,id=net0,helper=$BRIDGE_HELPER"
-        NET0_DEV="-device virtio-net-pci,netdev=net0,mac=$TARGET_MAC1,addr=4"
+        NET0_DEV="-device rtl8139,netdev=net0,mac=$TARGET_MAC1,addr=4"
 elif [ -n "$(get_bridge_slaves ${BRIDGE0_NAME} 2>/dev/null)" ] ; then
         NET0_NET="-netdev bridge,br=$BRIDGE0_NAME,id=net0,helper=$BRIDGE_HELPER"
-        NET0_DEV="-device virtio-net-pci,netdev=net0,mac=$TARGET_MAC1,addr=4"
+        NET0_DEV="-device rtl8139,netdev=net0,mac=$TARGET_MAC1,addr=4"
 else
         NET0_NET="-netdev user,id=net0,hostfwd=tcp::$TARGET_PORT-:22"
-        NET0_DEV="-device e1000e,netdev=net0,mac=$TARGET_MAC1,addr=4"
+        NET0_DEV="-device rtl8139,netdev=net0,mac=$TARGET_MAC1,addr=4"
         echo "$TARGET_PORT" > .netport
 fi
 
