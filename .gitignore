@@ -27,6 +27,7 @@ cscope.*
 .pkgs2
 .durl
 .diso
+.use_copr
 .devel
 .display_mode
 .usr

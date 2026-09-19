@@ -147,11 +147,13 @@ def _resolve_fedora(version=None):
 
 
 CHOICES = [
-    ("CentOS Stream 10",          lambda: _resolve_direct("MIRROR_CENTOS")),
-    ("Fedora (latest)",            lambda: _resolve_fedora()),
-    ("Fedora 44",                  lambda: _resolve_fedora(44)),
-    ("Fedora 43",                  lambda: _resolve_fedora(43)),
-    ("Custom ISO download link",   None),
+    ("CentOS Stream 10",          lambda: _resolve_direct("MIRROR_CENTOS"), False),
+    ("Fedora (latest)",            lambda: _resolve_fedora(),                False),
+    ("Fedora (latest) + Copr",    lambda: _resolve_fedora(),                True),
+    ("Fedora 44",                  lambda: _resolve_fedora(44),              False),
+    ("Fedora 44 + Copr",          lambda: _resolve_fedora(44),              True),
+    ("Fedora 43",                  lambda: _resolve_fedora(43),              False),
+    ("Custom ISO download link",   None,                                     False),
 ]
 
 
@@ -164,7 +166,7 @@ def _tui_select():
         if not first:
             print(f"\r{term.move_up(total_lines - 1)}", end="")
         print(f"  {term.cyan_bold}?{term.normal} {term.bold}Select an OS to use{term.normal}{term.clear_eol}")
-        for i, (label, _) in enumerate(CHOICES):
+        for i, (label, _, _) in enumerate(CHOICES):
             if i == selected:
                 print(f"  {term.cyan_bold}> {label}{term.normal}{term.clear_eol}")
             else:
@@ -204,7 +206,7 @@ def main():
         print("Cancelled.")
         sys.exit(0)
 
-    label, resolver = CHOICES[selection]
+    label, resolver, copr = CHOICES[selection]
 
     if resolver is None:
         prev_url = ""
@@ -252,6 +254,8 @@ def main():
         f.write(url + "\n")
     with open(os.path.join(state_dir, ".diso"), "w") as f:
         f.write(iso_name + "\n")
+    with open(os.path.join(state_dir, ".use_copr"), "w") as f:
+        f.write("1\n" if copr else "")
 
     print(f"ISO ready: ISO/{iso_name}")
 
