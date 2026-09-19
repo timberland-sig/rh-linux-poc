@@ -10,6 +10,14 @@ VMNAME="router-vm"
 
 set -e
 
+# Parse mode argument
+ROUTER_MODE="${1:-dynamic}"
+
+if [[ "$ROUTER_MODE" != "dynamic" && "$ROUTER_MODE" != "static" ]]; then
+    echo "Error: Invalid mode '$ROUTER_MODE'. Must be 'dynamic' or 'static'."
+    show-help
+fi
+
 show-help() {
     echo ""
     echo " Usage: netsetup.sh [dynamic|static]"
