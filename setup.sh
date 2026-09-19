@@ -278,7 +278,7 @@ install_router() {
         set +e
         # Add the default storage pool to the 'default' profile
         sudo incus storage create default btrfs
-        suso incus profile device add default root disk path=/ pool=default
+        sudo incus profile device add default root disk path=/ pool=default
         # Add the default network bridge to the 'default' profile
         sudo incus network create incusbr0 ipv4.address=auto ipv6.address=none
         sudo incus profile device add default eth0 nic network=incusbr0 name=eth0
