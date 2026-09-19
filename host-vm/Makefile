@@ -5,6 +5,7 @@
 VMNAME := $(shell basename $$PWD)
 DRIVE_CAP ?= 70G
 QEMU_ARGS ?= ""
+USE_COPR ?=
 VNC_DISPLAY ?=
 export VNC_DISPLAY
 METHOD ?= auto
@@ -64,7 +65,8 @@ help:
 	@echo "  DRIVE_CAP     Disk capacity (default: $(DRIVE_CAP))"
 	@echo "  VNC_DISPLAY   VNC display number (forces VNC mode, e.g., VNC_DISPLAY=1)"
 	@echo "  QEMU_ARGS     Additional QEMU arguments"
-	@echo "  ISO             Path to a .iso to be used for OS installation"
+	@echo "  USE_COPR      Enable the Copr repository with NVMe/TCP boot packages (e.g., USE_COPR=1)"
+	@echo "  ISO           Path to a .iso to be used for OS installation"
 	@echo ""
 	@echo "Examples:"
 	@echo "  make install-local                  # Install to local disk"
@@ -163,9 +165,12 @@ xterm:
 .ONESHELL: iso
 iso:
 	@old=$$(cat .diso 2>/dev/null); old_mtime=$$(stat -c %Y .diso 2>/dev/null)
+	old_copr=$$(cat .use_copr 2>/dev/null)
 	source ../defaults.sh && export MIRROR_CENTOS MIRROR_FEDORA && python3 ../iso_selector.py
 	new=$$(cat .diso 2>/dev/null)
+	new_copr=$$(cat .use_copr 2>/dev/null)
 	if [ "$$old" = "$$new" ] && [ -n "$$old_mtime" ]; then touch -d @$$old_mtime .diso; fi
+	if [ "$$old_copr" != "$$new_copr" ]; then rm -f boot.iso; fi
 
 .diso:
 	@source ../defaults.sh && export MIRROR_CENTOS MIRROR_FEDORA && python3 ../iso_selector.py
@@ -344,10 +349,18 @@ nvmeof-utils/ovmf_vars_set: nvmeof-utils/ovmf_vars_set.c
 # Simply embed the anaconda kickstart file into the ISO
 boot.iso: .diso anaconda-ks.cfg ../vm-lib/common.sh
 	rm -f $@
-	sudo mkksiso --ks anaconda-ks.cfg --cmdline "inst.sshd" $(INPUT_ISO) $@
+	cp anaconda-ks.cfg .anaconda-ks.cfg.tmp
+	@if [ "$$(cat .use_copr 2>/dev/null)" = "1" ] || [ -n "$(USE_COPR)" ]; then \
+		sed -i 's/^# \(repo --name="copr-nvme".*\)/\1/' .anaconda-ks.cfg.tmp; fi
+	sudo mkksiso --ks .anaconda-ks.cfg.tmp --cmdline "inst.sshd" $(INPUT_ISO) $@
+	# rm -f .anaconda-ks.cfg.tmp
 
-anaconda-ks.cfg: anaconda-ks.cfg.template
-	@read -p "Enter a root password for the host-vm: " -s PASSWORD; echo; sed -e "s|<ROOT_PASSWD>|$$(openssl passwd -1 -stdin <<< $$PASSWORD)|" $< > $@
+anaconda-ks.cfg: anaconda-ks.cfg.template ../defaults.sh $(wildcard ../.env)
+	@source ../defaults.sh && \
+	read -p "Enter a root password for the host-vm: " -s PASSWORD; echo; \
+	sed -e "s|<ROOT_PASSWD>|$$(openssl passwd -1 -stdin <<< $$PASSWORD)|" \
+	    -e "s|<COPR_USER>|$$COPR_USER|" \
+	    -e "s|<COPR_PROJECT>|$$COPR_PROJECT|" $< > $@
 
 .PHONY: clean-config
 clean-config:
@@ -367,6 +380,7 @@ clean: clean-config
 	-rm -rf .build
 	-rm -f .net*
 	-rm -f .ip
+	-rm -f .use_copr
 	-rm -f anaconda-ks.cfg
 	-rm -f efidisk
 	-rm -f bootlog
