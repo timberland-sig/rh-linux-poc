@@ -99,7 +99,7 @@ find_iso() {
         exit 1
     fi
     ISOVERSION="$(cat $PWD/.diso)"
-    ISO_FILE=$(find ../ -name $ISOVERSION -print)
+    ISO_FILE=$(find ../ -name $ISOVERSION -print -quit)
     if [ -z "$ISO_FILE" ]; then
         echo " Error: $ISOVERSION not found"
         echo " run \"make iso\" in this directory first"
