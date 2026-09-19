@@ -8,6 +8,8 @@ VMNAME="router-vm"
 . $DIR/../vm-lib/colors.sh
 . "$DIR/addresses.sh"
 
+set -e
+
 # Parse mode argument
 ROUTER_MODE="${1:-dynamic}"
 
