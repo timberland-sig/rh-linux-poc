@@ -13,6 +13,8 @@ set -e
 # Parse mode argument
 ROUTER_MODE="${1:-static}"
 
+set -e
+
 if [[ "$ROUTER_MODE" != "dynamic" && "$ROUTER_MODE" != "static" ]]; then
     echo "Error: Invalid mode '$ROUTER_MODE'. Must be 'dynamic' or 'static'."
     show-help
