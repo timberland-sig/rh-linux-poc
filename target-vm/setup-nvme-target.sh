@@ -31,10 +31,12 @@ modprobe nvme_fabrics
 modprobe nvmet_tcp
 cp nvmet-mods.conf /etc/modules-load.d/
 
-# Configure firewall to allow NVMe/TCP traffic (port 4420) on all zones
+# Configure firewall to allow NVMe/TCP traffic on all zones
+SUBSYS_PORT=$(grep -o '"trsvcid": "[0-9]*"' tcp.json | head -1 | grep -o '[0-9]*')
+SUBSYS_PORT=${SUBSYS_PORT:-4420}
 systemctl start firewalld
 for zone in $(firewall-cmd --get-active-zones | grep -v '^\s' | cut -d' ' -f1); do
-    firewall-cmd --zone=$zone --add-port=4420/tcp --permanent
+    firewall-cmd --zone=$zone --add-port=${SUBSYS_PORT}/tcp --permanent
 done
 
 sed -i "s|DISKPATH|$nvme_disk_path|" tcp.json
