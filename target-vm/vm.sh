@@ -149,13 +149,13 @@ fi
 # Detect a bridged setup
 if has_router && [ -n "$(get_bridge_slaves ${BRIDGE0_NAME} 2>/dev/null)" ] ; then
         NET0_NET="-netdev bridge,br=$VIRT_TARGET_BRIDGE_NAME0,id=net0,helper=$BRIDGE_HELPER"
-        NET0_DEV="-device rtl8139,netdev=net0,mac=$TARGET_MAC1,addr=4"
+        NET0_DEV="-device $QEMU_NETDEV,netdev=net0,mac=$TARGET_MAC1,addr=4"
 elif [ -n "$(get_bridge_slaves ${BRIDGE0_NAME} 2>/dev/null)" ] ; then
         NET0_NET="-netdev bridge,br=$BRIDGE0_NAME,id=net0,helper=$BRIDGE_HELPER"
-        NET0_DEV="-device rtl8139,netdev=net0,mac=$TARGET_MAC1,addr=4"
+        NET0_DEV="-device $QEMU_NETDEV,netdev=net0,mac=$TARGET_MAC1,addr=4"
 else
         NET0_NET="-netdev user,id=net0,hostfwd=tcp::$TARGET_PORT-:22"
-        NET0_DEV="-device rtl8139,netdev=net0,mac=$TARGET_MAC1,addr=4"
+        NET0_DEV="-device $QEMU_NETDEV,netdev=net0,mac=$TARGET_MAC1,addr=4"
         echo "$TARGET_PORT" > .netport
 fi
 
@@ -165,10 +165,10 @@ if has_router ; then
 fi
 
 NET1_NET="-netdev bridge,br=$BRIDGE1_NAME,id=net1,helper=$BRIDGE_HELPER"
-NET1_DEV="-device rtl8139,netdev=net1,mac=$TARGET_MAC2,addr=5"
+NET1_DEV="-device $QEMU_NETDEV,netdev=net1,mac=$TARGET_MAC2,addr=5"
 
 NET2_NET="-netdev bridge,br=$BRIDGE2_NAME,id=net2,helper=$BRIDGE_HELPER"
-NET2_DEV="-device rtl8139,netdev=net2,mac=$TARGET_MAC3,addr=6"
+NET2_DEV="-device $QEMU_NETDEV,netdev=net2,mac=$TARGET_MAC3,addr=6"
 
 # Set boot options based on mode
 if [ "$MODE" == "install" ]; then
