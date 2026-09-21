@@ -4,7 +4,7 @@
 %global libname libnvme3
 
 Name:           nvme-cli
-Version:        3.0
+Version:        3.1
 Release:        1
 Summary:        NVMe management command line interface
 
@@ -185,6 +185,9 @@ rm -f %{buildroot}/usr/lib/dracut/dracut.conf.d/70-nvmf-autoconnect.conf
 %{python3_sitearch}/libnvme3/*
 
 %changelog
+* Mon Sep 21 2026 Tomas Bzatek <tbzatek@redhat.com> - 3.1-1
+- Update to 3.1
+
 * Wed Sep 09 2026 Tomas Bzatek <tbzatek@redhat.com> - 3.0-1
 - Update to 3.0
 
