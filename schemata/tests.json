@@ -199,12 +199,12 @@
               "type": "integer",
               "minimum": 1,
               "maximum": 65535,
-              "description": "Port number (default: 4420)"
+              "description": "Port number (default: SUBSYS_PORT from defaults.sh)"
             },
             {
               "type": "string",
               "const": "default",
-              "description": "Use default port (4420)"
+              "description": "Use default port (SUBSYS_PORT from defaults.sh)"
             }
           ]
         },

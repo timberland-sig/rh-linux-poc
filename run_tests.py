@@ -36,6 +36,7 @@ DEFAULTS = {
     'TARGET_IP2': '192.168.101.20',
     'TARGET_IP3': '192.168.110.20',
     'SUBNQN': 'nqn.2014-08.org.nvmexpress:uuid:0c468c4d-a385-47e0-8299-6e95051277db',
+    'SUBSYS_PORT': '4420',
 }
 
 
@@ -502,7 +503,7 @@ class EFIConfigGenerator:
             return DEFAULTS.get('SUBNQN', 'nqn.2014-08.org.nvmexpress:uuid:0c468c4d-a385-47e0-8299-6e95051277db')
 
         elif field == 'port':
-            return '4420'
+            return DEFAULTS.get('SUBSYS_PORT', '4420')
 
         elif field == 'timeout':
             return '3000'
