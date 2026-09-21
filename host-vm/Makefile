@@ -371,8 +371,8 @@ tcpdump:
 	read -p "Target IP address (default: $${INPUT_TARGET}): " INPUT_TARGET
 	INPUT_PORT=$${INPUT_PORT:-$$SUBSYS_PORT}
 	read -p "Target IP port (default: $${INPUT_PORT}): " INPUT_PORT
-	@echo "sudo tcpdump -ni any host ${INPUT_TARGET} and port ${INPUT_PORT} -s 0 -w ${INPUT_TARGET}.pcap"
-	sudo tcpdump -ni any host ${INPUT_TARGET} and port ${INPUT_PORT} -s 0 -w ${INPUT_TARGET}.pcap &
+	@echo "sudo tcpdump -ni any host $${INPUT_TARGET} and port $${INPUT_PORT} -s 0 -w $${INPUT_TARGET}.pcap"
+	sudo tcpdump -ni any host $${INPUT_TARGET} and port $${INPUT_PORT} -s 0 -w $${INPUT_TARGET}.pcap &
 
 .PHONY: clean
 clean: clean-config
