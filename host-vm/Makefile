@@ -46,6 +46,7 @@ help:
 	@echo "  install-efidisk Install OS to remote NVMe/TCP disk with efidisk"
 	@echo "  start-remote    Start VM from remote NVMe/TCP disk"
 	@echo "  tcpdump         Start a tcpdump that collects all TCP traffic from $${TARGET_CIDR2}:$${SUBSYS_PORT}"
+	@echo "  stop-tcpdump    Stop the background tcpdump process"
 	@echo "  enter           Open an SSH connection to the VM in the current terminal window."
 	@echo "  xterm           Open an SSH connection to the VM in an xterm window."
 	@echo "                  ./netsetup.sh MUST be run first! The login is passwordless."
@@ -375,6 +376,14 @@ tcpdump:
 
 	@echo "sudo tcpdump -ni any host $${INPUT_TARGET} and port $${INPUT_PORT} -s 0 -w $${INPUT_TARGET}.pcap"
 	sudo tcpdump -ni any host $${INPUT_TARGET} and port $${INPUT_PORT} -s 0 -w $${INPUT_TARGET}.pcap &
+
+.PHONY: stop-tcpdump
+stop-tcpdump:
+	@if [ -n "$$(pgrep -f '[t]cpdump -ni any')" ] ; then \
+		sudo kill -SIGHUP $$(pgrep -f '[t]cpdump -ni any') ; \
+	else \
+		echo "No tcpdump process found" ; \
+	fi
 
 .PHONY: clean
 clean: clean-config
