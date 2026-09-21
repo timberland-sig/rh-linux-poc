@@ -32,5 +32,9 @@ echo ":   and $TARGET_IP3"
 
 sudo modprobe nvme_fabrics
 sudo modprobe nvme_tcp
-sudo nvme discover --hostnqn=$HOSTNQN --hostid="$HOSTID" --transport=tcp --traddr=$TARGET_IP2 --trsvcid=4420
-sudo nvme discover --hostnqn=$HOSTNQN --hostid="$HOSTID" --transport=tcp --traddr=$TARGET_IP3 --trsvcid=4420
+echo ""
+echo "nvme discover --hostnqn=$HOSTNQN --hostid="$HOSTID" --transport=tcp --traddr=$TARGET_IP2 --trsvcid=$SUBSYS_PORT"
+sudo nvme discover --hostnqn=$HOSTNQN --hostid="$HOSTID" --transport=tcp --traddr=$TARGET_IP2 --trsvcid=$SUBSYS_PORT
+echo ""
+echo "nvme discover --hostnqn=$HOSTNQN --hostid="$HOSTID" --transport=tcp --traddr=$TARGET_IP3 --trsvcid=$SUBSYS_PORT"
+sudo nvme discover --hostnqn=$HOSTNQN --hostid="$HOSTID" --transport=tcp --traddr=$TARGET_IP3 --trsvcid=$SUBSYS_PORT
