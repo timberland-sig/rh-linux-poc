@@ -263,8 +263,8 @@ eficonfig/config: eficonfig/config.in eficonfig/config2.in
 			read -p "Target IP address: " INPUT_TARGET
 		fi
 		sed -i "s/TARGET_IP/$$INPUT_TARGET/" $@
-		read -p "Port number (default: 4420): " INPUT_PORT
-		INPUT_PORT=$${INPUT_PORT:-4420}
+		read -p "Port number (default: $$SUBSYS_PORT): " INPUT_PORT
+		INPUT_PORT=$${INPUT_PORT:-$$SUBSYS_PORT}
 		sed -i "s/TARGET_PORT/$$INPUT_PORT/" $@
 		while true; do
 			read -p "Use discovery NQN? (y/n): " DISCOVERY
