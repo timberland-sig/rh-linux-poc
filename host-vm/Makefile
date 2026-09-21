@@ -32,6 +32,7 @@ endif
 .ONESHELL: help
 .PHONY: help
 help:
+	source ../defaults.sh
 	@echo "Host VM Makefile - Manage NVMe/TCP boot test host VM"
 	@echo ""
 	@echo "Main targets:"
@@ -44,7 +45,7 @@ help:
 	@echo "  install-remote  Install OS to remote NVMe/TCP disk w/out efidisk"
 	@echo "  install-efidisk Install OS to remote NVMe/TCP disk with efidisk"
 	@echo "  start-remote    Start VM from remote NVMe/TCP disk"
-	@echo "  tcpdump         Start a tcpdump that collects all TCP traffic from ${TARGET_CIDR2}:${SUBSYS_PORT}"
+	@echo "  tcpdump         Start a tcpdump that collects all TCP traffic from $${TARGET_CIDR2}:$${SUBSYS_PORT}"
 	@echo "  enter           Open an SSH connection to the VM in the current terminal window."
 	@echo "  xterm           Open an SSH connection to the VM in an xterm window."
 	@echo "                  ./netsetup.sh MUST be run first! The login is passwordless."
@@ -367,12 +368,13 @@ tcpdump:
 	source ../defaults.sh
 	source ../vm-lib/common.sh
 	split_cidr $$TARGET_CIDR2 TARGET_IP2 MASK2
+	read -p "Target IP address (default: $${TARGET_IP2}): " INPUT_TARGET
 	INPUT_TARGET=$${INPUT_TARGET:-$$TARGET_IP2}
-	read -p "Target IP address (default: $${INPUT_TARGET}): " INPUT_TARGET
+	read -p "Target IP port (default: $${SUBSYS_PORT}): " INPUT_PORT
 	INPUT_PORT=$${INPUT_PORT:-$$SUBSYS_PORT}
-	read -p "Target IP port (default: $${INPUT_PORT}): " INPUT_PORT
-	@echo "sudo tcpdump -ni any host ${INPUT_TARGET} and port ${INPUT_PORT} -s 0 -w ${INPUT_TARGET}.pcap"
-	sudo tcpdump -ni any host ${INPUT_TARGET} and port ${INPUT_PORT} -s 0 -w ${INPUT_TARGET}.pcap &
+
+	@echo "sudo tcpdump -ni any host $${INPUT_TARGET} and port $${INPUT_PORT} -s 0 -w $${INPUT_TARGET}.pcap"
+	sudo tcpdump -ni any host $${INPUT_TARGET} and port $${INPUT_PORT} -s 0 -w $${INPUT_TARGET}.pcap &
 
 .PHONY: clean
 clean: clean-config
