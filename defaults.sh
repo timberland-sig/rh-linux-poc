@@ -32,6 +32,8 @@ NSNGUID="${NSNGUID:-ace42e00-1510-2fce-2ee4-ac0000000001}"
 NSUUID="${NSUUID:-bee9c2b7-1761-44b5-a4e6-0f690498a94b}"
 SUBSYS_PORT="${SUBSYS_PORT:-4420}"
 
+QEMU_NETDEV="${QEMU_NETDEV:-rtl8139}"
+
 # Serial numbers for nvme disks, used by target-vm/install.sh
 # Generated with SN=$(hexdump -vn8 -e'4/4 "%08X" 1 "\n"' /dev/urandom)
 # The generate_serial_number() function from vm-lib/common.sh does just this
