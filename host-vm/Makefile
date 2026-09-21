@@ -45,7 +45,7 @@ help:
 	@echo "  install-remote  Install OS to remote NVMe/TCP disk w/out efidisk"
 	@echo "  install-efidisk Install OS to remote NVMe/TCP disk with efidisk"
 	@echo "  start-remote    Start VM from remote NVMe/TCP disk"
-	@echo "  tcpdump         Start a tcpdump that collects all TCP traffic from $${TARGET_CIDR2}:$${SUBSYS_PORT}"
+	@echo "  start-tcpdump   Start a tcpdump that collects all TCP traffic from $${TARGET_CIDR2}:$${SUBSYS_PORT}"
 	@echo "  stop-tcpdump    Stop the background tcpdump process"
 	@echo "  enter           Open an SSH connection to the VM in the current terminal window."
 	@echo "  xterm           Open an SSH connection to the VM in an xterm window."
@@ -362,10 +362,10 @@ reconfig: clean-config setup
 .PHONY: config
 config: reconfig
 
-.PHONY: tcpdump
-.ONESHELL: tcpdump
-.SILENT: tcpdump
-tcpdump:
+.PHONY: start-tcpdump
+.ONESHELL: start-tcpdump
+.SILENT: start-tcpdump
+start-tcpdump:
 	source ../defaults.sh
 	source ../vm-lib/common.sh
 	split_cidr $$TARGET_CIDR2 TARGET_IP2 MASK2
@@ -374,8 +374,8 @@ tcpdump:
 	read -p "Target IP port (default: $${SUBSYS_PORT}): " INPUT_PORT
 	INPUT_PORT=$${INPUT_PORT:-$$SUBSYS_PORT}
 
-	@echo "sudo tcpdump -ni any host $${INPUT_TARGET} and port $${INPUT_PORT} -s 0 -w $${INPUT_TARGET}.pcap"
-	sudo tcpdump -ni any host $${INPUT_TARGET} and port $${INPUT_PORT} -s 0 -w $${INPUT_TARGET}.pcap &
+	@echo "sudo tcpdump -ni any host $${INPUT_TARGET} and port $${INPUT_PORT} -s 0 -w $${INPUT_TARGET}-$${INPUT_PORT}.pcap"
+	sudo tcpdump -ni any host $${INPUT_TARGET} and port $${INPUT_PORT} -s 0 -w $${INPUT_TARGET}-$${INPUT_PORT}.pcap &
 
 .PHONY: stop-tcpdump
 stop-tcpdump:
