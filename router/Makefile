@@ -23,10 +23,10 @@ help:
 .PHONY: start
 start:
 	source ../defaults.sh
-	@if incus list | grep $(VMNAME) ; then \
-		incus start $(VMNAME) ; \
-	else \
-		incus launch images:fedora/44/default $(VMNAME) ; \
+	-@if incus list | grep $(VMNAME) && [ "$$($(MAKE) --silent is-running)" = 'NO' ] ; then
+		incus start $(VMNAME)
+	elif ! incus list | grep $(VMNAME) ; then
+		incus launch images:fedora/44/default $(VMNAME)
 		incus network attach $$BRIDGE1_NAME $(VMNAME) eth1
 		incus network attach $$BRIDGE2_NAME $(VMNAME) eth2
 
