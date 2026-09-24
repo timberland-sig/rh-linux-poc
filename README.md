@@ -447,6 +447,12 @@ make install-remote
 A menu with operating system choices shall appear. You may choose between CentOS Stream 10, Fedora 42, Fedora 43,
 the latest available Fedora version, or provide an HTTP(S) link to an ISO file of a distribution of your choice.
 
+There are also `+ Copr` options. These options override the `nvme-cli` package in the resulting OS installation.
+Instead of the official RPM, a custom RPM built by us is used. Use this to test with `nvme-cli-3.0`
+(at the time of writing this is the fresh upstream unpackaged version).
+
+You may also use your own Copr repository by setting the `COPR_PROJECT` and `COPR_USER` variables in `.env`.
+
 ![alt uefi reset](images/uefi_iso_install.png)
 
 Hit `Enter`.
