@@ -11,7 +11,7 @@ VMNAME="router-vm"
 set -e
 
 # Parse mode argument
-ROUTER_MODE="${1:-dynamic}"
+ROUTER_MODE="${1:-static}"
 
 if [[ "$ROUTER_MODE" != "dynamic" && "$ROUTER_MODE" != "static" ]]; then
     echo "Error: Invalid mode '$ROUTER_MODE'. Must be 'dynamic' or 'static'."
