@@ -10,7 +10,7 @@
         "adrfam": "ipv4",
         "traddr": "TARGET_IP2",
         "treq": "not specified",
-        "trsvcid": "4420",
+        "trsvcid": "SUBSYS_PORT",
         "trtype": "tcp"
       },
       "ana_groups": [
@@ -36,7 +36,7 @@
         "adrfam": "ipv4",
         "traddr": "TARGET_IP3",
         "treq": "not specified",
-        "trsvcid": "4420",
+        "trsvcid": "SUBSYS_PORT",
         "trtype": "tcp"
       },
       "ana_groups": [

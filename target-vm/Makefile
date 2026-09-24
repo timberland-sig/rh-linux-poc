@@ -157,6 +157,7 @@ iso:
 	sed -i "s/NSNGUID/$$NSNGUID/" $@
 	sed -i "s/NSUUID/$$NSUUID/" $@
 	sed -i "s/CTRLSN/$$SN2/" $@
+	sed -i "s/SUBSYS_PORT/$$SUBSYS_PORT/" $@
 
 disks/%.qcow2:
 	mkdir -p disks

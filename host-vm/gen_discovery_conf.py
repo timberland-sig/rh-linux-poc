@@ -22,7 +22,7 @@ DEFAULTS = {
     'TARGET_IP3': '192.168.110.20',
 }
 
-DEFAULT_PORT = 4420
+DEFAULT_PORT = int(os.environ.get('SUBSYS_PORT', '4420'))
 
 
 def resolve_test_files(test_file_arg: Optional[str]) -> List[str]:
