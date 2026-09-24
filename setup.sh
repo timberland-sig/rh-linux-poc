@@ -237,7 +237,7 @@ install_network() {
 }
 
 setup_router() {
-	local router_mode="${1:-dynamic}"
+	local router_mode="${1:-static}"
 	echo " : creating virtual bridges"
 
 	# Target <-> router bridges
@@ -256,7 +256,7 @@ setup_router() {
 }
 
 install_router() {
-    local router_mode="${1:-dynamic}"
+    local router_mode="${1:-static}"
 
     if [[ "$router_mode" != "dynamic" && "$router_mode" != "static" ]]; then
         echo "  Invalid router mode: $router_mode" >&2
