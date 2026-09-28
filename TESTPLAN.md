@@ -1,6 +1,6 @@
 # NVMe/TCP Boot Test Plan
 
-## Basic Test
+## Basic Testing
 
 The basic tests are run against a QEMU based linux soft target using a static
 IPv4 multi-path configuration with two `host-vm` networks with two `target-vm`
@@ -18,8 +18,33 @@ enterprise class storage arrays and NVMe-oF subsystems.
 7. multipath NIC #1 down + up during OS runtime
 8. multipath NIC #2 down + up during OS runtime
 
+For more informaiton about these tests see the Test Details section of this Test Plan.
+
+## Feature development
+
+Prior to upstream submission support for the following NVMe/TCP boot features will be developed and tested.
+
+1. static non-routed IPv4 support
+2. static routed IPv4 support
+3. support for Discovery NQNs
+4. support for NIDs
+5. support for different NVMe-oF Targets and Controllers (not just the Linux Soft Target)
+6. support for all [EDK2 CPU](https://github.com/timberland-sig/edk2/issues/71) Architectures
+
+Features not required for upstream submission will include
+
+1. support for dynamic addressing with DHCP
+2. support for IPv6 addressing
+
+Features are expressed in terms of the their NBFT configurations.  The Basic
+Tests are run with different `NBFT Attempt` configurations.
+
+### static non-routed IPv4
+
 The initial NBFT configuration should be run with the following Attempt
 variables programmed for Attempts 1 and 2.
+
+Key: xxx denotes a programmable NBFT value.
 
 ```
     MAC String:    xx:xx:xx:xx:xx
@@ -36,7 +61,9 @@ variables programmed for Attempts 1 and 2.
     DNS Mode:      FALSE
 ```
 
-## 1st dimension tests repeat the basic tests with the following additional NBFT configurations.
+### static routed IPv4
+
+Repeat the Basic Tests with the following additional NBFT configurations.
 
 1. static IPv4, Subsystem NQN, with gateway
 2. static IPv4, Subsystem NQN, with gateway, using different subnet masks
@@ -58,7 +85,9 @@ Attempt variables programmed for Attempts 1 and 2.
     DNS Mode:      FALSE
 ```
 
-## 2nd dimension tests adds the following the 1st dimension tests
+### Discovery NQN + NID support
+
+Repeat the Basic Tests with the following additional NBFT configurations.
 
 1. Discovery NQN
 2. Discovery NQN + NID
@@ -68,7 +97,7 @@ Attempt variables programmed for Attempts 1 and 2.
 ```
     MAC String:    xx:xx:xx:xx:xx
     Subsys IP:     xxx.xxx.xxx.xxx
-    Subsys PortId: 4420
+    Subsys PortId: xxxx
     Subsys NQN:    nqn.2014-08.org.nvmexpress.discovery
     Subsys NID:    xxxxxxxxx
     Host DHCP:     Disabled
@@ -80,10 +109,12 @@ Attempt variables programmed for Attempts 1 and 2.
     DNS Mode:      FALSE
 ```
 
-## Target Storage array testing:
+### Storage Array Tests
 
-The Target Storage array tests repeat the above demension 1 and 2 test
-configurations and tests with the following hardware.
+All of the above tests will be run against a collection of Storage array targets.
+
+The Target Storage array tests repeat the above NBFT test configurations with the
+with the following hardware:
 
 1. NetApp ONTAP
 2. HPE Alletra
@@ -100,8 +131,8 @@ include changing the `Subsys PortId` to 8009 when the Discovery NQN is used.
 ```
     MAC String:    xx:xx:xx:xx:xx
     Subsys IP:     xxx.xxx.xxx.xxx
-    Subsys PortId: 8009/4420
-    Subsys NQN:    nqn.2014-08.org.nvmexpress.discovery
+    Subsys PortId: 8009 or 4420
+    Subsys NQN:    nqn.2014-08.org.nvmexpress.discovery or subsys.nqn
     Subsys NID:    xxxxxxxxx
     Host DHCP:     Disabled
     Subsys DHCP:   Disabled
@@ -109,6 +140,56 @@ include changing the `Subsys PortId` to 8009 when the Discovery NQN is used.
     Local IP:      xxx.xxx.xxx.xxx
     Subnet Mask:   xxx.xxx.xxx.xxx
     Gateway:       xxx.xxx.xxx.xxx
+    DNS Mode:      FALSE
+```
+
+## Advanced Feature support
+
+**Note** Support for these features are not needed for upstream acceptance.
+
+### dynamic addressing with DHCP
+
+Support for the following DHCP features may be tested but they are not required for upstream submission.
+
+1. IPv4 with Host DHCP address
+2. IPv4 with Subsystem DHCP address
+3. IPv4 with Host and Subsystem DHCP address
+
+Attempt variables programmed for Attempts 1 and 2.
+
+```
+    MAC String:    xx:xx:xx:xx:xx
+    Subsys IP:     0.0.0.0
+    Subsys PortId: 4420
+    Subsys NQN:    nqn.2014-08.org.nvmexpress:uuid:0c468c4d-a385-47e0-8299-6e95051277db
+    Subsys NID:
+    Host DHCP:     Enabled
+    Subsys DHCP:   Enabled
+    IP Mode:       0 (IPv4)
+    Local IP:      0.0.0.0
+    Subnet Mask:   0.0.0.0
+    Gateway:       0.0.0.0 / xxx.xxx.xxx.xxx
+    DNS Mode:      FALSE
+```
+
+### IPv6 support
+
+Support for the following IPv6 features may be tested but they are not required for upstream submission.
+
+Attempt variables programmed for Attempts 1 and 2.
+
+```
+    MAC String:    xx:xx:xx:xx:xx
+    Subsys IP:     xxxx::xxxx:xxxx:xxxx:xxxx:xxxx
+    Subsys PortId: xxxx
+    Subsys NQN:    nqn.2014-08.org.nvmexpress.discovery
+    Subsys NID:    xxxxxxxxx
+    Host DHCP:     Enabled/Disabled
+    Subsys DHCP:   Enabled/Disabled
+    IP Mode:       1 (IPv6)
+    Local IP:      xxxx::xxxx:xxxx:xxxx:xxxx:xxxx
+    Subnet Mask:   xxxx::xxxx:xxxx:xxxx:xxxx:xxxx
+    Gateway:       xxxx::xxxx:xxxx:xxxx:xxxx:xxxx
     DNS Mode:      FALSE
 ```
 
@@ -189,52 +270,4 @@ Expected Results
 * System successfully reboots
 * System recovers all paths successfully after switchport is enabled following reboot
 
-## 3rd dimension tests adds the following the 1st and 2nd dimension tests
 
-The 3rd dimenstion tests are a strech goal and are not required for upstream acceptance.
-
-1. IPv4 with Host DHCP address
-2. IPv4 with Subsystem DHCP address
-3. IPv4 with Host and Subsystem DHCP address
-
-Attempt variables programmed for Attempts 1 and 2.
-
-```
-    MAC String:    xx:xx:xx:xx:xx
-    Subsys IP:     0.0.0.0
-    Subsys PortId: 4420
-    Subsys NQN:    nqn.2014-08.org.nvmexpress:uuid:0c468c4d-a385-47e0-8299-6e95051277db
-    Subsys NID:
-    Host DHCP:     Enabled
-    Subsys DHCP:   Enabled
-    IP Mode:       0 (IPv4)
-    Local IP:      0.0.0.0
-    Subnet Mask:   0.0.0.0
-    Gateway:       0.0.0.0 / xxx.xxx.xxx.xxx
-    DNS Mode:      FALSE
-```
-
-## 4th dimension tests - IPV6
-
-The 4th dimenstion tests are for future reference and will not be run prior to
-upstream submission. The 4th dimension tests adds IPV6 to the above NBFT
-configuraitons.
-
-**Note** IPv6 support is not needed for upstream acceptance.
-
-Attempt variables programmed for Attempts 1 and 2.
-
-```
-    MAC String:    xx:xx:xx:xx:xx
-    Subsys IP:     xxxx::xxxx:xxxx:xxxx:xxxx:xxxx
-    Subsys PortId: xxxx
-    Subsys NQN:    nqn.2014-08.org.nvmexpress.discovery
-    Subsys NID:    xxxxxxxxx
-    Host DHCP:     Enabled/Disabled
-    Subsys DHCP:   Enabled/Disabled
-    IP Mode:       1 (IPv6)
-    Local IP:      xxxx::xxxx:xxxx:xxxx:xxxx:xxxx
-    Subnet Mask:   xxxx::xxxx:xxxx:xxxx:xxxx:xxxx
-    Gateway:       xxxx::xxxx:xxxx:xxxx:xxxx:xxxx
-    DNS Mode:      FALSE
-```
