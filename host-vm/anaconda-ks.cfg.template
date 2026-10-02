@@ -52,5 +52,5 @@ done
 dracut -f --add-drivers "nvme"
 %end
 
-# Reboot the system at the end
-reboot
+# Shutdown the system at the end
+shutdown
