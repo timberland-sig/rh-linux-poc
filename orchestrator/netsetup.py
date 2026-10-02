@@ -267,7 +267,7 @@ class NetworkSetup:
     def setup_router(self):
         """Provision and start the virtual router using ./setup.sh router."""
         print()
-        run_script([str(self.script_dir / "setup.sh"), 'router'], "Router setup", 300, self.script_dir)
+        run_script([str(self.script_dir / "setup.sh"), 'router', 'static'], "Router setup", 300, self.script_dir)
 
     def teardown_router(self):
         """Tear down the virtual router using ./teardown.sh router."""

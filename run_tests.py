@@ -126,12 +126,16 @@ def load_test_config(test_file: str, schema_file: str) -> Dict[str, Any]:
     return config
 
 
-def prepare_environment(environment: Dict[str, Any], display_mode: str = 'vnc', vnc_display: Optional[int] = None):
+def prepare_environment(environment: Dict[str, Any], display_mode: str = 'vnc', vnc_display: Optional[int] = None,
+                        use_router: bool = False):
     """Setup network and target-vm for an environment."""
     network_setup = NetworkSetup(environment['network'], SCRIPT_DIR)
 
     network_setup.setup()
-    network_setup.setup_target_vm(display_mode=display_mode, vnc_display=vnc_display)
+    if use_router:
+        network_setup.setup_router()
+    network_setup.setup_target_vm(display_mode=display_mode, vnc_display=vnc_display,
+                                   use_router=use_router)
 
 
 # Pytest test parametrization hook
@@ -197,18 +201,26 @@ class TestNVMeBoot:
             env_config=environment,
         )
 
+        use_router = environment.get('useRouter', False)
+
         # Setup network once per environment
         if env_idx not in self.__class__.setup_environments:
             print(f"\n{'='*70}")
             print(f"Setting up environment: {env_name}")
+            if use_router:
+                print("Virtual router: enabled")
             print(f"{'='*70}")
             try:
-                # Teardown network before setting up new environment
+                # Teardown before setting up new environment
                 network_setup = NetworkSetup(environment['network'], SCRIPT_DIR)
-                network_setup.teardown()
+                if use_router:
+                    network_setup.teardown_router()
+                else:
+                    network_setup.teardown()
 
                 # Setup the new environment
-                prepare_environment(environment, display_mode=display_mode, vnc_display=vnc_display)
+                prepare_environment(environment, display_mode=display_mode, vnc_display=vnc_display,
+                                    use_router=use_router)
                 self.__class__.setup_environments.add(env_idx)
             except RuntimeError as e:
                 pytest.exit(f"SETUP FAILED: {e}", returncode=1)

@@ -76,6 +76,18 @@ class EFIConfigGenerator:
             return cidr_to_netmask(network_subnet)
         return str(network_subnet)
 
+    def _get_gateway(self, attempt_idx: int) -> str:
+        """Get the Gateway for a boot attempt: the router's host-side IP when useRouter is enabled."""
+        if not self.environment.get('useRouter', False):
+            return '0.0.0.0'
+
+        if attempt_idx == 0:
+            return DEFAULTS.get('ROUTER_TO_HOST_IP2', '192.168.31.1')
+        elif attempt_idx == 1:
+            return DEFAULTS.get('ROUTER_TO_HOST_IP3', '192.168.32.1')
+        else:
+            return DEFAULTS.get('ROUTER_TO_HOST_IP2', '192.168.31.1')
+
     def _generate_attempt_config(self, attempt: Dict[str, Any], attempt_idx: int, attempt_num: int) -> str:
         """Generate configuration for a single boot attempt."""
         mac = self._resolve_default(attempt.get('macAddress', 'default'), 'macAddress', attempt_idx)
@@ -86,7 +98,7 @@ class EFIConfigGenerator:
         timeout = self._resolve_default(attempt.get('timeout', 'default'), 'timeout', attempt_idx)
         subnet_mask = self._get_subnet_mask(attempt, attempt_idx)
 
-        gateway = '0.0.0.0'
+        gateway = self._get_gateway(attempt_idx)
         if host_ip == 'dhcp':
             local_ip = '0.0.0.0'
             subnet_mask = '0.0.0.0'
