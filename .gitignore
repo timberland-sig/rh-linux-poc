@@ -39,7 +39,7 @@ tests/*
 lorax_results/*
 mock_result/*
 mock_repo/*
-__pycache__/*
+**/__pycache__/*
 ISO/*
 artifacts/*
 *-vm/.net
