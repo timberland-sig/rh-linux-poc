@@ -70,9 +70,9 @@ fi
 
 for _role in TARGET HOST; do
 	for _n in 1 2 3; do
-		_iface_var="${_role}${_n}_IFACE"
-		_ip_var="${_role}${_n}_IP"
-		_net_var="${_role}${_n}_NET"
+		_iface_var="ROUTER_TO_${_role}_IFACE${_n}"
+		_ip_var="ROUTER_TO_${_role}_IP${_n}"
+		_net_var="ROUTER_TO_${_role}_NET${_n}"
 		dev_name="${!_iface_var}"
 		ip_cidr="${!_ip_var}/${!_net_var#*/}"
 		dev_conn="$(lookup_dev_connection $dev_name)"
