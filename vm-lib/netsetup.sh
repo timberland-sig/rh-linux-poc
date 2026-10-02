@@ -95,7 +95,7 @@ case "$VMNAME" in
                 # TARGET_CIDR1 is forced to 'dhcp' only when there is no
                 # br0 on the hypervisor: in that case net0/$TARGET_MAC1 is
                 # actually QEMU usermode (SLIRP) networking, not the
-                # router's TARGET1_NET subnet, and already has its own
+                # router's ROUTER_TO_TARGET_NET1 subnet, and already has its own
                 # working DHCP-assigned address/gateway/DNS that must not
                 # be touched. GATEWAY/DNS_SERVERS are computed
                 # unconditionally below - remote-netsetup.sh's dhcp code
@@ -106,13 +106,13 @@ case "$VMNAME" in
                 fi
                 TARGET_CIDR2="${TARGET_CIDR2}"
                 TARGET_CIDR3="${TARGET_CIDR3}"
-                GATEWAY="$TARGET1_IP"
+                GATEWAY="$ROUTER_TO_TARGET_IP1"
                 DNS_SERVERS="${DNS_SERVERS}"
                 # Routes for TARGET: access HOST networks via TARGET interfaces
-                ROUTES2="${HOST2_NET} ${TARGET2_IP}"
-                [ -n "$BRIDGE1_NET" ] && ROUTES2="${ROUTES2}, ${BRIDGE1_NET} ${TARGET2_IP}"
-                ROUTES3="${HOST3_NET} ${TARGET3_IP}"
-                [ -n "$BRIDGE2_NET" ] && ROUTES3="${ROUTES3}, ${BRIDGE2_NET} ${TARGET3_IP}"
+                ROUTES2="${ROUTER_TO_HOST_NET2} ${ROUTER_TO_TARGET_IP2}"
+                [ -n "$BRIDGE1_NET" ] && ROUTES2="${ROUTES2}, ${BRIDGE1_NET} ${ROUTER_TO_TARGET_IP2}"
+                ROUTES3="${ROUTER_TO_HOST_NET3} ${ROUTER_TO_TARGET_IP3}"
+                [ -n "$BRIDGE2_NET" ] && ROUTES3="${ROUTES3}, ${BRIDGE2_NET} ${ROUTER_TO_TARGET_IP3}"
             fi
         fi
         make -C "$VMDIR" .build/tcp.json
@@ -142,7 +142,7 @@ set -e
                 # HOST_CIDR1 is forced to 'dhcp' only when there is no br0
                 # on the hypervisor: in that case net0/$HOST_MAC1 is
                 # actually QEMU usermode (SLIRP) networking, not the
-                # router's HOST1_NET subnet, and already has its own
+                # router's ROUTER_TO_HOST_NET1 subnet, and already has its own
                 # working DHCP-assigned address/gateway/DNS that must not
                 # be touched. GATEWAY/DNS_SERVERS are computed
                 # unconditionally below - remote-netsetup.sh's dhcp code
@@ -153,13 +153,13 @@ set -e
                 fi
                 HOST_CIDR2="${HOST_CIDR2}"
                 HOST_CIDR3="${HOST_CIDR3}"
-                GATEWAY="$HOST1_IP"
+                GATEWAY="$ROUTER_TO_HOST_IP1"
                 DNS_SERVERS="${DNS_SERVERS}"
                 # Routes for HOST: access TARGET networks via HOST interfaces
-                ROUTES2="${TARGET2_NET} ${HOST2_IP}"
-                [ -n "$BRIDGE1_NET" ] && ROUTES2="${ROUTES2}, ${BRIDGE1_NET} ${HOST2_IP}"
-                ROUTES3="${TARGET3_NET} ${HOST3_IP}"
-                [ -n "$BRIDGE2_NET" ] && ROUTES3="${ROUTES3}, ${BRIDGE2_NET} ${HOST3_IP}"
+                ROUTES2="${ROUTER_TO_TARGET_NET2} ${ROUTER_TO_HOST_IP2}"
+                [ -n "$BRIDGE1_NET" ] && ROUTES2="${ROUTES2}, ${BRIDGE1_NET} ${ROUTER_TO_HOST_IP2}"
+                ROUTES3="${ROUTER_TO_TARGET_NET3} ${ROUTER_TO_HOST_IP3}"
+                [ -n "$BRIDGE2_NET" ] && ROUTES3="${ROUTES3}, ${BRIDGE2_NET} ${ROUTER_TO_HOST_IP3}"
             fi
         fi
         make -C "$VMDIR" .build/discovery.conf
