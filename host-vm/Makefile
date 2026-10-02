@@ -294,8 +294,8 @@ eficonfig/config: eficonfig/config.in eficonfig/config2.in
 	split_cidr $$HOST_CIDR2   HOST_IP2   MASK
 	split_cidr $$HOST_CIDR3   HOST_IP3   MASK
 
-	-configure_attempt 1 "$$HOST_MAC2" "$$HOST_IP2" "$$TARGET_IP2" "$$MASK2" "$$HOST2_IP" && \
-	configure_attempt 2 "$$HOST_MAC3" "$$HOST_IP3" "$$TARGET_IP3" "$$MASK3" "$$HOST3_IP" && \
+	-configure_attempt 1 "$$HOST_MAC2" "$$HOST_IP2" "$$TARGET_IP2" "$$MASK2" "$$ROUTER_TO_HOST_IP2" && \
+	configure_attempt 2 "$$HOST_MAC3" "$$HOST_IP3" "$$TARGET_IP3" "$$MASK3" "$$ROUTER_TO_HOST_IP3" && \
 	configure_attempt 3 "" "" "" && \
 	configure_attempt 4 "" "" ""
 
