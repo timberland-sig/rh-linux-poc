@@ -3,6 +3,12 @@
 %global nmlibdir %{_prefix}/lib/NetworkManager
 %global libname libnvme3
 
+%if (0%{?rhel} == 0)
+%global nvmediscoverddir %{_bindir}
+%else
+%global nvmediscoverddir %{_sbindir}
+%endif
+
 Name:           nvme-cli
 Version:        3.1
 Release:        1
@@ -24,6 +30,8 @@ BuildRequires:  dbus-devel
 BuildRequires:  keyutils-libs-devel
 BuildRequires:  kmod-libs kmod-devel
 BuildRequires:  perl-interpreter
+BuildRequires:  systemd-libs >= 253
+BuildRequires:  systemd-devel
 
 BuildRequires:  asciidoc
 BuildRequires:  xmlto
@@ -31,6 +39,8 @@ BuildRequires:  xmlto
 BuildRequires:  systemd-rpm-macros
 
 Requires:       util-linux
+Requires:       nvmf-autoconnect
+Recommends:     nvme-discoverd
 
 %if (0%{?rhel} == 0)
 BuildRequires: kernel-headers >= 5.15
@@ -41,6 +51,28 @@ nvme-cli provides NVM-Express user space tooling for Linux.
 NOTICE: This is an expermental version of nvme-cli
 from the Timberland-sig repository.
 
+%package -n nvme-discoverd
+Summary:        NVMe over Fabrics discovery daemon
+License:        GPL-2.0-only
+Provides:       nvmf-autoconnect = %{version}-%{release}
+Conflicts:      nvme-udev-rules
+
+%description -n nvme-discoverd
+This system daemon replaces the udev rules from
+nvme-cli 2.0 for performance and versitality gains.
+It handles NVMe/FC kickstart discovery, connection management,
+coexistence with other NVMe-oF orchestrators and much more.
+
+%package -n nvme-udev-rules
+Summary:        NVMe over Fabrics udev rules
+License:        GPL-2.0-only
+Provides:       nvmf-autoconnect = %{version}-%{release}
+Conflicts:      nvme-discoverd
+
+%description -n nvme-udev-rules
+This package includes the original udev rules from
+nvme-cli 2.x for backwards compatibility. These rules are
+replaced by the nvme-discoverd daemon in version 3.x.
 
 %package -n %libname
 Summary:        Linux-native nvme device management library
@@ -93,6 +125,8 @@ This package contains Python bindings for libnvme3.
         -Dnvme=enabled \
         -Dlibnvme=enabled \
         -Dfabrics=enabled \
+        -Dnvme-discoverd=enabled \
+        -Dnvmf-autoconnect=enabled \
         -Dmi=enabled \
         -Dtop=enabled \
         -Dpython=enabled \
@@ -113,20 +147,20 @@ mkdir -p $RPM_BUILD_ROOT%{nmlibdir}/conf.d
 %{__install} -pm 644 %{SOURCE1} $RPM_BUILD_ROOT%{nmlibdir}/conf.d/
 rm -f %{buildroot}/usr/lib/dracut/dracut.conf.d/70-nvmf-autoconnect.conf
 
-%post
+%post -n nvme-udev-rules
 # https://docs.fedoraproject.org/en-US/packaging-guidelines/Scriptlets/#_systemd
 %systemd_post nvmefc-boot-connections.service
 %systemd_post nvmf-autoconnect.service
 %systemd_post nvmf-connect@.service
 %systemd_post nvmf-connect-nbft.service
 
-%preun
+%preun -n nvme-udev-rules
 %systemd_preun nvmefc-boot-connections.service
 %systemd_preun nvmf-autoconnect.service
 %systemd_preun nvmf-connect@.service
 %systemd_preun nvmf-connect-nbft.service
 
-%postun
+%postun -n nvme-udev-rules
 %systemd_postun nvmefc-boot-connections.service
 %systemd_postun nvmf-autoconnect.service
 %systemd_postun nvmf-connect@.service
@@ -146,6 +180,15 @@ rm -f %{buildroot}/usr/lib/dracut/dracut.conf.d/70-nvmf-autoconnect.conf
 %ghost %{_sysconfdir}/etc/nvme/config.json
 %ghost %{_sysconfdir}/etc/nvme/discovery.conf
 
+%{_udevrulesdir}/70-nvmf-keys.rules
+%{_udevrulesdir}/70-nvmf-registry.rules
+%{_udevrulesdir}/71-nvmf-netapp.rules
+%{_udevrulesdir}/71-nvmf-vastdata.rules
+%{_udevrulesdir}/71-nvmf-hpe.rules
+
+%{nmlibdir}/conf.d/99-nvme-nbft-no-ignore-carrier.conf
+
+%files -n nvme-udev-rules
 %{_unitdir}/nvmf-connect@.service
 %{_unitdir}/nvmefc-boot-connections.service
 %{_unitdir}/nvmf-connect-nbft.service
@@ -154,14 +197,14 @@ rm -f %{buildroot}/usr/lib/dracut/dracut.conf.d/70-nvmf-autoconnect.conf
 
 %{_udevrulesdir}/65-persistent-net-nbft.rules
 %{_udevrulesdir}/70-nvmf-autoconnect.rules
-%{_udevrulesdir}/70-nvmf-registry.rules
-%{_udevrulesdir}/70-nvmf-keys.rules
-%{_udevrulesdir}/71-nvmf-netapp.rules
-%{_udevrulesdir}/71-nvmf-vastdata.rules
-%{_udevrulesdir}/71-nvmf-hpe.rules
 
 %{nmlibdir}/dispatcher.d/80-nvmf-connect-nbft.sh
-%{nmlibdir}/conf.d/99-nvme-nbft-no-ignore-carrier.conf
+
+%files -n nvme-discoverd
+%{nvmediscoverddir}/nvme-discoverd
+%{_mandir}/man8/nvme-discoverd.8.gz
+%{_unitdir}/nvme-discoverd.service
+%config(noreplace) %{_sysconfdir}/nvme/nvme-discoverd.conf
 
 %files -n %{libname}
 %license libnvme/COPYING
