@@ -5,7 +5,7 @@
 
 Name:           nvme-cli
 Version:        3.1
-Release:        1
+Release:        2
 Summary:        NVMe management command line interface
 
 License:        GPL-2.0-only
@@ -185,6 +185,9 @@ rm -f %{buildroot}/usr/lib/dracut/dracut.conf.d/70-nvmf-autoconnect.conf
 %{python3_sitearch}/libnvme3/*
 
 %changelog
+* Tue Oct 13 2026 Michal Rábek <mrabek@redhat.com> - 3.1-2
+- Enable nvme-discoverd
+
 * Mon Sep 21 2026 Tomas Bzatek <tbzatek@redhat.com> - 3.1-1
 - Update to 3.1
 
