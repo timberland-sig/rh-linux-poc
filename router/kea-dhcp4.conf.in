@@ -36,6 +36,14 @@
         {
             "name": "domain-name-servers",
             "data": "${DNS_SERVERS}"
+        },
+        {
+            // NVMe/TCP target info for TargetInfoFromDhcp (option 17 root-path)
+            "name": "root-path",
+            "code": 17,
+            "space": "dhcp4",
+            // "csv-format": true,
+            "data": "nvme+tcp://${ROUTER_TO_TARGET_RESIP2}/${SUBNQN}"
         }
     ],
 
