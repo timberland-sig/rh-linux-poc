@@ -9,7 +9,7 @@ keyboard --vckeymap=us --xlayouts='us'
 # System language
 lang en_US.UTF-8
 
-# repo --name="copr-nvme" --baseurl=https://download.copr.fedorainfracloud.org/results/<COPR_USER>/<COPR_PROJECT>/fedora-$releasever-$basearch/
+# repo --name="copr-nvme" --baseurl=https://download.copr.fedorainfracloud.org/results/<COPR_USER>/<COPR_PROJECT>/fedora-$releasever-$basearch/ --install
 
 %packages
 @core
