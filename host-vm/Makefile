@@ -228,7 +228,7 @@ eficonfig/config: eficonfig/config.in eficonfig/config2.in
 		sed -i "s/HOST_MAC/$$INPUT_MAC/" $@
 		local USE_DHCP=0
 		while true; do
-			read -p "Use DHCP? (y/n, default: n): " DHCP_ANSWER
+			read -p "Use DHCP for host addressing? (y/n, default: n): " DHCP_ANSWER
 			DHCP_ANSWER=$${DHCP_ANSWER:-n}
 			if [ "$$DHCP_ANSWER" = "y" ]; then
 				USE_DHCP=1
@@ -263,28 +263,49 @@ eficonfig/config: eficonfig/config.in eficonfig/config2.in
 			done
 			sed -i "s/SUBNET_MASK/$$INPUT_MASK/" $@
 		fi
-		if [ -n "$$target_default" ]; then
-			read -p "Target IP address (default: $$target_default): " INPUT_TARGET
-			INPUT_TARGET=$${INPUT_TARGET:-$$target_default}
-		else
-			read -p "Target IP address: " INPUT_TARGET
-		fi
-		sed -i "s/TARGET_IP/$$INPUT_TARGET/" $@
-		read -p "Port number (default: $$SUBSYS_PORT): " INPUT_PORT
-		INPUT_PORT=$${INPUT_PORT:-$$SUBSYS_PORT}
-		sed -i "s/TARGET_PORT/$$INPUT_PORT/" $@
+		local USE_TARGET_DHCP=0
 		while true; do
-			read -p "Use discovery NQN? (y/n): " DISCOVERY
-			if [ "$$DISCOVERY" = "y" ]; then
-				NQN_VALUE="nqn.2014-08.org.nvmexpress.discovery"
+			read -p "Get NVMe/TCP target info from DHCP? (y/n, default: n): " TARGET_DHCP_ANSWER
+			TARGET_DHCP_ANSWER=$${TARGET_DHCP_ANSWER:-n}
+			if [ "$$TARGET_DHCP_ANSWER" = "y" ]; then
+				USE_TARGET_DHCP=1
 				break
-			elif [ "$$DISCOVERY" = "n" ]; then
-				read -p "Subsystem NQN (default: $$SUBNQN): " INPUT_NQN
-				NQN_VALUE=$${INPUT_NQN:-$$SUBNQN}
+			elif [ "$$TARGET_DHCP_ANSWER" = "n" ]; then
 				break
 			fi
 		done
-		sed -i "s/SUBNQN/$$NQN_VALUE/" $@
+		if [ "$$USE_TARGET_DHCP" = "1" ]; then
+			sed -i "s/TARGET_DHCP/TRUE/" $@
+			sed -i "s/TARGET_IP/0.0.0.0/" $@
+		else
+			sed -i "s/TARGET_DHCP/FALSE/" $@
+			if [ -n "$$target_default" ]; then
+				read -p "Target IP address (default: $$target_default): " INPUT_TARGET
+				INPUT_TARGET=$${INPUT_TARGET:-$$target_default}
+			else
+				read -p "Target IP address: " INPUT_TARGET
+			fi
+			sed -i "s/TARGET_IP/$$INPUT_TARGET/" $@
+		fi
+		read -p "Port number (default: $$SUBSYS_PORT): " INPUT_PORT
+		INPUT_PORT=$${INPUT_PORT:-$$SUBSYS_PORT}
+		sed -i "s/TARGET_PORT/$$INPUT_PORT/" $@
+		if [ "$$USE_TARGET_DHCP" = "1" ]; then
+			sed -i "s/SUBNQN//" $@
+		else
+			while true; do
+				read -p "Use discovery NQN? (y/n): " DISCOVERY
+				if [ "$$DISCOVERY" = "y" ]; then
+					NQN_VALUE="nqn.2014-08.org.nvmexpress.discovery"
+					break
+				elif [ "$$DISCOVERY" = "n" ]; then
+					read -p "Subsystem NQN (default: $$SUBNQN): " INPUT_NQN
+					NQN_VALUE=$${INPUT_NQN:-$$SUBNQN}
+					break
+				fi
+			done
+			sed -i "s/SUBNQN/$$NQN_VALUE/" $@
+		fi
 		return 0
 	}
 
