@@ -190,6 +190,9 @@ eficonfig/config: eficonfig/config.in eficonfig/config2.in
 	source ../defaults.sh
 	source ../vm-lib/colors.sh
 	source ../vm-lib/common.sh
+	if has_router; then
+		source ../router/addresses.sh
+	fi
 
 	sed -i "s/HOSTNQN/$$HOSTNQN/" $@
 	sed -i "s/HOSTID/$$HOSTID/" $@
@@ -204,6 +207,7 @@ eficonfig/config: eficonfig/config.in eficonfig/config2.in
 		local ip_default=$$3
 		local target_default=$$4
 		local mask_default=$$5
+		local gw_default=$$6
 		if [ $$num -gt 1 ]; then
 			echo ""
 			while true; do
@@ -229,7 +233,7 @@ eficonfig/config: eficonfig/config.in eficonfig/config2.in
 		sed -i "s/HOST_MAC/$$INPUT_MAC/" $@
 		local USE_DHCP=0
 		while true; do
-			read -p "Use DHCP? (y/n, default: n): " DHCP_ANSWER
+			read -p "Use DHCP for host addressing? (y/n, default: n): " DHCP_ANSWER
 			DHCP_ANSWER=$${DHCP_ANSWER:-n}
 			if [ "$$DHCP_ANSWER" = "y" ]; then
 				USE_DHCP=1
@@ -252,7 +256,7 @@ eficonfig/config: eficonfig/config.in eficonfig/config2.in
 				read -p "Host IP address: " INPUT_IP
 			fi
 			sed -i "s/HOST_IP/$$INPUT_IP/" $@
-			sed -i "s/HOSTGW_IP/0.0.0.0/" $@
+			sed -i "s/HOSTGW_IP/$${gw_default:-0.0.0.0}/" $@
 			while true; do
 				read -p "Subnet mask (CIDR bits 1-31 or dotted decimal, default: $$mask_default): " INPUT_MASK
 				INPUT_MASK=$${INPUT_MASK:-$$mask_default}
@@ -264,28 +268,49 @@ eficonfig/config: eficonfig/config.in eficonfig/config2.in
 			done
 			sed -i "s/SUBNET_MASK/$$INPUT_MASK/" $@
 		fi
-		if [ -n "$$target_default" ]; then
-			read -p "Target IP address (default: $$target_default): " INPUT_TARGET
-			INPUT_TARGET=$${INPUT_TARGET:-$$target_default}
-		else
-			read -p "Target IP address: " INPUT_TARGET
-		fi
-		sed -i "s/TARGET_IP/$$INPUT_TARGET/" $@
-		read -p "Port number (default: $$SUBSYS_PORT): " INPUT_PORT
-		INPUT_PORT=$${INPUT_PORT:-$$SUBSYS_PORT}
-		sed -i "s/TARGET_PORT/$$INPUT_PORT/" $@
+		local USE_TARGET_DHCP=0
 		while true; do
-			read -p "Use discovery NQN? (y/n): " DISCOVERY
-			if [ "$$DISCOVERY" = "y" ]; then
-				NQN_VALUE="nqn.2014-08.org.nvmexpress.discovery"
+			read -p "Get NVMe/TCP target info from DHCP? (y/n, default: n): " TARGET_DHCP_ANSWER
+			TARGET_DHCP_ANSWER=$${TARGET_DHCP_ANSWER:-n}
+			if [ "$$TARGET_DHCP_ANSWER" = "y" ]; then
+				USE_TARGET_DHCP=1
 				break
-			elif [ "$$DISCOVERY" = "n" ]; then
-				read -p "Subsystem NQN (default: $$SUBNQN): " INPUT_NQN
-				NQN_VALUE=$${INPUT_NQN:-$$SUBNQN}
+			elif [ "$$TARGET_DHCP_ANSWER" = "n" ]; then
 				break
 			fi
 		done
-		sed -i "s/SUBNQN/$$NQN_VALUE/" $@
+		if [ "$$USE_TARGET_DHCP" = "1" ]; then
+			sed -i "s/TARGET_DHCP/TRUE/" $@
+			sed -i "s/TARGET_IP/0.0.0.0/" $@
+		else
+			sed -i "s/TARGET_DHCP/FALSE/" $@
+			if [ -n "$$target_default" ]; then
+				read -p "Target IP address (default: $$target_default): " INPUT_TARGET
+				INPUT_TARGET=$${INPUT_TARGET:-$$target_default}
+			else
+				read -p "Target IP address: " INPUT_TARGET
+			fi
+			sed -i "s/TARGET_IP/$$INPUT_TARGET/" $@
+		fi
+		read -p "Port number (default: $$SUBSYS_PORT): " INPUT_PORT
+		INPUT_PORT=$${INPUT_PORT:-$$SUBSYS_PORT}
+		sed -i "s/TARGET_PORT/$$INPUT_PORT/" $@
+		if [ "$$USE_TARGET_DHCP" = "1" ]; then
+			sed -i "s/SUBNQN//" $@
+		else
+			while true; do
+				read -p "Use discovery NQN? (y/n): " DISCOVERY
+				if [ "$$DISCOVERY" = "y" ]; then
+					NQN_VALUE="nqn.2014-08.org.nvmexpress.discovery"
+					break
+				elif [ "$$DISCOVERY" = "n" ]; then
+					read -p "Subsystem NQN (default: $$SUBNQN): " INPUT_NQN
+					NQN_VALUE=$${INPUT_NQN:-$$SUBNQN}
+					break
+				fi
+			done
+			sed -i "s/SUBNQN/$$NQN_VALUE/" $@
+		fi
 		return 0
 	}
 
@@ -295,8 +320,8 @@ eficonfig/config: eficonfig/config.in eficonfig/config2.in
 	split_cidr $$HOST_CIDR2   HOST_IP2   MASK
 	split_cidr $$HOST_CIDR3   HOST_IP3   MASK
 
-	-configure_attempt 1 "$$HOST_MAC2" "$$HOST_IP2" "$$TARGET_IP2" "$$MASK2" && \
-	configure_attempt 2 "$$HOST_MAC3" "$$HOST_IP3" "$$TARGET_IP3" "$$MASK3" && \
+	-configure_attempt 1 "$$HOST_MAC2" "$$HOST_IP2" "$$TARGET_IP2" "$$MASK2" "$$ROUTER_TO_HOST_IP2" && \
+	configure_attempt 2 "$$HOST_MAC3" "$$HOST_IP3" "$$TARGET_IP3" "$$MASK3" "$$ROUTER_TO_HOST_IP3" && \
 	configure_attempt 3 "" "" "" && \
 	configure_attempt 4 "" "" ""
 
@@ -354,7 +379,8 @@ boot.iso: .diso anaconda-ks.cfg ../vm-lib/common.sh
 	rm -f $@
 	cp anaconda-ks.cfg .anaconda-ks.cfg.tmp
 	@if [ "$$(cat .use_copr 2>/dev/null)" = "1" ] || [ -n "$(USE_COPR)" ]; then \
-		sed -i 's/^# \(repo --name="copr-nvme".*\)/\1/' .anaconda-ks.cfg.tmp; fi
+		sed -i 's/^# \(repo --name="copr-nvme".*\)/\1/' .anaconda-ks.cfg.tmp; \
+		sed -i 's/^# \(libnvme3\)/\1/' .anaconda-ks.cfg.tmp; fi
 	sudo mkksiso --ks .anaconda-ks.cfg.tmp --cmdline "inst.sshd" $(INPUT_ISO) $@
 	# rm -f .anaconda-ks.cfg.tmp
 

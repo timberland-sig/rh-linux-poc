@@ -1,0 +1,93 @@
+#!/bin/bash
+# SPDX-License-Identifier: GPL-3.0+
+# Copyright (C) 2026 Michal Rábek <mrabek@redhat.com> All rights reserved.
+
+# This script configures DNS and routing on VMs in static mode.
+# It is executed on the VM via SSH by the router-vm.
+# Template variables are substituted using envsubst.
+
+set -e
+
+echo "Configuring ${VM_ROLE} VM for static networking..."
+
+# Check if mac2iface command is available
+if ! command -v mac2iface &>/dev/null; then
+    echo "Error: mac2iface command not found in PATH"
+    exit 1
+fi
+
+# Primary interface (for default gateway)
+GATEWAY_IFACE=$(mac2iface "${GATEWAY_MAC}")
+if [ -z "$GATEWAY_IFACE" ]; then
+    echo "Error: Could not find interface with MAC ${GATEWAY_MAC}"
+    exit 1
+fi
+
+if [ -n "${SKIP_PRIMARY}" ]; then
+    # No br0 on the hypervisor: this interface is QEMU usermode (SLIRP)
+    # networking, not the router's primary subnet. It already has its own
+    # working DHCP-assigned address/gateway/DNS - leave it alone.
+    echo "Skipping $GATEWAY_IFACE (${GATEWAY_MAC}): using its own DHCP, not the router"
+else
+    GATEWAY_CONN=$(nmcli -t -f NAME,DEVICE con show | grep ":${GATEWAY_IFACE}$" | cut -d':' -f1)
+    if [ -z "$GATEWAY_CONN" ]; then
+        echo "Error: Could not find connection for interface $GATEWAY_IFACE"
+        exit 1
+    fi
+
+    echo "Setting default gateway on $GATEWAY_IFACE (${GATEWAY_MAC}) -> ${GATEWAY_IP}"
+    nmcli con modify "$GATEWAY_CONN" ipv4.gateway "${GATEWAY_IP}"
+    nmcli con modify "$GATEWAY_CONN" ipv4.never-default no
+fi
+
+# Secondary interface 2 (with static routes)
+IF2=$(mac2iface "${MAC2}")
+if [ -n "$IF2" ]; then
+    CONN2=$(nmcli -t -f NAME,DEVICE con show | grep ":${IF2}$" | cut -d':' -f1)
+    if [ -n "$CONN2" ]; then
+        echo "Configuring routes on $IF2 (${MAC2})"
+        ${ROUTES2}
+        nmcli dev reapply "$IF2" || true
+    fi
+fi
+
+# Secondary interface 3 (with static routes)
+IF3=$(mac2iface "${MAC3}")
+if [ -n "$IF3" ]; then
+    CONN3=$(nmcli -t -f NAME,DEVICE con show | grep ":${IF3}$" | cut -d':' -f1)
+    if [ -n "$CONN3" ]; then
+        echo "Configuring routes on $IF3 (${MAC3})"
+        ${ROUTES3}
+        nmcli dev reapply "$IF3" || true
+    fi
+fi
+
+# Set up DNS servers on all connections (except the SLIRP-managed primary
+# interface, if any, which must keep its own DHCP-provided DNS)
+echo "Setting DNS servers: ${DNS_SERVERS}"
+for conn in $(nmcli -t -f NAME,TYPE con show | grep ':802-3-ethernet$' | cut -d':' -f1); do
+    if [[ "$conn" != nbft* ]]; then
+        if [ -n "${SKIP_PRIMARY}" ]; then
+            dev=$(nmcli -t -f connection.interface-name con show "$conn" | cut -d':' -f2)
+            if [ "$dev" = "$GATEWAY_IFACE" ]; then
+                continue
+            fi
+        fi
+        nmcli con modify "$conn" ipv4.dns "${DNS_SERVERS}"
+        nmcli con modify "$conn" ipv4.ignore-auto-dns yes
+    fi
+done
+
+# Reapply all active connections
+for conn in $(nmcli -t -f NAME,TYPE con show --active | grep ':802-3-ethernet$' | cut -d':' -f1); do
+    if [[ "$conn" != nbft* ]]; then
+        dev=$(nmcli -t -f connection.interface-name con show "$conn" | cut -d':' -f2)
+        if [ -n "$dev" ] && [ "$dev" != "--" ]; then
+            nmcli dev reapply "$dev" || true
+        fi
+    fi
+done
+
+echo "Static network configuration completed for ${VM_ROLE} VM"
+ip route show
+resolvectl status | grep -A 5 "DNS Servers" || true
