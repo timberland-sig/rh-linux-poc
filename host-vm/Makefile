@@ -354,7 +354,8 @@ boot.iso: .diso anaconda-ks.cfg ../vm-lib/common.sh
 	rm -f $@
 	cp anaconda-ks.cfg .anaconda-ks.cfg.tmp
 	@if [ "$$(cat .use_copr 2>/dev/null)" = "1" ] || [ -n "$(USE_COPR)" ]; then \
-		sed -i 's/^# \(repo --name="copr-nvme".*\)/\1/' .anaconda-ks.cfg.tmp; fi
+		sed -i 's/^# \(repo --name="copr-nvme".*\)/\1/' .anaconda-ks.cfg.tmp; \
+		sed -i 's/^# \(libnvme3\)/\1/' .anaconda-ks.cfg.tmp; fi
 	sudo mkksiso --ks .anaconda-ks.cfg.tmp --cmdline "inst.sshd" $(INPUT_ISO) $@
 	# rm -f .anaconda-ks.cfg.tmp
 
