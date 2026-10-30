@@ -36,3 +36,16 @@ NET_TYPE ?= "localhost"
 		fi
 
 .ONESHELL: .build/hosts.txt
+
+VMNAME ?=
+MAC2 ?=
+MAC3 ?=
+IP2 ?=
+IP3 ?=
+
+.PHONY: .build/remote-netsetup.sh
+.build/remote-netsetup.sh: ../vm-lib/remote-netsetup.sh.in ../vm-lib/build-remote-netsetup.sh
+		@mkdir -p .build
+		@VMNAME="$(VMNAME)" MAC2="$(MAC2)" MAC3="$(MAC3)" \
+		 IP2="$(IP2)" IP3="$(IP3)" \
+		 ../vm-lib/build-remote-netsetup.sh $@

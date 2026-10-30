@@ -76,10 +76,14 @@ case "$VMNAME" in
             TARGET_CIDR3=dhcp
         fi
         make -C "$VMDIR" .build/tcp.json
-        scp -i $DIR/../.ssh/id_ecdsa -o StrictHostKeyChecking=no "${VMDIR}/.build/"{tcp.json,hosts.txt} $VMDIR/wipe-nvme.sh $VMDIR/setup-nvme-target.sh $VMDIR/nvmet-mods.conf $DIR/remote-netsetup.sh scp://${SSH_TARGET}
+        make -C "$VMDIR" -f "$DIR/Makefile" VMNAME="$VMNAME" \
+            MAC2="$TARGET_MAC2" MAC3="$TARGET_MAC3" \
+            IP2="$TARGET_CIDR2" IP3="$TARGET_CIDR3" \
+            .build/remote-netsetup.sh
+        scp -i $DIR/../.ssh/id_ecdsa -o StrictHostKeyChecking=no "${VMDIR}/.build/"{tcp.json,hosts.txt,remote-netsetup.sh} $VMDIR/wipe-nvme.sh $VMDIR/setup-nvme-target.sh $VMDIR/nvmet-mods.conf scp://${SSH_TARGET}
         run_ssh $VMNAME "
 set -e
-. remote-netsetup.sh $TARGET_MAC2 $TARGET_MAC3 \"$TARGET_CIDR2\" \"$TARGET_CIDR3\"
+. remote-netsetup.sh
 . setup-nvme-target.sh \"$NVME_NS_PATH\"
 "
     ;;
@@ -89,10 +93,14 @@ set -e
             HOST_CIDR3=dhcp
         fi
         make -C "$VMDIR" .build/discovery.conf
-        scp -i $DIR/../.ssh/id_ecdsa -o StrictHostKeyChecking=no ${VMDIR}/.build/* $DIR/../vm-lib/remote-netsetup.sh scp://${SSH_TARGET}
+        make -C "$VMDIR" -f "$DIR/Makefile" VMNAME="$VMNAME" \
+            MAC2="$HOST_MAC2" MAC3="$HOST_MAC3" \
+            IP2="$HOST_CIDR2" IP3="$HOST_CIDR3" \
+            .build/remote-netsetup.sh
+        scp -i $DIR/../.ssh/id_ecdsa -o StrictHostKeyChecking=no ${VMDIR}/.build/* scp://${SSH_TARGET}
         run_ssh $VMNAME "\
             cp ./discovery.conf /etc/nvme/
-	    . remote-netsetup.sh $HOST_MAC2 $HOST_MAC3 \"$HOST_CIDR2\" \"$HOST_CIDR3\""
+	    . remote-netsetup.sh"
     ;;
     *)
         # This should never be reached
