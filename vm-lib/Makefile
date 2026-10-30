@@ -38,14 +38,27 @@ NET_TYPE ?= "localhost"
 .ONESHELL: .build/hosts.txt
 
 VMNAME ?=
+MAC1 ?=
 MAC2 ?=
 MAC3 ?=
+IP1 ?=
 IP2 ?=
 IP3 ?=
+GATEWAY ?=
+ROUTES2 ?=
+ROUTES3 ?=
+DNS_SERVERS ?=
 
+# This target's real inputs are driven by the dispatcher's runtime
+# has_router/has_dhcpd branching (e.g. switching router-dynamic <->
+# router-static without an intervening `make clean`), which can change
+# between consecutive invocations without any file timestamp changing -
+# declared .PHONY (unlike .build/hosts.txt) so it always re-renders.
 .PHONY: .build/remote-netsetup.sh
 .build/remote-netsetup.sh: ../vm-lib/remote-netsetup.sh.in ../vm-lib/build-remote-netsetup.sh
 		@mkdir -p .build
-		@VMNAME="$(VMNAME)" MAC2="$(MAC2)" MAC3="$(MAC3)" \
-		 IP2="$(IP2)" IP3="$(IP3)" \
+		@VMNAME="$(VMNAME)" MAC1="$(MAC1)" MAC2="$(MAC2)" MAC3="$(MAC3)" \
+		 IP1="$(IP1)" IP2="$(IP2)" IP3="$(IP3)" \
+		 GATEWAY="$(GATEWAY)" ROUTES2="$(ROUTES2)" ROUTES3="$(ROUTES3)" \
+		 DNS_SERVERS="$(DNS_SERVERS)" \
 		 ../vm-lib/build-remote-netsetup.sh $@

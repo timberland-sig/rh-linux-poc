@@ -25,11 +25,20 @@ mac2iface() {
 # below and breaking MAC matching against /sys/class/net, which the kernel
 # always reports in lowercase.
 VMNAME="${TPL_VMNAME}"
+MAC1="$(to_lower "${TPL_MAC1}")"
 MAC2="$(to_lower "${TPL_MAC2}")"
 MAC3="$(to_lower "${TPL_MAC3}")"
+IP1="${TPL_IP1}"
 IP2="${TPL_IP2}"
 IP3="${TPL_IP3}"
+# GATEWAY/ROUTES2/ROUTES3/DNS_SERVERS are only non-empty in static router
+# mode - see setup_iface() below for how they're applied (or ignored).
+GATEWAY="${TPL_GATEWAY}"
+ROUTES2="${TPL_ROUTES2}"
+ROUTES3="${TPL_ROUTES3}"
+DNS_SERVERS="${TPL_DNS_SERVERS}"
 
+IF1="$(mac2iface "$MAC1")"
 IF2="$(mac2iface "$MAC2")"
 IF3="$(mac2iface "$MAC3")"
 
@@ -46,6 +55,10 @@ fi
 setup_iface() {
 	local iface=$1
 	local ip_config=$2
+	local never_default=${3:-yes}
+	local gateway=${4:-}
+	local routes=${5:-}
+	local dns=${6:-}
 
 	if [ -z "$iface" ]; then
 		return
@@ -53,6 +66,7 @@ setup_iface() {
 
 	if [ -z "$ip_config" ]; then
 		echo "Skipping interface $iface: no IP configuration provided"
+		return
 	fi
 
 	# If an nbft connection owns this device, leave it alone entirely
@@ -84,7 +98,7 @@ setup_iface() {
 			ifname "$iface" \
 			ipv4.method auto \
 			ipv4.dhcp-timeout 30 \
-			ipv4.never-default yes \
+			ipv4.never-default "$never_default" \
 			ipv4.may-fail no \
 			ipv6.method shared \
 			connection.autoconnect yes \
@@ -93,27 +107,56 @@ setup_iface() {
 
 		nmcli con up "${iface}-dhcp"
 	else
+		# Static-mode module: gateway/routes/dns are plain nmcli property
+		# values (data), not shell commands - nmcli accepts a full
+		# multi-value property directly on `con add`, same as this
+		# codebase already does for DNS_SERVERS's comma-separated list.
+		local -a extra_args=()
+		if [ -n "$gateway" ]; then
+			echo "Setting default gateway on $iface -> $gateway"
+			extra_args+=(ipv4.gateway "$gateway")
+		fi
+		if [ -n "$routes" ]; then
+			echo "Setting static routes on $iface: $routes"
+			extra_args+=(ipv4.routes "$routes")
+		fi
+		if [ -n "$dns" ]; then
+			echo "Setting DNS servers on $iface: $dns"
+			extra_args+=(ipv4.dns "$dns" ipv4.ignore-auto-dns yes)
+		fi
+
 		nmcli con add \
 			type ethernet \
 			con-name "${iface}-static" \
 			ifname "$iface" \
 			ipv4.addresses "$ip_config" \
 			ipv4.method manual \
-			ipv4.never-default yes \
+			ipv4.never-default "$never_default" \
 			ipv6.method shared \
 			connection.autoconnect yes \
-			connection.autoconnect-priority 10
+			connection.autoconnect-priority 10 \
+			"${extra_args[@]}"
 
 		nmcli con up "${iface}-static"
 	fi
 }
 
-setup_iface "$IF2" "$IP2"
-setup_iface "$IF3" "$IP3"
+# IF1 is the router-facing (gateway) interface: it must be allowed to hold
+# the default route, so never-default is "no". GATEWAY/ROUTES2/ROUTES3/
+# DNS_SERVERS are only non-empty in static router mode, and are ignored by
+# the dhcp branch above whenever an interface's IP config is "dhcp" (e.g.
+# the SLIRP/no-br0 case forces IP1 to "dhcp" even in static mode, so the
+# gateway/DNS override is safely skipped for that interface without any
+# extra flag needed).
+setup_iface "$IF1" "$IP1" no  "$GATEWAY" ""         "$DNS_SERVERS"
+setup_iface "$IF2" "$IP2" yes ""         "$ROUTES2" "$DNS_SERVERS"
+setup_iface "$IF3" "$IP3" yes ""         "$ROUTES3" "$DNS_SERVERS"
 
 nmcli g hostname "$VMNAME"
 
 ip -h -c -o -br address show
+ip route show
+resolvectl status | grep -A 5 "DNS Servers" || true
 
 cat hosts.txt >> /etc/hosts
 if [ -f $HOME/hostid ] ; then

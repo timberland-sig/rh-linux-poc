@@ -456,6 +456,11 @@ has_router() {
 		[ "$(incus info router-vm 2>/dev/null | grep '^Status:' | cut -d' ' -f2)" = 'RUNNING' ]
 }
 
+has_dhcpd() {
+	has_router && \
+		incus exec router-vm -- command -v kea-dhcp4 &>/dev/null
+}
+
 # NOTE: caller must set `target_ip` before calling this function.
 run_ssh() {
     local vmname="$1"

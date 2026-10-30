@@ -169,8 +169,8 @@ Directories and files are explained here:
 | `vm-lib` | - | Contains shared scripts and functions used by both *target-vm* and *host-vm* subdirectories. Includes common network setup scripts and Makefile targets. |
 | `vm-lib` | `common.sh` | Contains global functions used by the scripts in the `target-vm` and `host-vm` subdirectories. |
 | `vm-lib` | `netsetup.sh` | Unified network setup launcher script used by both VMs. |
-| `vm-lib` | `remote-netsetup.sh.in` | Template of the script that runs on the VMs to configure their network interfaces. Rendered by `build-remote-netsetup.sh`. |
-| `vm-lib` | `build-remote-netsetup.sh` | Renders `remote-netsetup.sh.in` with per-VM MAC/IP parameters baked in via `envsubst`. Invoked by `vm-lib/netsetup.sh`, directly or via the `vm-lib/Makefile` `.build/remote-netsetup.sh` target. |
+| `vm-lib` | `remote-netsetup.sh.in` | Template of the script that runs on the VMs to configure their network interfaces and, in `static` router mode, the default gateway, static routes, DNS servers, and hostname. Rendered by `build-remote-netsetup.sh`. |
+| `vm-lib` | `build-remote-netsetup.sh` | Renders `remote-netsetup.sh.in` with per-VM MAC/IP/gateway/route/DNS parameters baked in via `envsubst`. Invoked by `vm-lib/netsetup.sh` via the `vm-lib/Makefile` `.build/remote-netsetup.sh` target. |
 | `host-vm` | - |Contains the scripts and files needed to create and run your QEMU host virtual machine. |
 | `target-vm` | - | Contains the scripts and files needed to create and run your QEMU target virtual machine. |
 | `router` | - | Contains the scripts and configuration files needed to provision and manage the router VM (an Incus system container). Provides firewall, DHCP, and routing services between the `target-vm` and `host-vm`. |
@@ -178,7 +178,6 @@ Directories and files are explained here:
 | `router` | `netsetup.sh` | Configures the router VM's network interfaces via NetworkManager, loads the nftables firewall ruleset, and deploys the Kea DHCPv4 server configuration inside the Incus container. |
 | `router` | `Makefile` | Build targets for managing the router Incus container. |
 | `router` | `.env.example` | Template listing all configurable router variables (interface names, IPs, subnets) with their defaults. Copy to `.env` to override. |
-| `router` | `static-client-config.sh.in` | Template of the script that configures DNS, routes and the default gateway on the VMs in `static` router mode. Rendered with `envsubst` and executed on each VM via SSH by the router. |
 |`edk2`    | Contains the timberland-sig edk2 repository. The built artifacts are contained in: *edk2/edk2/Build/OvmfX64/DEBUG_GCC5/X64*.  The spefic artifacts needed to boot with nvme/tcp are moved to: *host-vm/eficonfig/NvmeOfCli.efi*, *host-vm/OVMF_CODE.fd* and *host-vm/vm_vars.fd*. |
 
 Proposed changes and patches should be sent to the repsective repositories at:
