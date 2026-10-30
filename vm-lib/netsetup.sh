@@ -9,6 +9,11 @@ echo "$DIR"
 . $DIR/../defaults.sh
 . $DIR/../vm-lib/common.sh
 
+# Source router addresses if router is available
+if has_router; then
+    . $DIR/../router/addresses.sh
+fi
+
 VMNAME=${VMNAME:-$(basename -- $PWD)}
 echo "VMNAME=${VMNAME}"
 VMDIR="$DIR/../$VMNAME"
@@ -71,14 +76,43 @@ ssh-copy-id -o StrictHostKeyChecking=no -o ConnectTimeout=20 -i $DIR/../.ssh/id_
 
 case "$VMNAME" in
     target-vm)
+        GATEWAY="" ROUTES2="" ROUTES3="" DNS_SERVERS=""
         if has_router; then
-            TARGET_CIDR2=dhcp
-            TARGET_CIDR3=dhcp
+            if has_dhcpd; then
+                TARGET_CIDR1='dhcp'
+                TARGET_CIDR2='dhcp'
+                TARGET_CIDR3='dhcp'
+            else
+                # Static mode: use addresses from router/addresses.sh.
+                # TARGET_CIDR1 is forced to 'dhcp' only when there is no
+                # br0 on the hypervisor: in that case net0/$TARGET_MAC1 is
+                # actually QEMU usermode (SLIRP) networking, not the
+                # router's TARGET1_NET subnet, and already has its own
+                # working DHCP-assigned address/gateway/DNS that must not
+                # be touched. GATEWAY/DNS_SERVERS are computed
+                # unconditionally below - remote-netsetup.sh's dhcp code
+                # path for an interface ignores them entirely, so this is
+                # safe even in the SLIRP case.
+                if [ "$target_ip" = "localhost" ]; then
+                    TARGET_CIDR1='dhcp'
+                fi
+                TARGET_CIDR2="${TARGET_CIDR2}"
+                TARGET_CIDR3="${TARGET_CIDR3}"
+                GATEWAY="$TARGET1_IP"
+                DNS_SERVERS="${DNS_SERVERS}"
+                # Routes for TARGET: access HOST networks via TARGET interfaces
+                ROUTES2="${HOST2_NET} ${TARGET2_IP}"
+                [ -n "$BRIDGE1_NET" ] && ROUTES2="${ROUTES2}, ${BRIDGE1_NET} ${TARGET2_IP}"
+                ROUTES3="${HOST3_NET} ${TARGET3_IP}"
+                [ -n "$BRIDGE2_NET" ] && ROUTES3="${ROUTES3}, ${BRIDGE2_NET} ${TARGET3_IP}"
+            fi
         fi
         make -C "$VMDIR" .build/tcp.json
         make -C "$VMDIR" -f "$DIR/Makefile" VMNAME="$VMNAME" \
-            MAC2="$TARGET_MAC2" MAC3="$TARGET_MAC3" \
-            IP2="$TARGET_CIDR2" IP3="$TARGET_CIDR3" \
+            MAC1="$TARGET_MAC1" MAC2="$TARGET_MAC2" MAC3="$TARGET_MAC3" \
+            IP1="$TARGET_CIDR1" IP2="$TARGET_CIDR2" IP3="$TARGET_CIDR3" \
+            GATEWAY="$GATEWAY" ROUTES2="$ROUTES2" ROUTES3="$ROUTES3" \
+            DNS_SERVERS="$DNS_SERVERS" \
             .build/remote-netsetup.sh
         scp -i $DIR/../.ssh/id_ecdsa -o StrictHostKeyChecking=no "${VMDIR}/.build/"{tcp.json,hosts.txt,remote-netsetup.sh} $VMDIR/wipe-nvme.sh $VMDIR/setup-nvme-target.sh $VMDIR/nvmet-mods.conf scp://${SSH_TARGET}
         run_ssh $VMNAME "
@@ -88,14 +122,43 @@ set -e
 "
     ;;
     host-vm)
+        GATEWAY="" ROUTES2="" ROUTES3="" DNS_SERVERS=""
         if has_router; then
-            HOST_CIDR2=dhcp
-            HOST_CIDR3=dhcp
+            if has_dhcpd; then
+                HOST_CIDR1='dhcp'
+                HOST_CIDR2='dhcp'
+                HOST_CIDR3='dhcp'
+            else
+                # Static mode: use addresses from router/addresses.sh.
+                # HOST_CIDR1 is forced to 'dhcp' only when there is no br0
+                # on the hypervisor: in that case net0/$HOST_MAC1 is
+                # actually QEMU usermode (SLIRP) networking, not the
+                # router's HOST1_NET subnet, and already has its own
+                # working DHCP-assigned address/gateway/DNS that must not
+                # be touched. GATEWAY/DNS_SERVERS are computed
+                # unconditionally below - remote-netsetup.sh's dhcp code
+                # path for an interface ignores them entirely, so this is
+                # safe even in the SLIRP case.
+                if [ "$target_ip" = "localhost" ]; then
+                    HOST_CIDR1='dhcp'
+                fi
+                HOST_CIDR2="${HOST_CIDR2}"
+                HOST_CIDR3="${HOST_CIDR3}"
+                GATEWAY="$HOST1_IP"
+                DNS_SERVERS="${DNS_SERVERS}"
+                # Routes for HOST: access TARGET networks via HOST interfaces
+                ROUTES2="${TARGET2_NET} ${HOST2_IP}"
+                [ -n "$BRIDGE1_NET" ] && ROUTES2="${ROUTES2}, ${BRIDGE1_NET} ${HOST2_IP}"
+                ROUTES3="${TARGET3_NET} ${HOST3_IP}"
+                [ -n "$BRIDGE2_NET" ] && ROUTES3="${ROUTES3}, ${BRIDGE2_NET} ${HOST3_IP}"
+            fi
         fi
         make -C "$VMDIR" .build/discovery.conf
         make -C "$VMDIR" -f "$DIR/Makefile" VMNAME="$VMNAME" \
-            MAC2="$HOST_MAC2" MAC3="$HOST_MAC3" \
-            IP2="$HOST_CIDR2" IP3="$HOST_CIDR3" \
+            MAC1="$HOST_MAC1" MAC2="$HOST_MAC2" MAC3="$HOST_MAC3" \
+            IP1="$HOST_CIDR1" IP2="$HOST_CIDR2" IP3="$HOST_CIDR3" \
+            GATEWAY="$GATEWAY" ROUTES2="$ROUTES2" ROUTES3="$ROUTES3" \
+            DNS_SERVERS="$DNS_SERVERS" \
             .build/remote-netsetup.sh
         scp -i $DIR/../.ssh/id_ecdsa -o StrictHostKeyChecking=no ${VMDIR}/.build/* scp://${SSH_TARGET}
         run_ssh $VMNAME "\
