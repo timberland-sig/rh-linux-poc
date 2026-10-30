@@ -1,4 +1,8 @@
 #!/bin/bash
+#
+# Template for the per-VM remote network setup script. Rendered with
+# envsubst by vm-lib/build-remote-netsetup.sh into a ready-to-run script
+# with no arguments - do not run this .in file directly.
 
 set -e
 
@@ -11,18 +15,23 @@ mac2iface() {
     find /sys/class/net -mindepth 1 ! -name lo -execdir sh -c "MAC=\$(cat {}/address 2>/dev/null); if [ \"\$MAC\" = \"$macaddr\" ]; then echo \"\$(basename {})\"; fi" \;
 }
 
-if [ $# -ne 0 -a $# -ne 2 -a $# -ne 4 ] ; then
-	echo "Usage: $0 [<mac address 2> <mac address 3>] [<dhcp|ip/prefix 2> <dhcp|ip/prefix 3>]"
-	exit 1
-fi
+# TPL_* below are the only envsubst placeholders in this file. Everything
+# derived from them (VMNAME, MAC2, IP2, IF2, iface, ip_config, ...) is a
+# plain runtime shell variable with a *different* name on purpose: envsubst
+# does a blind whole-file text substitution, not just a single "declaration"
+# line, so a runtime variable reused with the same name as a placeholder
+# (e.g. a bare "$MAC2" in a later mac2iface call) would also get replaced
+# with the raw, un-lowercased template value - silently bypassing to_lower()
+# below and breaking MAC matching against /sys/class/net, which the kernel
+# always reports in lowercase.
+VMNAME="${TPL_VMNAME}"
+MAC2="$(to_lower "${TPL_MAC2}")"
+MAC3="$(to_lower "${TPL_MAC3}")"
+IP2="${TPL_IP2}"
+IP3="${TPL_IP3}"
 
-MAC2="$(to_lower \"$1\")"
-MAC3="$(to_lower \"$2\")"
-IP2="$3"
-IP3="$4"
-
-IF2="$(mac2iface \"$MAC2\")"
-IF3="$(mac2iface \"$MAC3\")"
+IF2="$(mac2iface "$MAC2")"
+IF3="$(mac2iface "$MAC3")"
 
 echo "<$IF2> <$IF3>"
 if [ '(' -z $IF2 ')' -o '(' -z $IF3 ')' ] ; then
@@ -102,7 +111,7 @@ setup_iface() {
 setup_iface "$IF2" "$IP2"
 setup_iface "$IF3" "$IP3"
 
-nmcli g hostname $VMNAME
+nmcli g hostname "$VMNAME"
 
 ip -h -c -o -br address show
 
