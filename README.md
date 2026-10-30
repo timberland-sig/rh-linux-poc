@@ -169,7 +169,8 @@ Directories and files are explained here:
 | `vm-lib` | - | Contains shared scripts and functions used by both *target-vm* and *host-vm* subdirectories. Includes common network setup scripts and Makefile targets. |
 | `vm-lib` | `common.sh` | Contains global functions used by the scripts in the `target-vm` and `host-vm` subdirectories. |
 | `vm-lib` | `netsetup.sh` | Unified network setup launcher script used by both VMs. |
-| `vm-lib` | `remote-netsetup.sh` | Script that runs on the VMs to configure their network interfaces. |
+| `vm-lib` | `remote-netsetup.sh.in` | Template of the script that runs on the VMs to configure their network interfaces and, in `static` router mode, the default gateway, static routes, DNS servers, and hostname. Rendered by `build-remote-netsetup.sh`. |
+| `vm-lib` | `build-remote-netsetup.sh` | Renders `remote-netsetup.sh.in` with per-VM MAC/IP/gateway/route/DNS parameters baked in via `envsubst`. Invoked by `vm-lib/netsetup.sh` via the `vm-lib/Makefile` `.build/remote-netsetup.sh` target. |
 | `host-vm` | - |Contains the scripts and files needed to create and run your QEMU host virtual machine. |
 | `target-vm` | - | Contains the scripts and files needed to create and run your QEMU target virtual machine. |
 | `router` | - | Contains the scripts and configuration files needed to provision and manage the router VM (an Incus system container). Provides firewall, DHCP, and routing services between the `target-vm` and `host-vm`. |
@@ -203,6 +204,17 @@ Some scripts also write back to `.env` to keep computed state persistent across
 terminal sessions. For example, the router's address configuration
 (`router/addresses.sh`) stores the resolved `TARGET_CIDR*` and `HOST_CIDR*`
 values in `.env` so they survive across separate shell sessions.
+
+### `WORKAROUND_NBFT_STATIC_ROUTING_BUG`
+
+In `static` router mode, NBFT connections generated from the firmware table
+carry a default gateway (192.168.31.1/192.168.32.1 on the host-vm). Multiple
+competing default routes break internet connectivity in the VM.
+`WORKAROUND_NBFT_STATIC_ROUTING_BUG` (default `1`, defined in `defaults.sh`)
+gates a workaround in `apply_nbft_workaround()` in `vm-lib/remote-netsetup.sh.in`
+that replaces each NBFT default gateway with a static route to the NVMe/TCP
+target subnet behind that gateway. Set it to `0` to disable the workaround,
+e.g. when verifying a fix for the underlying OS bug.
 
 # Getting Started
 
@@ -451,7 +463,8 @@ the latest available Fedora version, or provide an HTTP(S) link to an ISO file o
 
 There are also `+ Copr` options. These options override the `nvme-cli` package in the resulting OS installation.
 Instead of the official RPM, a custom RPM built by us is used. Use this to test with `nvme-cli-3.0`
-(at the time of writing this is the fresh upstream unpackaged version).
+(at the time of writing this is the fresh upstream unpackaged version). This RPM also carries the
+`nvme-discoverd` subpackage - a system daemon that replaces the udev autoconnect rules from nvme-cli 2.x.
 
 You may also use your own Copr repository by setting the `COPR_PROJECT` and `COPR_USER` variables in `.env`.
 
@@ -731,8 +744,15 @@ This `router-vm` is provisioned as an Incus system container running Fedora Linu
 
 The services that it provides out of the box are:
 - firewall (`nftables`)
-- DHCP server (`kea`)
+- DHCP server (`kea`, in `dynamic` mode only)
 - static routing tables
+- passwordless root SSH access to the `target-vm` and `host-vm`
+
+The SSH access is set up during router provisioning: an ECDSA key pair is generated
+inside the router container and the public key (also stored in `.ssh/router/id_ecdsa.pub`
+on the hypervisor) is installed into the VMs' `authorized_keys` by their
+`netsetup.sh` scripts. This mirrors real setups where the network administrator has
+root access to the nodes they manage.
 
 To activate the router, you first need to tear down the currently provisioned
 virtual machines using:
@@ -755,8 +775,31 @@ Once the setup has been cleaned up, run:
 make router
 ```
 
+The `static` mode is the default. It uses a bash script instead of a DHCP server to
+configure the networks on the VMs. The script does not need to be executed by the
+user - the `netsetup.sh` scripts take care of this.
+
+The `dynamic` mode provisions a DHCP server that takes care of configuring the host
+and the target automatically. It can be selected with:
+```
+make router-dynamic
+```
+
+Both modes are also available through `./setup.sh router [dynamic|static]` (or the
+`make router-static` alias). Switching between modes reconfigures the router: if a
+router was set up in the `dynamic` mode and then subsequently `./setup.sh router static`
+is invoked again, the DHCP server is removed. The inverse applies too - if the DHCP is
+missing in `dynamic` mode, it is (re)installed.
+
 _Note that the script shall install the `incus` container engine, which requires the provision
 of SubUIDs and SubGIDs. The user is expected to resolve any errors that occur manually._
+
+**WARNING:** Beware that when using `static` mode with `br0` provisioned, the VMs will have **absolutely no
+network configuration** out of the box! Moreover, if you change the DHCP setup to a static setup
+without re-installing the OS in between, there will likely be leftover configuration that will need to be updated.
+That **does not** mean that the configuration is necesarily bad and that an OS reinstall is necessary - sometimes
+this may mean less manual work, sometimes more, depending on how exactly does the existing configuration clash
+with the intended one.
 
 ## Provisioning the VMs
 
@@ -769,7 +812,7 @@ and hook up to the proper virtual bridges. Their `netsetup.sh` scripts must be r
 ```
 
 The IP addresses of the VMs on their management interface can be set
-in the `router-vm/.env` file. This file does not exists by default, but can be created
+in the `router-vm/.env` file. This file does not exist by default, but can be created
 by copying the `router-vm/.env.example` file into `router-vm/.env`.
 
 ```shell
@@ -824,7 +867,7 @@ created in the follow directories:
 | Directory  | Decription |
 | :-----   | :----      |
 | `lorax_results` | contains the bootable iso generated from the build process. This iso is created using the generated rpm from your `copr.fedorainfracloud.org` project. The specific location of the iso is: *lorax_results/images/boot.iso*`.  This is the default iso used by the *host-vm\vm.sh* and *target-vm\vm.sh* scripts.|
-| `copr.fedorainfracloud.org` | Contains rpms for nvme-cli, libnvme and dracut. (e.g.: see [johnmeneghini's](https://copr.fedorainfracloud.org/coprs/johnmeneghini/timberland-sig/) copr repository. |
+| `copr.fedorainfracloud.org` | Contains rpms for nvme-cli (with the `nvme-discoverd` daemon), libnvme and dracut. (e.g.: see [johnmeneghini's](https://copr.fedorainfracloud.org/coprs/johnmeneghini/timberland-sig/) copr repository. |
 
 ## Developer Build
 

@@ -18,7 +18,9 @@ help:
 	@echo "                : - script prompts for \"bridged\" primary interface."
 	@echo "                :   Enter \"none\" to skip primary interface reconfiguration."
 	@echo "  router        : configure the router (container) acting as a gateway"
-	@echo "                : between the host-vm and target-vm"
+	@echo "                : between the host-vm and target-vm (dynamic mode)"
+	@echo "  router-dynamic: same as router - deploy DHCP server"
+	@echo "  router-static : configure the router without a DHCP server"
 	@echo ""
 	@echo "Other targets:"
 	@echo "  devel         : setup development environment with https"
@@ -72,6 +74,14 @@ net:
 .PHONY: router
 router:
 	./setup.sh router
+
+.PHONY: router_dynamic
+router-dynamic:
+	./setup.sh router dynamic
+
+.PHONY: router_static
+router-static:
+	./setup.sh router static
 
 .PHONY: status
 status:
