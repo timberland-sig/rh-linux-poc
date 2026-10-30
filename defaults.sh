@@ -88,6 +88,10 @@ HOSTGW_CIDR3="${HOSTGW_CIDR3:-192.168.110.1/24}"
 
 LOCAL_HOST_VM_USE_NBFT="${LOCAL_HOST_VM_USE_NBFT:-false}"
 
+# See "WORKAROUND_NBFT_STATIC_ROUTING_BUG" in README.md. Set to 0 to disable,
+# e.g. when verifying a fix for the underlying OS bug.
+WORKAROUND_NBFT_STATIC_ROUTING_BUG="${WORKAROUND_NBFT_STATIC_ROUTING_BUG:-1}"
+
 MIRROR_CENTOS="${MIRROR_CENTOS:-https://mirror.stream.centos.org/10-stream/BaseOS/x86_64/iso/}"
 MIRROR_FEDORA="${MIRROR_FEDORA:-https://download.fedoraproject.org/pub/fedora/linux/}"
 

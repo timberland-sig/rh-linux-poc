@@ -113,6 +113,7 @@ case "$VMNAME" in
             IP1="$TARGET_CIDR1" IP2="$TARGET_CIDR2" IP3="$TARGET_CIDR3" \
             GATEWAY="$GATEWAY" ROUTES2="$ROUTES2" ROUTES3="$ROUTES3" \
             DNS_SERVERS="$DNS_SERVERS" \
+            NBFT_WORKAROUND="$WORKAROUND_NBFT_STATIC_ROUTING_BUG" \
             .build/remote-netsetup.sh
         scp -i $DIR/../.ssh/id_ecdsa -o StrictHostKeyChecking=no "${VMDIR}/.build/"{tcp.json,hosts.txt,remote-netsetup.sh} $VMDIR/wipe-nvme.sh $VMDIR/setup-nvme-target.sh $VMDIR/nvmet-mods.conf scp://${SSH_TARGET}
         run_ssh $VMNAME "
@@ -159,6 +160,7 @@ set -e
             IP1="$HOST_CIDR1" IP2="$HOST_CIDR2" IP3="$HOST_CIDR3" \
             GATEWAY="$GATEWAY" ROUTES2="$ROUTES2" ROUTES3="$ROUTES3" \
             DNS_SERVERS="$DNS_SERVERS" \
+            NBFT_WORKAROUND="$WORKAROUND_NBFT_STATIC_ROUTING_BUG" \
             .build/remote-netsetup.sh
         scp -i $DIR/../.ssh/id_ecdsa -o StrictHostKeyChecking=no ${VMDIR}/.build/* scp://${SSH_TARGET}
         run_ssh $VMNAME "\

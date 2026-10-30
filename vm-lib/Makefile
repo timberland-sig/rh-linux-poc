@@ -48,6 +48,7 @@ GATEWAY ?=
 ROUTES2 ?=
 ROUTES3 ?=
 DNS_SERVERS ?=
+NBFT_WORKAROUND ?=
 
 # This target's real inputs are driven by the dispatcher's runtime
 # has_router/has_dhcpd branching (e.g. switching router-dynamic <->
@@ -60,5 +61,5 @@ DNS_SERVERS ?=
 		@VMNAME="$(VMNAME)" MAC1="$(MAC1)" MAC2="$(MAC2)" MAC3="$(MAC3)" \
 		 IP1="$(IP1)" IP2="$(IP2)" IP3="$(IP3)" \
 		 GATEWAY="$(GATEWAY)" ROUTES2="$(ROUTES2)" ROUTES3="$(ROUTES3)" \
-		 DNS_SERVERS="$(DNS_SERVERS)" \
+		 DNS_SERVERS="$(DNS_SERVERS)" NBFT_WORKAROUND="$(NBFT_WORKAROUND)" \
 		 ../vm-lib/build-remote-netsetup.sh $@

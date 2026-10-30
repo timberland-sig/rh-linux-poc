@@ -205,6 +205,17 @@ terminal sessions. For example, the router's address configuration
 (`router/addresses.sh`) stores the resolved `TARGET_CIDR*` and `HOST_CIDR*`
 values in `.env` so they survive across separate shell sessions.
 
+### `WORKAROUND_NBFT_STATIC_ROUTING_BUG`
+
+In `static` router mode, NBFT connections generated from the firmware table
+carry a default gateway (192.168.31.1/192.168.32.1 on the host-vm). Multiple
+competing default routes break internet connectivity in the VM.
+`WORKAROUND_NBFT_STATIC_ROUTING_BUG` (default `1`, defined in `defaults.sh`)
+gates a workaround in `apply_nbft_workaround()` in `vm-lib/remote-netsetup.sh.in`
+that replaces each NBFT default gateway with a static route to the NVMe/TCP
+target subnet behind that gateway. Set it to `0` to disable the workaround,
+e.g. when verifying a fix for the underlying OS bug.
+
 # Getting Started
 
 Step by step instructions for creating your QEMU Virtual Machines.
