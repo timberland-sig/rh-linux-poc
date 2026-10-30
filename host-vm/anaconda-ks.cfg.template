@@ -21,7 +21,7 @@ vim
 ethtool
 net-tools
 nvme-cli
-libnvme3
+# libnvme3
 %end
 
 # Run the Setup Agent on first boot
