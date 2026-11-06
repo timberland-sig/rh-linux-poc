@@ -10,14 +10,14 @@
 %endif
 
 Name:           nvme-cli
-Version:        3.1
-Release:        2
+Version:        3.2
+Release:        1
 Summary:        NVMe management command line interface
 
 License:        GPL-2.0-only
 URL:            https://github.com/linux-nvme/nvme-cli
 Source0:        %{url}/archive/v%{version_no_tilde}/%{name}-%{version_no_tilde}.tar.gz
-Source1:        99-nvme-nbft-no-ignore-carrier.conf
+# Source1:        99-nvme-nbft-no-ignore-carrier.conf
 
 BuildRequires:  gcc gcc-c++ cmake
 BuildRequires:  swig
@@ -32,6 +32,7 @@ BuildRequires:  kmod-libs kmod-devel
 BuildRequires:  perl-interpreter
 BuildRequires:  systemd-libs >= 253
 BuildRequires:  systemd-devel
+BuildRequires:  libarchive-devel
 
 BuildRequires:  asciidoc
 BuildRequires:  xmlto
@@ -121,12 +122,14 @@ This package contains Python bindings for libnvme3.
         -Dudevrulesdir=%{_udevrulesdir} \
         -Dsystemddir=%{_unitdir} \
         -Ddocs=man \
-        -Ddocs-build=true \
         -Dnvme=enabled \
         -Dlibnvme=enabled \
         -Dfabrics=enabled \
         -Dnvme-discoverd=enabled \
         -Dnvmf-autoconnect=enabled \
+        -Dnvme-keysd=disabled \
+        -Dkmip=disabled \
+        -Dmdns=disabled \
         -Dmi=enabled \
         -Dtop=enabled \
         -Dpython=enabled \
@@ -144,7 +147,7 @@ This package contains Python bindings for libnvme3.
 %{__install} -D -pm 644 README.md %{buildroot}%{_pkgdocdir}/README.md
 %{__install} -D -pm 644 SECURITY.md %{buildroot}%{_pkgdocdir}/SECURITY.md
 mkdir -p $RPM_BUILD_ROOT%{nmlibdir}/conf.d
-%{__install} -pm 644 %{SOURCE1} $RPM_BUILD_ROOT%{nmlibdir}/conf.d/
+# %{__install} -pm 644 %{SOURCE1} $RPM_BUILD_ROOT%{nmlibdir}/conf.d/
 rm -f %{buildroot}/usr/lib/dracut/dracut.conf.d/70-nvmf-autoconnect.conf
 
 %post -n nvme-udev-rules
@@ -186,8 +189,6 @@ rm -f %{buildroot}/usr/lib/dracut/dracut.conf.d/70-nvmf-autoconnect.conf
 %{_udevrulesdir}/71-nvmf-vastdata.rules
 %{_udevrulesdir}/71-nvmf-hpe.rules
 
-%{nmlibdir}/conf.d/99-nvme-nbft-no-ignore-carrier.conf
-
 %files -n nvme-udev-rules
 %{_unitdir}/nvmf-connect@.service
 %{_unitdir}/nvmefc-boot-connections.service
@@ -204,7 +205,7 @@ rm -f %{buildroot}/usr/lib/dracut/dracut.conf.d/70-nvmf-autoconnect.conf
 %{nvmediscoverddir}/nvme-discoverd
 %{_mandir}/man8/nvme-discoverd.8.gz
 %{_unitdir}/nvme-discoverd.service
-%config(noreplace) %{_sysconfdir}/nvme/nvme-discoverd.conf
+%{_sysconfdir}/nvme/nvme-discoverd.conf.sample
 
 %files -n %{libname}
 %license libnvme/COPYING
@@ -218,6 +219,8 @@ rm -f %{buildroot}/usr/lib/dracut/dracut.conf.d/70-nvmf-autoconnect.conf
 %{_includedir}/libnvme3/libnvme-mi.h
 %{_includedir}/libnvme3/nvme/*.h
 %{_includedir}/libnvme3/nvme/generated/*.h
+%{_includedir}/libnvme3/libnvme-sed.h
+%{_includedir}/libnvme3/sed/*.h
 %{_libdir}/pkgconfig/libnvme3.pc
 
 %files -n %{libname}-doc
@@ -228,6 +231,9 @@ rm -f %{buildroot}/usr/lib/dracut/dracut.conf.d/70-nvmf-autoconnect.conf
 %{python3_sitearch}/libnvme3/*
 
 %changelog
+* Tue Nov 03 2026 Michal Rábek <mrabek@redhat.com> - 3.2-1
+- Update to 3.2
+
 * Tue Oct 13 2026 Michal Rábek <mrabek@redhat.com> - 3.1-2
 - Enable nvme-discoverd
 
