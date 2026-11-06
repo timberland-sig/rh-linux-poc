@@ -82,12 +82,6 @@ if [ -f "$ROUTER_SSH_KEY" ]; then
     echo "Router SSH key installed on $VMNAME"
 fi
 
-# Install VM utilities to /usr/local/bin
-echo "Installing VM utilities on $VMNAME..."
-scp -i $DIR/../.ssh/id_ecdsa -o StrictHostKeyChecking=no $DIR/mac2iface scp://${SSH_TARGET}//usr/local/bin/
-run_ssh $VMNAME "chmod +x /usr/local/bin/mac2iface"
-echo "VM utilities installed on $VMNAME"
-
 case "$VMNAME" in
     target-vm)
         GATEWAY="" ROUTES2="" ROUTES3="" DNS_SERVERS=""
