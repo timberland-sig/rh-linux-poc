@@ -74,6 +74,7 @@ unset _env_file
 
 export INTERFACES="\"$TARGET1_IFACE\", \"$TARGET2_IFACE\", \"$TARGET3_IFACE\", \"$HOST1_IFACE\", \"$HOST2_IFACE\", \"$HOST3_IFACE\""
 export TARGET_MAC1 TARGET_MAC2 TARGET_MAC3 HOST_MAC1 HOST_MAC2 HOST_MAC3
+export SUBNQN
 
 # Bridge network addresses (read from host interfaces)
 for _i in 1 2; do
