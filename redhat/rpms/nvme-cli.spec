@@ -1,6 +1,5 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-%global nmlibdir %{_prefix}/lib/NetworkManager
 %global libname libnvme3
 
 %if (0%{?rhel} == 0)
@@ -10,14 +9,13 @@
 %endif
 
 Name:           nvme-cli
-Version:        3.1
-Release:        2
+Version:        3.2
+Release:        1
 Summary:        NVMe management command line interface
 
 License:        GPL-2.0-only
 URL:            https://github.com/linux-nvme/nvme-cli
 Source0:        %{url}/archive/v%{version_no_tilde}/%{name}-%{version_no_tilde}.tar.gz
-Source1:        99-nvme-nbft-no-ignore-carrier.conf
 
 BuildRequires:  gcc gcc-c++ cmake
 BuildRequires:  swig
@@ -39,7 +37,6 @@ BuildRequires:  xmlto
 BuildRequires:  systemd-rpm-macros
 
 Requires:       util-linux
-Requires:       nvmf-autoconnect
 Recommends:     nvme-discoverd
 
 %if (0%{?rhel} == 0)
@@ -54,25 +51,12 @@ from the Timberland-sig repository.
 %package -n nvme-discoverd
 Summary:        NVMe over Fabrics discovery daemon
 License:        GPL-2.0-only
-Provides:       nvmf-autoconnect = %{version}-%{release}
-Conflicts:      nvme-udev-rules
 
 %description -n nvme-discoverd
 This system daemon replaces the udev rules from
 nvme-cli 2.0 for performance and versitality gains.
 It handles NVMe/FC kickstart discovery, connection management,
 coexistence with other NVMe-oF orchestrators and much more.
-
-%package -n nvme-udev-rules
-Summary:        NVMe over Fabrics udev rules
-License:        GPL-2.0-only
-Provides:       nvmf-autoconnect = %{version}-%{release}
-Conflicts:      nvme-discoverd
-
-%description -n nvme-udev-rules
-This package includes the original udev rules from
-nvme-cli 2.x for backwards compatibility. These rules are
-replaced by the nvme-discoverd daemon in version 3.x.
 
 %package -n %libname
 Summary:        Linux-native nvme device management library
@@ -121,12 +105,14 @@ This package contains Python bindings for libnvme3.
         -Dudevrulesdir=%{_udevrulesdir} \
         -Dsystemddir=%{_unitdir} \
         -Ddocs=man \
-        -Ddocs-build=true \
         -Dnvme=enabled \
         -Dlibnvme=enabled \
         -Dfabrics=enabled \
         -Dnvme-discoverd=enabled \
-        -Dnvmf-autoconnect=enabled \
+        -Dnvmf-autoconnect=disabled \
+        -Dnvme-keysd=disabled \
+        -Dkmip=disabled \
+        -Dmdns=disabled \
         -Dmi=enabled \
         -Dtop=enabled \
         -Dpython=enabled \
@@ -144,27 +130,7 @@ This package contains Python bindings for libnvme3.
 %{__install} -D -pm 644 README.md %{buildroot}%{_pkgdocdir}/README.md
 %{__install} -D -pm 644 SECURITY.md %{buildroot}%{_pkgdocdir}/SECURITY.md
 mkdir -p $RPM_BUILD_ROOT%{nmlibdir}/conf.d
-%{__install} -pm 644 %{SOURCE1} $RPM_BUILD_ROOT%{nmlibdir}/conf.d/
 rm -f %{buildroot}/usr/lib/dracut/dracut.conf.d/70-nvmf-autoconnect.conf
-
-%post -n nvme-udev-rules
-# https://docs.fedoraproject.org/en-US/packaging-guidelines/Scriptlets/#_systemd
-%systemd_post nvmefc-boot-connections.service
-%systemd_post nvmf-autoconnect.service
-%systemd_post nvmf-connect@.service
-%systemd_post nvmf-connect-nbft.service
-
-%preun -n nvme-udev-rules
-%systemd_preun nvmefc-boot-connections.service
-%systemd_preun nvmf-autoconnect.service
-%systemd_preun nvmf-connect@.service
-%systemd_preun nvmf-connect-nbft.service
-
-%postun -n nvme-udev-rules
-%systemd_postun nvmefc-boot-connections.service
-%systemd_postun nvmf-autoconnect.service
-%systemd_postun nvmf-connect@.service
-%systemd_postun nvmf-connect-nbft.service
 
 %files
 %license LICENSE LICENSES
@@ -180,31 +146,18 @@ rm -f %{buildroot}/usr/lib/dracut/dracut.conf.d/70-nvmf-autoconnect.conf
 %ghost %{_sysconfdir}/etc/nvme/config.json
 %ghost %{_sysconfdir}/etc/nvme/discovery.conf
 
+%{_udevrulesdir}/65-persistent-net-nbft.rules
 %{_udevrulesdir}/70-nvmf-keys.rules
 %{_udevrulesdir}/70-nvmf-registry.rules
 %{_udevrulesdir}/71-nvmf-netapp.rules
 %{_udevrulesdir}/71-nvmf-vastdata.rules
 %{_udevrulesdir}/71-nvmf-hpe.rules
 
-%{nmlibdir}/conf.d/99-nvme-nbft-no-ignore-carrier.conf
-
-%files -n nvme-udev-rules
-%{_unitdir}/nvmf-connect@.service
-%{_unitdir}/nvmefc-boot-connections.service
-%{_unitdir}/nvmf-connect-nbft.service
-%{_unitdir}/nvmf-connect.target
-%{_unitdir}/nvmf-autoconnect.service
-
-%{_udevrulesdir}/65-persistent-net-nbft.rules
-%{_udevrulesdir}/70-nvmf-autoconnect.rules
-
-%{nmlibdir}/dispatcher.d/80-nvmf-connect-nbft.sh
-
 %files -n nvme-discoverd
 %{nvmediscoverddir}/nvme-discoverd
 %{_mandir}/man8/nvme-discoverd.8.gz
 %{_unitdir}/nvme-discoverd.service
-%config(noreplace) %{_sysconfdir}/nvme/nvme-discoverd.conf
+%{_sysconfdir}/nvme/nvme-discoverd.conf.sample
 
 %files -n %{libname}
 %license libnvme/COPYING
@@ -218,6 +171,8 @@ rm -f %{buildroot}/usr/lib/dracut/dracut.conf.d/70-nvmf-autoconnect.conf
 %{_includedir}/libnvme3/libnvme-mi.h
 %{_includedir}/libnvme3/nvme/*.h
 %{_includedir}/libnvme3/nvme/generated/*.h
+%{_includedir}/libnvme3/libnvme-sed.h
+%{_includedir}/libnvme3/sed/*.h
 %{_libdir}/pkgconfig/libnvme3.pc
 
 %files -n %{libname}-doc
@@ -228,6 +183,9 @@ rm -f %{buildroot}/usr/lib/dracut/dracut.conf.d/70-nvmf-autoconnect.conf
 %{python3_sitearch}/libnvme3/*
 
 %changelog
+* Tue Nov 03 2026 Michal Rábek <mrabek@redhat.com> - 3.2-1
+- Update to 3.2
+
 * Tue Oct 13 2026 Michal Rábek <mrabek@redhat.com> - 3.1-2
 - Enable nvme-discoverd
 
