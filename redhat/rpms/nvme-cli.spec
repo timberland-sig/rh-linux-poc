@@ -113,6 +113,7 @@ This package contains Python bindings for libnvme3.
         -Dnvme-keysd=disabled \
         -Dkmip=disabled \
         -Dmdns=disabled \
+        -Dlibarchive=disabled \
         -Dmi=enabled \
         -Dtop=enabled \
         -Dpython=enabled \
